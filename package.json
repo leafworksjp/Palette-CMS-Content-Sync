@@ -1,0 +1,223 @@
+{
+    "name": "palette-cms-content-sync",
+    "displayName": "Palette CMS Content Sync",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/leafworksjp/Palette-CMS-Content-Sync"
+    },
+    "description": "Edit and synchronize web content in Palette CMS for VSCode",
+    "publisher": "leafworks, Inc.",
+    "version": "1.0.0",
+    "engines": {
+        "vscode": "^1.71.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "workspaceContains:**/contents.json",
+        "onView:paletteCmsContentSyncViews"
+    ],
+    "main": "./dist/extension.bundle.js",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "paletteCmsContentSyncViews",
+                    "title": "Palette CMS Content Sync",
+                    "icon": "media/image/light/logo.svg"
+                }
+            ]
+        },
+        "views": {
+            "paletteCmsContentSyncViews": [
+                {
+                    "type": "webview",
+                    "id": "paletteCmsContentSync.settingView",
+                    "name": "コンテンツ設定"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "paletteCmsContentSync.previewContent",
+                "category": "Palette CMS Content Sync",
+                "title": "プレビュー",
+                "icon": "$(preview)"
+            },
+            {
+                "command": "paletteCmsContentSync.uploadContent",
+                "category": "Palette CMS Content Sync",
+                "title": "アップロード",
+                "icon": "$(cloud-upload)"
+            },
+            {
+                "command": "paletteCmsContentSync.uploadAllContents",
+                "category": "Palette CMS Content Sync",
+                "title": "全てアップロード",
+                "icon": "$(cloud-upload)"
+            },
+            {
+                "command": "paletteCmsContentSync.downlaodContent",
+                "category": "Palette CMS Content Sync",
+                "title": "ダウンロード",
+                "icon": "$(cloud-download)"
+            },
+            {
+                "command": "paletteCmsContentSync.renameDirectory",
+                "category": "Palette CMS Content Sync",
+                "title": "フォルダ名を更新",
+                "icon": "$(replace)"
+            },
+            {
+                "command": "paletteCmsContentSync.createContent",
+                "category": "Palette CMS Content Sync",
+                "title": "新規作成",
+                "icon": "$(new-file)"
+            },
+            {
+                "command": "paletteCmsContentSync.duplicateContent",
+                "category": "Palette CMS Content Sync",
+                "title": "複製",
+                "icon": "$(files)"
+            },
+            {
+                "command": "paletteCmsContentSync.deleteContent",
+                "category": "Palette CMS Content Sync",
+                "title": "削除",
+                "icon": "$(trash)"
+            },
+            {
+                "command": "paletteCmsContentSync.insertVariable",
+                "category": "Palette CMS Content Sync",
+                "title": "変数を挿入",
+                "icon": "$(add)"
+            },
+            {
+                "command": "paletteCmsContentSync.changeLanguage",
+                "category": "Palette CMS Content Sync",
+                "title": "拡張子を変更",
+                "icon": "$(arrow-swap)"
+            },
+            {
+                "command": "paletteCmsContentSync.downloadDefinitions",
+                "category": "Palette CMS Content Sync",
+                "title": "定義ファイルを再取得",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "paletteCmsContentSync.downloadVariables",
+                "category": "Palette CMS Content Sync",
+                "title": "コンテンツ変数を再取得",
+                "icon": "$(refresh)"
+            }
+        ],
+        "menus": {
+            "view/title": [
+                {
+                    "command": "paletteCmsContentSync.previewContent",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "paletteCmsContentSync.uploadContent",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "paletteCmsContentSync.downlaodContent",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "navigation@3"
+                },
+                {
+                    "command": "paletteCmsContentSync.createContent",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "navigation@4"
+                },
+                {
+                    "command": "paletteCmsContentSync.duplicateContent",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "navigation@5"
+                },
+                {
+                    "command": "paletteCmsContentSync.deleteContent",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "navigation@6"
+                },
+                {
+                    "command": "paletteCmsContentSync.uploadAllContents",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "menus@1"
+                },
+                {
+                    "command": "paletteCmsContentSync.renameDirectory",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "menus@2"
+                },
+                {
+                    "command": "paletteCmsContentSync.changeLanguage",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "menus@3"
+                },
+                {
+                    "command": "paletteCmsContentSync.downloadVariables",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "menus@4"
+                },
+                {
+                    "command": "paletteCmsContentSync.downloadDefinitions",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "menus@5"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "webpack --mode production",
+        "webpack": "cross-env NODE_ENV=development webpack --mode development",
+        "webpack-dev": "webpack --mode development --watch",
+        "test-compile": "tsc -p ./",
+        "lint": "eslint . --ext .ts,.tsx"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.19.3",
+        "@babel/plugin-transform-runtime": "^7.19.1",
+        "@babel/preset-env": "^7.19.4",
+        "@babel/preset-react": "^7.18.6",
+        "@babel/runtime": "^7.19.4",
+        "@types/escape-html": "^1.0.2",
+        "@types/express": "^4.17.17",
+        "@types/glob": "^7.2.0",
+        "@types/mocha": "^9.1.1",
+        "@types/node": "16.x",
+        "@types/node-fetch": "^2.6.2",
+        "@types/react": "^18.0.21",
+        "@types/react-dom": "^18.0.6",
+        "@types/vscode": "^1.71.0",
+        "@types/vscode-webview": "^1.57.0",
+        "@types/ws": "^8.5.4",
+        "@typescript-eslint/eslint-plugin": "^5.31.0",
+        "@typescript-eslint/parser": "^5.31.0",
+        "@vscode/test-electron": "^2.1.5",
+        "babel-loader": "^8.2.5",
+        "cross-env": "^7.0.3",
+        "eslint": "^8.20.0",
+        "glob": "^8.0.3",
+        "license-checker": "^25.0.1",
+        "mocha": "^10.0.0",
+        "ts-loader": "^9.4.1",
+        "typescript": "^4.7.4",
+        "webpack": "^5.74.0",
+        "webpack-cli": "^4.10.0"
+    },
+    "dependencies": {
+        "escape-html": "^1.0.3",
+        "express": "^4.18.2",
+        "node-fetch": "^2.6.7",
+        "open": "^8.4.2",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "ws": "^8.13.0",
+        "zod": "^3.21.4"
+    }
+}

@@ -1,0 +1,121 @@
+// [プロジェクト設定]
+// ⚠️ このファイルは変更しないでください。
+{
+    "files.insertFinalNewline": false, // ファイルの保存時に末尾に改行を挿入
+    "files.trimFinalNewlines": true, // ファイルの保存時に最終行以降をトリミング
+    "files.trimTrailingWhitespace": true, // ファイルの保存時に行末の空白をトリミング
+    "files.eol": "\n", // 改行コード
+    "editor.renderControlCharacters": true, // 制御文字を表示
+    "editor.renderWhitespace": "all", // 半角スペースを表示
+    // 言語ごとに上書きする設定
+    "editor.insertSpaces": true, // インデント（true：スペース、false：タブ）
+    "editor.tabSize": 4, // インデント幅
+    "editor.formatOnSave": false, // ファイル保存時にフォーマット
+    "editor.formatOnPaste": false, // ペースト時にフォーマット
+    "editor.formatOnType": false, // 入力時にフォーマット
+    // HTMLの設定
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features", // フォーマットに利用する拡張機能
+        "editor.tabSize": 2, // インデントはスペース2個
+        "editor.formatOnSave": true // ファイル保存時に自動フォーマット
+    },
+    // PHPの設定
+    "[php]": {
+        "editor.defaultFormatter": "bmewburn.vscode-intelephense-client", // フォーマットに利用する拡張機能
+        "editor.wordSeparators": "`~!@#%^&*()=+[{]}\\|;:'\",.<>/?-", // `$`記号もダブルクリックの選択範囲に含む
+        "editor.insertSpaces": false, // インデントはタブ
+        "editor.formatOnSave": true // ファイル保存時に自動フォーマット
+    },
+    // JavaScriptの設定
+    "[javascript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint", // フォーマットに利用する拡張機能
+        "editor.insertSpaces": false, // インデントはタブ
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": true // ファイル保存時に自動フォーマット
+        }
+    },
+    // JavaScriptの設定
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint", // フォーマットに利用する拡張機能
+        "editor.insertSpaces": false, // インデントはタブ
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": true // ファイル保存時に自動フォーマット
+        }
+    },
+    // TypeScriptの設定
+    "[typescript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint", // フォーマットに利用する拡張機能
+        "editor.insertSpaces": false, // インデントはタブ
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": true // ファイル保存時に自動フォーマット
+        }
+    },
+    // TypeScriptの設定
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint", // フォーマットに利用する拡張機能
+        "editor.insertSpaces": false, // インデントはタブ
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": true // ファイル保存時に自動フォーマット
+        }
+    },
+    // JSONの設定
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features", // フォーマットに利用する拡張機能
+        "editor.formatOnSave": true // ファイル保存時に自動フォーマット
+    },
+    // JSDocの設定
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features", // フォーマットに利用する拡張機能
+        "editor.formatOnSave": true // ファイル保存時に自動フォーマット
+    },
+    // HTMLのフォーマット設定
+    // 既定のHTMLフォーマッタを有効化/無効化
+    "html.format.enable": true,
+    // コンテンツを再フォーマットしてはならないタグ
+    // "null"の場合は既定値の"pre"
+    "html.format.contentUnformatted": "pre, code, textarea",
+    // 直前に改行を挿入するタグ
+    // "null"の場合は既定値の"head"、"body"、"/html"
+    // どのタグの前にも空行を入れたくない場合は""
+    "html.format.extraLiners": "",
+    // 再フォーマットしてはならないタグ
+    // "null"の場合は既定値
+    "html.format.unformatted": null,
+    // <head>セクションと<body>セクションをインデント
+    "html.format.indentInnerHtml": false,
+    // 1つのチャンク内に保持できる改行の最大数
+    // "null"の場合は無制限
+    "html.format.maxPreserveNewLines": 1,
+    // 要素の前にある既存の改行を保持するかどうか
+    // 要素の前でのみ機能し、タグの内側やテキストに対しては機能しない
+    "html.format.preserveNewLines": true,
+    // 末尾に改行を挿入
+    "html.format.endWithNewline": true,
+    // 属性の折り返し
+    "html.format.wrapAttributes": "auto",
+    // 1行あたりの最大文字数(0 = 無効)
+    "html.format.wrapLineLength": 0,
+    "html.format.indentScripts": "keep",
+    // HTML内JavaScriptのフォーマット設定
+    "javascript.format.placeOpenBraceOnNewLineForControlBlocks": true,
+    "javascript.format.placeOpenBraceOnNewLineForFunctions": true,
+    // PHPのフォーマット設定
+    "intelephense.format.braces": "allman", // PHPの括弧のスタイル
+    "formatFiles.excludedFolders": [
+        "node_modules",
+        "out",
+        "dist",
+        "public",
+        ".vscode",
+        ".git",
+        "common/lib"
+    ],
+    "files.exclude": {
+        "out": false // set this to true to hide the "out" folder with the compiled JS files
+    },
+    "search.exclude": {
+        "out": true // set this to false to include "out" folder in search results
+    },
+    // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
+    "typescript.tsc.autoDetect": "off"
+}

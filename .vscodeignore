@@ -1,0 +1,15 @@
+.gitignore
+.vscode
+dist/bin/
+extension
+node_modules
+webview
+.yarnrc
+development-guide.md
+tsconfig.json
+.eslintignore
+.eslintrc.json
+webpack.config.js
+**/*.map
+**/*.ts
+**/*.tsx

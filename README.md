@@ -2,6 +2,8 @@
 
 *NOTE: This extension only works for [Palette CMS](https://palettecms.jp/).*
 
+日本語は[こちら](./README_ja.md)
+
 ## Overview
 
 Edit and synchronize web content in [Palette CMS](https://palettecms.jp/) for VSCode.
@@ -14,12 +16,24 @@ Edit and synchronize web content in [Palette CMS](https://palettecms.jp/) for VS
 1. Extract downloaded ZIP archive.
 1. Open folder with VSCode.
 
+> ✅ TIPS:
+>
+> VSCode can freely change the display position of extensions.
+>
+> Drag *Palette CMS Content Sync* extension icon from the left sidebar to the desired position.
+>
+> Move it to the right side of the window to see the file browser and content settings at the same time.
+
+![](./media/image/readme/move_extension.png)
+
 ## Usage
 
 ### Insert content variables
 
 1. Open downloaded HTML code.
 1. Type `[` key to get variable suggestions.
+
+![](./media/image/readme/content_variables.png)
 
 ### Configure content settings
 
@@ -29,12 +43,20 @@ Edit and synchronize web content in [Palette CMS](https://palettecms.jp/) for VS
 
 > ✅ At this time, your settings has not yet been uploaded to the server and can be safely changed.
 
+![](./media/image/readme/content_settings.png)
+
+
 ### Upload
 
 1. Open any HTML code or `contents.json`.
 1. Click `アップロード` button from the toolbar.
 1. If the upload is successful, the server will reflect the settings and HTML.
-1. If there are some errors in your settings, an error dialog will be displayed.
+
+![](./media/image/readme/upload_content.png)
+
+If there are some errors in your settings, an error dialog will be displayed.
+
+![](./media/image/readme/error.png)
 
 ### Download
 
@@ -43,6 +65,8 @@ Edit and synchronize web content in [Palette CMS](https://palettecms.jp/) for VS
 1. Local settings are overwritten by server data.
 
 > ⚠️ If you do not upload the changed settings, it will be lost.
+
+![](./media/image/readme/download_content.png)
 
 ### Create new content
 
@@ -69,6 +93,8 @@ Edit and synchronize web content in [Palette CMS](https://palettecms.jp/) for VS
 1. When you click `フォルダ名を更新` button from the toolbar, it will be renamed by content id.
 
 > ✅ You can change names anything you want even Japanese names.
+
+![](./media/image/readme/rename_folder.png)
 
 ### Change extensions
 

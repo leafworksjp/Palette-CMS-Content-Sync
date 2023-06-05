@@ -1,8 +1,12 @@
 # Palette CMS Content Sync
 
+[![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://raw.githubusercontent.com/IBM-Bluemix/vscode-log-output-colorizer/master/LICENSE)
+
 *NOTE: This extension only works for [Palette CMS](https://palettecms.jp/).*
 
 日本語は[こちら](./README_ja.md)
+
+---
 
 ## Overview
 
@@ -16,13 +20,11 @@ Edit and synchronize web content in [Palette CMS](https://palettecms.jp/) for VS
 1. Extract downloaded ZIP archive.
 1. Open folder with VSCode.
 
-> ✅ TIPS:
->
-> VSCode can freely change the display position of extensions.
->
-> Drag *Palette CMS Content Sync* extension icon from the left sidebar to the desired position.
->
-> Move it to the right side of the window to see the file browser and content settings at the same time.
+VSCode can freely change the display position of extensions.
+
+Drag *Palette CMS Content Sync* extension icon from the left sidebar to the desired position.
+
+Move it to the right side of the window to see the file browser and content settings at the same time.
 
 ![](./media/image/readme/move_extension.png)
 

@@ -1,6 +1,10 @@
 # Palette CMS Content Sync
 
+[![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://raw.githubusercontent.com/IBM-Bluemix/vscode-log-output-colorizer/master/LICENSE)
+
 *※この拡張機能は[パレットCMS](https://palettecms.jp/)専用です。*
+
+---
 
 ## 概要
 
@@ -14,13 +18,11 @@ VSCodeで[パレットCMS](https://palettecms.jp/)のウェブコンテンツの
 1. ダウンロードしたZIPファイルを解凍します。
 1. VSCodeで解凍したフォルダを開きます。
 
-> ✅ TIPS:
->
-> VSCodeは拡張機能の表示位置を自由に変更できます。
->
-> サイドバーから*Palette CMS Content Sync*パネルを開き、拡張機能のアイコンをドラッグして任意の位置に移動します。
->
-> ウインドウの右側に移動すると、ファイル一覧とコンテンツの設定を同時に確認できて便利です。
+VSCodeは拡張機能の表示位置を自由に変更できます。
+
+サイドバーから*Palette CMS Content Sync*パネルを開き、拡張機能のアイコンをドラッグして任意の位置に移動します。
+
+ウインドウの右側に移動すると、ファイル一覧とコンテンツの設定を同時に確認できて便利です。
 
 ![](./media/image/readme/move_extension.png)
 

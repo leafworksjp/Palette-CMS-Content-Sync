@@ -8,6 +8,7 @@
     "description": "Edit and synchronize web content in Palette CMS for VSCode",
     "publisher": "leafworks, Inc.",
     "version": "1.0.0",
+    "icon": "media/image/icon.png",
     "engines": {
         "vscode": "^1.71.0"
     },

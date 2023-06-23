@@ -6,7 +6,7 @@
         "url": "https://github.com/leafworksjp/Palette-CMS-Content-Sync"
     },
     "description": "Edit and synchronize web content in Palette CMS for VSCode",
-    "publisher": "leafworks, Inc.",
+    "publisher": "leafworks",
     "version": "1.0.0",
     "icon": "media/image/icon.png",
     "engines": {

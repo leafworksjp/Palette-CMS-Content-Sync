@@ -26,7 +26,7 @@ VS Codeは拡張機能の表示位置を自由に変更できます。
 
 ウインドウの右側に移動すると、ファイル一覧とコンテンツの設定を同時に確認できて便利です。
 
-![](./media/doc/move_extension.gif)
+![](/media/doc/move_extension.gif)
 
 ## 使用方法
 
@@ -36,14 +36,14 @@ VS Codeは拡張機能の表示位置を自由に変更できます。
 1. 開いているHTMLファイルに応じてプレビューに表示される内容が自動的に切り替わります。
 1. ファイルを保存すると、変更内容が即座にプレビューに反映されます。
 
-![](./media/doc/preview.gif)
+![](/media/doc/preview.gif)
 
 ### コンテンツ変数を挿入
 
 1. ダウンロードしたフォルダ内のHTMLファイルを開きます。
 1. `[`キーを入力するとコンテンツ変数のサジェストが表示されます。
 
-![](./media/doc/content_variables.gif)
+![](/media/doc/content_variables.gif)
 
 ### コンテンツ設定を変更
 
@@ -53,7 +53,7 @@ VS Codeは拡張機能の表示位置を自由に変更できます。
 
 > ✅ この時点では、まだ設定内容はサーバーにアップロードされていないため、安全に変更できます。
 
-![](./media/doc/content_settings.png)
+![](/media/doc/content_settings.png)
 
 ### アップロード
 
@@ -61,11 +61,11 @@ VS Codeは拡張機能の表示位置を自由に変更できます。
 1. ツールバーから`アップロード`ボタンをクリックします。
 1. アップロードが成功すると、サーバーにHTMLとコンテンツ設定が反映されます。
 
-![](./media/doc/upload_content.png)
+![](/media/doc/upload_content.png)
 
 コンテンツ設定にエラーがある場合は、エラーダイアログが表示されます。
 
-![](./media/doc/error.png)
+![](/media/doc/error.png)
 
 ### ダウンロード
 
@@ -75,7 +75,7 @@ VS Codeは拡張機能の表示位置を自由に変更できます。
 
 > ⚠️ 先にHTMLや設定をアップロードしなかった場合、ローカルの変更内容は失われます。
 
-![](./media/doc/download_content.png)
+![](/media/doc/download_content.png)
 
 ### 新規コンテンツの作成
 
@@ -103,7 +103,7 @@ VS Codeは拡張機能の表示位置を自由に変更できます。
 
 > ✅ 日本語名を含む任意の名前に変更できます。
 
-![](./media/doc/rename_folder.png)
+![](/media/doc/rename_folder.png)
 
 ### 拡張子の変更
 

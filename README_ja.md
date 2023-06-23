@@ -8,7 +8,7 @@
 
 ## 概要
 
-VSCodeで[パレットCMS](https://palettecms.jp/)のウェブコンテンツの作成や編集と同期を可能にする拡張機能です。
+VS Code上で[パレットCMS](https://palettecms.jp/)用のWEBコンテンツの作成や編集と同期を可能にする拡張機能です。
 
 ## セットアップ
 
@@ -16,24 +16,34 @@ VSCodeで[パレットCMS](https://palettecms.jp/)のウェブコンテンツの
 1. システム設定から`コンテンツカテゴリ`ページに移動します。
 1. `ZIPダウンロード`をクリックしてZIPファイルをダウンロードします。
 1. ダウンロードしたZIPファイルを解凍します。
-1. VSCodeで解凍したフォルダを開きます。
+1. VS Codeで解凍したフォルダを開きます。
 
-VSCodeは拡張機能の表示位置を自由に変更できます。
+### 表示位置の調整
+
+VS Codeは拡張機能の表示位置を自由に変更できます。
 
 サイドバーから*Palette CMS Content Sync*パネルを開き、拡張機能のアイコンをドラッグして任意の位置に移動します。
 
 ウインドウの右側に移動すると、ファイル一覧とコンテンツの設定を同時に確認できて便利です。
 
-![](./media/image/readme/move_extension.png)
+![](./media/doc/move_extension.gif)
 
 ## 使用方法
+
+### プレビュー
+
+1. ツールバーから`プレビュー`ボタンをクリックします。
+1. 開いているHTMLファイルに応じてプレビューに表示される内容が自動的に切り替わります。
+1. ファイルを保存すると、変更内容が即座にプレビューに反映されます。
+
+![](./media/doc/preview.gif)
 
 ### コンテンツ変数を挿入
 
 1. ダウンロードしたフォルダ内のHTMLファイルを開きます。
 1. `[`キーを入力するとコンテンツ変数のサジェストが表示されます。
 
-![](./media/image/readme/content_variables.png)
+![](./media/doc/content_variables.gif)
 
 ### コンテンツ設定を変更
 
@@ -43,7 +53,7 @@ VSCodeは拡張機能の表示位置を自由に変更できます。
 
 > ✅ この時点では、まだ設定内容はサーバーにアップロードされていないため、安全に変更できます。
 
-![](./media/image/readme/content_settings.png)
+![](./media/doc/content_settings.png)
 
 ### アップロード
 
@@ -51,11 +61,11 @@ VSCodeは拡張機能の表示位置を自由に変更できます。
 1. ツールバーから`アップロード`ボタンをクリックします。
 1. アップロードが成功すると、サーバーにHTMLとコンテンツ設定が反映されます。
 
-![](./media/image/readme/upload_content.png)
+![](./media/doc/upload_content.png)
 
 コンテンツ設定にエラーがある場合は、エラーダイアログが表示されます。
 
-![](./media/image/readme/error.png)
+![](./media/doc/error.png)
 
 ### ダウンロード
 
@@ -65,7 +75,7 @@ VSCodeは拡張機能の表示位置を自由に変更できます。
 
 > ⚠️ 先にHTMLや設定をアップロードしなかった場合、ローカルの変更内容は失われます。
 
-![](./media/image/readme/download_content.png)
+![](./media/doc/download_content.png)
 
 ### 新規コンテンツの作成
 
@@ -93,7 +103,7 @@ VSCodeは拡張機能の表示位置を自由に変更できます。
 
 > ✅ 日本語名を含む任意の名前に変更できます。
 
-![](./media/image/readme/rename_folder.png)
+![](./media/doc/rename_folder.png)
 
 ### 拡張子の変更
 

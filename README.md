@@ -28,7 +28,7 @@ Drag *Palette CMS Content Sync* extension icon from the left sidebar to the desi
 
 Move it to the right side of the window to see the file browser and content settings at the same time.
 
-![](./media/doc/move_extension.gif)
+![](/media/doc/move_extension.gif)
 
 ## Usage
 
@@ -40,14 +40,14 @@ Move it to the right side of the window to see the file browser and content sett
 1. The preview automatically switches according to the opened HTML file.
 1. When you save a file, it is immediately reflected in the preview.
 
-![](./media/doc/preview.gif)
+![](/media/doc/preview.gif)
 
 ### Insert content variables
 
 1. Open downloaded HTML code.
 1. Type `[` key to get variable suggestions.
 
-![](./media/doc/content_variables.gif)
+![](/media/doc/content_variables.gif)
 
 ### Configure content settings
 
@@ -56,7 +56,7 @@ Move it to the right side of the window to see the file browser and content sett
 
 > ✅ At this time, your settings has not yet been uploaded to the server and can be safely changed.
 
-![](./media/doc/content_settings.png)
+![](/media/doc/content_settings.png)
 
 
 ### Upload
@@ -65,11 +65,11 @@ Move it to the right side of the window to see the file browser and content sett
 1. Click `アップロード` button from the toolbar.
 1. If the upload is successful, the server will reflect the settings and HTML.
 
-![](./media/doc/upload_content.png)
+![](/media/doc/upload_content.png)
 
 If there are some errors in your settings, an error dialog will be displayed.
 
-![](./media/doc/error.png)
+![](/media/doc/error.png)
 
 ### Download
 
@@ -79,7 +79,7 @@ If there are some errors in your settings, an error dialog will be displayed.
 
 > ⚠️ If you do not upload the changed settings, it will be lost.
 
-![](./media/doc/download_content.png)
+![](/media/doc/download_content.png)
 
 ### Create new content
 
@@ -107,7 +107,7 @@ If there are some errors in your settings, an error dialog will be displayed.
 
 > ✅ You can change names anything you want even Japanese names.
 
-![](./media/doc/rename_folder.png)
+![](/media/doc/rename_folder.png)
 
 ### Change extensions
 

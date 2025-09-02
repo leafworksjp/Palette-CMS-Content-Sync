@@ -6,7 +6,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.0.0] - 2025-09-02
+
+### Added
+
+- inazuma⚡engine support
+
 ## [1.0.0] - 2023-06-05
+
 ### Added
 
 - Initial release

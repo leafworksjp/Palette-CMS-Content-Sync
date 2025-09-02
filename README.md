@@ -2,121 +2,148 @@
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://raw.githubusercontent.com/IBM-Bluemix/vscode-log-output-colorizer/master/LICENSE)
 
-*NOTE: This extension only works for [Palette CMS](https://palettecms.jp/).*
+*⚠️ この拡張機能は[パレットCMS](https://palettecms.jp/)専用です。*
 
-日本語は[こちら](./README_ja.md)
+## 1. 概要
 
----
+VS Code上で[パレットCMS](https://palettecms.jp/)のコンテンツの作成・編集・同期を行うための拡張機能です。
 
-## Overview
+以下のような機能を備え、テンプレート開発の効率と快適性を向上させます。
 
-Edit and synchronize web contents in [Palette CMS](https://palettecms.jp/) for VS Code.
+* シンタックスハイライト
+* スニペット
+* コンパイルエラーのインライン表示
+* ホットリロード
+* コンテンツの同期
 
-## Setup
+## 2. VSCode の設定
 
-1. Open Palette CMS and log in as administrator.
-1. Go to `コンテンツカテゴリ` page from system preferences.
-1. Click `ZIPダウンロード` button to download ZIP archive.
-1. Extract downloaded ZIP archive.
-1. Open folder with VS Code.
+### (1) 表示位置の調整
 
-### Adjusting the extension position
+VSCode では拡張機能のパネル位置を自由に変更できます。
 
-VS Code can freely change the display position of extensions.
+左サイドバーに表示されている Palette CMS Content Sync のアイコンをドラッグして、拡張機能のパネルを任意の位置に移動してください。
 
-Drag *Palette CMS Content Sync* extension icon from the left sidebar to the desired position.
-
-Move it to the right side of the window to see the file browser and content settings at the same time.
+特に右側ペインに移動すると、ファイルブラウザとコンテンツ設定を同時に確認できて便利です。
 
 ![](/media/doc/move_extension.gif)
 
-## Usage
+### (2) 自動アップロードの有効化
 
-1. Open *Palette CMS Content Sync* panel from side bar.
+1. `Ctrl + ,` で VSCode の設定画面を開きます。
+2. `paletteCMSContentSync.uploadOnSave` を検索します。
+3. **「保存時にコンテンツを自動的にサーバーへアップロードします。」** を有効にします。
 
-### Insert content variables
+* この設定を有効にすると、ファイルを保存するだけでテンプレートがサーバーへアップロードされます。
+* 開発環境では、ホットリロードにより、アップロード完了後にページが自動的にリロードされます。
 
-1. Open downloaded HTML code.
-1. Type `[` key to get variable suggestions.
+> ✅ 本番環境と開発環境で設定を分けたい場合は、フォルダ設定またはワークスペース設定で切り替えてください。
 
-![](/media/doc/content_variables.gif)
+## 3. コンテンツ（ZIP ファイル）のダウンロード
 
-### Configure content settings
+1. パレット CMS に管理者（admin）としてログインします。
+2. システム設定から **「コンテンツ」** ページへ移動します。
+3. **「ZIP ダウンロード」** をクリックして ZIP ファイルを取得します。
+4. ダウンロードした ZIP ファイルを解凍します。
+5. VSCode で解凍したフォルダを開きます。
 
-1. Open HTML code or `contents.json` then you can see content settings in *Palette CMS Content Sync* panel.
-1. It automatically saves in `contents.json` when you change the settings.
-
-> ✅ At this time, your settings has not yet been uploaded to the server and can be safely changed.
+## 4. Palette CMS Content Sync の基本操作
 
 ![](/media/doc/content_settings.png)
 
+### (1) 新規作成
 
-### Upload
+Palette CMS Content Sync の右上にある **「新規作成」** ボタンをクリックします。
 
-1. Open any HTML code or `contents.json`.
-1. Click `アップロード` button from the toolbar.
-1. If the upload is successful, the server will reflect the settings and HTML.
+### (2) ページレンダリング方式の選択
+
+コンテンツのページレンダリング方式を **「テンプレートエンジン」** に設定します。
+
+### (3) コンテンツ情報の入力
+
+コンテンツ名、カテゴリ、公開設定など、必要な情報を入力します。
+
+### (4) アップロード
 
 ![](/media/doc/upload_content.png)
 
-If there are some errors in your settings, an error dialog will be displayed.
+設定完了後、右上にある **「アップロード」** をクリックすると、パレット CMS 上に新しいコンテンツが作成されます。
 
-![](/media/doc/error.png)
+システム ID やその他いくつかの項目はサーバー側で自動的に生成さます。
 
-### Download
+アップロードが完了すると、空のテンプレートファイル（`*.palette.html`）が生成されます。
 
-1. Open any HTML code or `contents.json`.
-1. Click `ダウンロード` button from the toolbar.
-1. Local settings are overwritten by server data.
-
-> ⚠️ If you do not upload the changed settings, it will be lost.
-
-![](/media/doc/download_content.png)
-
-### Create new content
-
-1. Click `新規作成` button from the toolbar.
-
-> ✅ After uploading content, empty source code files are automatically generated.
->
-> ✅ System ID and some other columns are automatically generated on the server side and they will be applied into `contents.json`.
-
-### Duplicate a content
-
-1. Click `複製` button from the toolbar.
-
-### Delete a content
-
-1. Click `削除` button from the toolbar.
-
-> ⚠️ Server side data will be permanently deleted.
-
-> ✅ If you want to delete only local data, please delete from the file browser.
-
-### Change a folder name
-
-1. When you click `フォルダ名を更新` button from the toolbar, it will be renamed by content id.
-
-> ✅ You can change names anything you want even Japanese names.
+### (5) フォルダ名の更新
 
 ![](/media/doc/rename_folder.png)
 
-### Change extensions
+三点リーダー（…）メニューから **「フォルダ名を更新」** を選ぶと、フォルダ名がコンテンツ ID にリネームされます。
 
-1. If you want to change all extentions at once, please click `拡張子を変更` button from the toolbar.
+### (6) テンプレートの編集
 
-> ✅ This function makes it easy to change the all extentions, after changing `HTTPヘッダー｜Content-Type`.
+生成されたフォルダ内の `*.palette.html` にテンプレートを記述します。
 
-### Reget content variable definitions
+保存するとテンプレートが自動的にサーバーへアップロードされます。
 
-1. Click `コンテンツ変数を再取得` button from the toolbar to download content variable's definitions.
+開発環境では、アップロード完了後にページが自動的にリロードされます。
 
-> ✅ When you add the new optional columns on Palette CMS, the content variable's definitions should be reget.
->
-> ✅ It is also reget when downloading content.
+## 5. スニペットの活用
 
-### Reget all other definitions
+Palette CMS Content Sync 拡張機能には、多数のコードスニペット（定型文）が用意されています。
 
-1. Click `コンテンツ変数を再取得` button from the toolbar to download all other definitions.
+スニペットを活用すると、開発効率が飛躍的に向上します。
 
-> ✅ When you add new sheets on Palette CMS, all other definitions should be reget.
+### スニペット一覧の表示
+
+`Ctrl + Space` で候補一覧を表示できます。
+
+### 絞り込み検索
+
+スニペット名の一部を入力すると、該当する候補だけが表示されます。
+
+> ✅ 「`form`」と入力 ⇒ フォーム関連スニペットだけ表示
+> ✅ 「`input`」と入力 ⇒ 入力フィールド関連スニペットだけ表示
+
+## 6. その他の便利機能
+
+### (1) コンテンツ選択
+
+任意のテンプレートまたは `contents.json` を開くと、そのコンテンツが自動的に選択されます。
+
+### (2) 手動アップロード
+
+ツールバーのアップロードボタンで、選択中のコンテンツをアップロードします。
+
+新規作成したコンテンツは、アップロード完了後に空のテンプレートファイル（`*.palette.html`）が生成されます。
+
+システム ID やその他いくつかの項目はサーバー側で自動的に生成さます。
+
+### (3) ダウンロード
+
+![](/media/doc/download_content.png)
+
+ツールバーのダウンロードボタンで、選択中のコンテンツをサーバーからダウンロードします。
+
+> ⚠️ ローカルのテンプレートが上書きされます。
+
+### (4) コンテンツの複製・削除
+
+ツールバーから、選択中のコンテンツの複製や削除ができます。
+
+> ⚠️ 削除はサーバー上からも完全に消去されます。
+
+### (5) 拡張子の一括変更
+
+HTTP ヘッダーの Content-Type を変更した際などに、全ファイルの拡張子を一括で変換できます。
+
+### (6) スニペットの再取得
+
+三点リーダー（…）メニューから最新のスニペットを取得できます。
+
+任意項目を作成・編集した場合は、スニペットを最新化してください。
+
+### (7) 定義ファイルの再取得
+
+三点リーダー（…）メニューから最新の定義ファイルを取得できます。
+
+シートを作成したり任意項目を作成・編集した場合は、定義ファイルを最新化してください。

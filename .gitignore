@@ -1,6 +1,10 @@
 out
 dist
 node_modules
+inazuma
+sample
+sample_framework
+sample_marugoat
+sample_pcms
 *.vsix
-media/preview/preview.html
 !.gitkeep

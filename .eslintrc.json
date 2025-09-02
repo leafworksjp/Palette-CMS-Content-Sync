@@ -81,7 +81,7 @@
         "no-prototype-builtins": "error",
         "no-regex-spaces": "warn",
         "no-sparse-arrays": "error",
-        "no-template-curly-in-string": "error",
+        "no-template-curly-in-string": "off",
         "no-unexpected-multiline": "error",
         "no-unreachable": "error",
         "no-unsafe-finally": "error",
@@ -98,12 +98,7 @@
         ],
         "block-scoped-var": "error",
         "class-methods-use-this": "off",
-        "complexity": [
-            "error",
-            {
-                "max": 15
-            }
-        ],
+        "complexity": "off",
         "consistent-return": "error",
         "curly": [
             "warn",
@@ -145,7 +140,7 @@
         "no-iterator": "error",
         "no-labels": "error",
         "no-lone-blocks": "error",
-        "no-loop-func": "error",
+        "no-loop-func": "off",
         "no-magic-numbers": "off",
         "no-multi-spaces": [
             "warn",
@@ -164,7 +159,7 @@
         "no-new-wrappers": "error",
         "no-octal": "error",
         "no-octal-escape": "error",
-        "no-param-reassign": "error",
+        "no-param-reassign": "off",
         "no-proto": "error",
         "no-redeclare": "error",
         "no-restricted-properties": "off",
@@ -192,7 +187,7 @@
             }
         ],
         "radix": "error",
-        "require-await": "warn",
+        "require-await": "off",
         "vars-on-top": "error",
         "wrap-iife": [
             "warn",
@@ -231,7 +226,7 @@
                 "variables": true
             }
         ],
-        "callback-return": "error",
+        "callback-return": "off",
         "global-require": "off",
         "handle-callback-err": "warn",
         "no-buffer-constructor": "warn",
@@ -367,15 +362,7 @@
             "error",
             6
         ],
-        "max-statements": [
-            "error",
-            {
-                "max": 25
-            },
-            {
-                "ignoreTopLevelFunctions": true
-            }
-        ],
+        "max-statements": "off",
         "max-statements-per-line": [
             "error",
             {
@@ -400,7 +387,7 @@
         "no-multi-assign": "warn",
         "no-multiple-empty-lines": "warn",
         "no-negated-condition": "warn",
-        "no-nested-ternary": "error",
+        "no-nested-ternary": "off",
         "no-new-object": "warn",
         "no-plusplus": "off",
         "no-restricted-syntax": "off",

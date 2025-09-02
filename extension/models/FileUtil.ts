@@ -93,14 +93,14 @@ export class FileUtil
 		vscode.workspace.fs.createDirectory(uri);
 	};
 
-	public static reaname = async (sorce: vscode.Uri, target: vscode.Uri) =>
+	public static rename = async (source: vscode.Uri, target: vscode.Uri) =>
 	{
-		await vscode.workspace.fs.rename(sorce, target);
+		await vscode.workspace.fs.rename(source, target);
 	};
 
-	public static copy = async (sorce: vscode.Uri, target: vscode.Uri) =>
+	public static copy = async (source: vscode.Uri, target: vscode.Uri) =>
 	{
-		await vscode.workspace.fs.copy(sorce, target);
+		await vscode.workspace.fs.copy(source, target);
 	};
 
 	public static deleteFile = async (uri: vscode.Uri, options?: { recursive?: boolean; useTrash?: boolean }) =>

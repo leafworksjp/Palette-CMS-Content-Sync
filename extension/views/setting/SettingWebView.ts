@@ -1,8 +1,8 @@
 import vscode from 'vscode';
 import {FileUtil} from '../../models/FileUtil';
 import {SettingHtml} from './SettingHtml';
-import {} from '../../types/Definitions';
-import {Content, updateDefaultValues} from '../../types/Content';
+import {} from '../../../common/types/Definitions';
+import {Content, updateDefaultValues} from '../../../common//types/Content';
 import {DefinitionsFile} from '../../models/DefinitionsFile';
 import {ContentFormatter} from '../../models/ContentFormatter';
 import {ContentFile} from '../../models/ContentFile';
@@ -121,11 +121,15 @@ export class SettingWebView implements vscode.WebviewViewProvider
 
 					this.content = updateDefaultValues(definitions, this.content);
 
+					const documentUri = vscode.window.activeTextEditor?.document?.uri;
+					const fileName = documentUri ? FileUtil.getName(documentUri) : '';
+
 					this.webview.postMessage({
 						command: 'refresh',
 						value: {
 							definitions,
 							content: this.content,
+							fileName,
 						}
 					});
 				}

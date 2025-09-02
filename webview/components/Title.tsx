@@ -1,6 +1,6 @@
 import React from 'react';
-import {Content, getCodeTypeName} from '../types/Content';
-import {Definitions} from '../types/Definitions';
+import {Content, getCodeTypeName} from '../../common/types/Content';
+import {Definitions} from '../../common//types/Definitions';
 
 type TitleProps =
 {
@@ -31,7 +31,8 @@ export const Title = ({content, definitions, fileName}: TitleProps) =>
 	}, []);
 
 	const contentName = name ? '｜' + name : '';
-	const codeTypeName = getCodeTypeName(definitions, fileName);
+	const codeType = fileName.replace('.palette', '');
+	const codeTypeName = getCodeTypeName(definitions, codeType);
 	const dataName = dataNames.get(fileName);
 
 	const title = (codeTypeName ?? dataName ?? '不明なファイル') + contentName;

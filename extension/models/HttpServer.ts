@@ -1,39 +1,55 @@
 import vscode from 'vscode';
 import express, {Express} from 'express';
+import http from 'http';
 import {FileUtil} from './FileUtil';
+import {getLogger} from './Services';
 
 export class HttpServer
 {
-	private app?: Express;
+	private app: Express;
+	private server?: http.Server;
 
-	public create(options: {
-		port: number,
-		root: vscode.Uri,
-		index: string,
-	})
+	public constructor(
+		private readonly port: number,
+		private readonly root: vscode.Uri,
+		private readonly index: string
+	)
 	{
-		if (this.app) return;
-
-		const {port, root, index} = options;
-
-		const indexUri = FileUtil.join(root, index);
-
 		this.app = express();
+
+		this.app.use(express.static(this.root.fsPath));
 
 		this.app
 		.get('/', async (request, response) =>
 		{
+			const indexUri = FileUtil.join(this.root, this.index);
 			const content = await FileUtil.readFile(indexUri);
 
-			response.writeHead(200, {'Content-Type': this.getContentType(indexUri)});
-			response.write(content, 'utf-8');
-			response.end();
-		})
-		.listen(port);
+			response.type(this.getContentType(indexUri)).send(content);
+		});
 
-		if (root)
+		this.server = this.app.listen(this.port, () =>
 		{
-			this.app.use(express.static(root.fsPath));
+			getLogger().log(`[HttpServer] Listening on http://localhost:${this.port}`);
+		});
+	}
+
+	public dispose(): void
+	{
+		if (this.server)
+		{
+			this.server.close(err =>
+			{
+				if (err)
+				{
+					getLogger().error('[HttpServer] Error on close', err);
+				}
+				else
+				{
+					getLogger().log('[HttpServer] Server closed');
+				}
+			});
+			this.server = undefined;
 		}
 	}
 

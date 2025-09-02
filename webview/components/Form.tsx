@@ -10,9 +10,9 @@ import {Radio} from './Radio';
 import {BasicAuthInput} from './BasicAuthInput';
 import {SearchInputs} from './SearchInputs';
 import {OrderInputs} from './OrderInputs';
-import {Content} from '../types/Content';
-import {Definitions} from '../types/Definitions';
-import {getColumns} from '../../extension/types/Content';
+import {Content} from '../../common/types/Content';
+import {Definitions} from '../../common//types/Definitions';
+import {getColumns} from '../../common//types/Content';
 
 type FormProps =
 {
@@ -58,7 +58,7 @@ export const Form = ({content, definitions, fileName}: FormProps) =>
 		});
 	}, []);
 
-	const someColumnExsists = (names: Array<string>) => names.some(name => getColumns(definitions, content)?.includes(name) ?? false);
+	const someColumnExists = (names: Array<string>) => names.some(name => getColumns(definitions, content)?.includes(name) ?? false);
 
 	const isReadOnly = Boolean(content.id);
 	const isSheetContent = definitions.columns[content.contents_type]?.at(0)?.options.includes('sheet_id');
@@ -70,7 +70,7 @@ export const Form = ({content, definitions, fileName}: FormProps) =>
 			</div>
 			<Error />
 			{
-				someColumnExsists(['id'])
+				someColumnExists(['id'])
 				&& content.contents_type !== 'parts'
 				&& <div className="contents__inner">
 					<h2 className="contents__title">{Locale.title.contentInfo}</h2>
@@ -90,23 +90,24 @@ export const Form = ({content, definitions, fileName}: FormProps) =>
 				<Text name="category" content={content} definitions={definitions} />
 				<Text name="name" required={true} content={content} definitions={definitions} />
 				<Select name="contents_type" required={true} always={true} readOnly={isReadOnly} content={content} definitions={definitions} />
+				<Radio name="use_template_engine" required={true} readOnly={isReadOnly} content={content} definitions={definitions} />
 				<Select name="sheet_id" required={true} always={isSheetContent} readOnly={isReadOnly} content={content} definitions={definitions} />
 				<Select name="http_header_content_type" required={true} content={content} definitions={definitions} />
 			</div>
 			{
-				someColumnExsists(['role_key'])
+				someColumnExists(['role_key'])
 				&& <div className="contents__inner">
 					<h2 className="contents__title">{Locale.title.roleSettings}</h2>
 					<Radio name="role_key" required={true} content={content} definitions={definitions} />
 					{
-						someColumnExsists(['role_key_owner'])
+						someColumnExists(['role_key_owner'])
 						&& ['my', 'other'].includes(roleKey ?? '')
 						&& <Radio name="role_key_owner" required={true} content={content} definitions={definitions} />
 					}
 				</div>
 			}
 			{
-				someColumnExsists(['login_url', 'logout_url', 'search_row', 'permission', 'permission_url', 'device_type', 'device_type_url', 'auth_key', 'auth_pass', 'state'])
+				someColumnExists(['login_url', 'logout_url', 'search_row', 'permission', 'permission_url', 'device_type', 'device_type_url', 'auth_key', 'auth_pass', 'state'])
 				&& <div className="contents__inner">
 					<h2 className="contents__title">{Locale.title.viewSettings}</h2>
 					<Text name="login_url" required={true} placeholder="/path/to/content/" content={content} definitions={definitions} />
@@ -114,12 +115,12 @@ export const Form = ({content, definitions, fileName}: FormProps) =>
 					<Text name="search_row" required={true} content={content} definitions={definitions} />
 					<Check name="permission" required={true} content={content} definitions={definitions} />
 					{
-						someColumnExsists(['permission_sheet'])
+						someColumnExists(['permission_sheet'])
 						&& permission?.includes('user')
 						&& <Check name="permission_sheet" required={true} content={content} definitions={definitions} />
 					}
 					{
-						someColumnExsists(['manager_permission_sheet'])
+						someColumnExists(['manager_permission_sheet'])
 						&& permission?.includes('manager')
 						&& <Check name="manager_permission_sheet" required={true} content={content} definitions={definitions} />
 					}
@@ -131,7 +132,7 @@ export const Form = ({content, definitions, fileName}: FormProps) =>
 				</div>
 			}
 			{
-				someColumnExsists(['search_query_where', 'search_query_order_state', 'search_query_order'])
+				someColumnExists(['search_query_where', 'search_query_order_state', 'search_query_order'])
 				&& <div className="contents__inner">
 					<h2 className="contents__title">{Locale.title.searchQuery}</h2>
 					<SearchInputs content={content} definitions={definitions} />

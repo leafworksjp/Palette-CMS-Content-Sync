@@ -1,4 +1,5 @@
-import {Content} from '../types/Content';
+import {Content} from '../../common//types/Content';
+import {getLogger} from './Services';
 
 export class ContentFormatter
 {
@@ -17,6 +18,7 @@ export class ContentFormatter
 		switch (key)
 		{
 			case 'search_row':
+			case 'use_template_engine':
 			case 'state':
 				this.content[key] = Number(value);
 				break;

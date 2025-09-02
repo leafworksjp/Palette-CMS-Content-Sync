@@ -1,5 +1,6 @@
 import {FileUtil} from './FileUtil';
-import {Definitions, zDefinitions} from '../types/Definitions';
+import {Definitions, zDefinitions} from '../../common/types/Definitions';
+import {getLogger} from './Services';
 
 export class DefinitionsFile
 {
@@ -28,6 +29,7 @@ export class DefinitionsFile
 		catch (error)
 		{
 			console.error(error);
+			getLogger().error(error);
 			return undefined;
 		}
 	}

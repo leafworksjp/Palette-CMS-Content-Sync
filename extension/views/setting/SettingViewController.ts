@@ -1,33 +1,44 @@
 import vscode from 'vscode';
 import {SettingWebView} from './SettingWebView';
-import {SettingToolBar} from './SettingToolBar';
+import {Command} from '../../models/Command';
 import {FileUtil} from '../../models/FileUtil';
 import {ContentFile} from '../../models/ContentFile';
 import {CodeFile} from '../../models/CodeFile';
-import {Failure, Success} from '../../types/Result';
-import {GeneralFailureArgs, ValidationFailureArgs} from '../../types/ApiResult';
+import {Failure, Success} from '../../../common/types/Result';
+import {
+	CompilationFailureArgs,
+	GeneralFailureArgs,
+	ValidationFailureArgs,
+} from '../../../common/types/ApiResult';
 
 export class SettingViewController
 {
 	public readonly webview: SettingWebView;
-	public readonly toolBar: SettingToolBar;
+	public readonly command: Command;
 
 	constructor(context: vscode.ExtensionContext)
 	{
 		this.webview = new SettingWebView(context.extensionUri);
-		this.toolBar = new SettingToolBar();
+		this.command = new Command();
 
 		context.subscriptions.push(
 			vscode.window.registerWebviewViewProvider(this.webview.id, this.webview)
 		);
 	}
 
+	public dispose()
+	{
+	}
+
 	async upload()
 	{
-		const result = await this.toolBar.upload();
+		const result = await this.command.upload();
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		if (result.isFailure())
+		{
+			this.showMessages(result);
+		}
 	}
 
 	async uploadAll()
@@ -40,7 +51,7 @@ export class SettingViewController
 
 		if (!message || message.title !== 'アップロード') return;
 
-		const result = await this.toolBar.uploadAll();
+		const result = await this.command.uploadAll();
 		await this.webview.refresh();
 
 		this.showMessages(result);
@@ -56,7 +67,7 @@ export class SettingViewController
 
 		if (!message || message.title !== 'ダウンロード') return;
 
-		const result = await this.toolBar.download();
+		const result = await this.command.download();
 		await this.webview.refresh();
 
 		this.showMessages(result);
@@ -72,22 +83,29 @@ export class SettingViewController
 
 		if (!message || message.title !== '削除') return;
 
-		const result = await this.toolBar.delete();
+		const result = await this.command.delete();
 		await this.webview.refresh();
+
+		this.showMessages(result);
+	}
+
+	async downloadSnippets()
+	{
+		const result = await this.command.downloadSnippets();
 
 		this.showMessages(result);
 	}
 
 	async downloadVariables()
 	{
-		const result = await this.toolBar.downloadVariables();
+		const result = await this.command.downloadVariables();
 
 		this.showMessages(result);
 	}
 
 	async downloadDefinitions()
 	{
-		const result = await this.toolBar.downloadDefinitions();
+		const result = await this.command.downloadDefinitions();
 		await this.webview.refresh();
 
 		this.showMessages(result);
@@ -95,12 +113,12 @@ export class SettingViewController
 
 	public async create()
 	{
-		await this.toolBar.create();
+		await this.command.create();
 	}
 
 	public async duplicate()
 	{
-		await this.toolBar.duplicate();
+		await this.command.duplicate();
 	}
 
 	public async changeLanguage()
@@ -119,12 +137,12 @@ export class SettingViewController
 
 		if (!target) return;
 
-		await this.toolBar.changeExtensions(source, target).catch(e => vscode.window.showErrorMessage(e.message));
+		await this.command.changeExtensions(source, target).catch(e => vscode.window.showErrorMessage(e.message));
 	}
 
 	public async renameDirectory()
 	{
-		await this.toolBar.renameDirectory();
+		await this.command.renameDirectory();
 	}
 
 	public onDidChangeActiveTextEditor()
@@ -132,15 +150,33 @@ export class SettingViewController
 		this.webview.refresh();
 	}
 
-	public onDidSaveTextDocument(document: vscode.TextDocument)
+	public async onDidSaveTextDocument(document: vscode.TextDocument)
 	{
+		const config = vscode.workspace.getConfiguration('paletteCMSContentSync');
+		const uploadOnSave = config.get<boolean>('uploadOnSave', false);
+
+		if (uploadOnSave)
+		{
+			const content = await ContentFile.read();
+			if (content)
+			{
+				await this.upload();
+			}
+		}
+
 		if (FileUtil.getBase(document.uri) === ContentFile.fileName)
 		{
-			this.webview.refresh();
+			await this.webview.refresh();
 		}
 	}
 
-	private showMessages(result: Success<string>|Failure<GeneralFailureArgs>|Failure<ValidationFailureArgs>)
+	private showMessages(
+		result:
+			| Success<string>
+			| Failure<GeneralFailureArgs>
+			| Failure<ValidationFailureArgs>
+			| Failure<CompilationFailureArgs>
+	)
 	{
 		if (result.isSuccess())
 		{
@@ -152,6 +188,11 @@ export class SettingViewController
 			{
 				case 'ValidationErrorType':
 					this.webview.postMessage('setErrors', result.error.messages);
+					break;
+
+				case 'CompilationErrorType':
+					this.webview.postMessage('setErrors', ['コンパイルエラーが発生しました。']);
+					CodeFile.appendCompileErrors(result.error.errors);
 					break;
 
 				default:

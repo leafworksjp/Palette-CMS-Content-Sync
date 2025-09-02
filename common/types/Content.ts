@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {Definitions} from './Definitions';
+import {Is} from './Is';
 
 export const zSearchQueryForWhere = z.object({
 	col: z.string(),
@@ -35,6 +36,7 @@ export const zContent = z.object({
 	auth_pass: z.string().optional(),
 	device_type: z.array(z.string()).optional(),
 	device_type_url: z.string().optional(),
+	use_template_engine: z.number().optional(),
 	state: z.number().optional(),
 	login_url: z.string().optional(),
 	logout_url: z.string().optional(),
@@ -60,13 +62,13 @@ export type TextProperties = 'id'
 	| 'logout_url'
 	|'search_row';
 
-export type RadioProperties = 'state'|'role_key'|'role_key_owner'|'search_query_order_state';
+export type RadioProperties = 'use_template_engine'|'state'|'role_key'|'role_key_owner'|'search_query_order_state';
 
 export type CheckBoxProperties = 'permission'|'permission_sheet'|'manager_permission_sheet'|'device_type';
 
 export type SelectProperties = 'contents_type'|'http_header_content_type'|'sheet_id'|'search_query_order_rand';
 
-export type SearchQuerytProperties = 'search_query_where'|'search_query_order';
+export type SearchQueryProperties = 'search_query_where'|'search_query_order';
 
 export type Content = z.infer<typeof zContent>;
 
@@ -120,21 +122,37 @@ export const getColumns = (definitions: Definitions, content: Content) =>
 	return sheetColumns ?? defaultColumns;
 };
 
+type StringOptions = {key: string, name: string}[];
+type NumberOptions = {key: number, name: string}[];
+
 /*eslint-disable complexity*/
-export const getOptions = (definitions: Definitions, content: Content, column: CheckBoxProperties | SelectProperties | RadioProperties) =>
+export const getOptions = (definitions: Definitions, content: Content, column: CheckBoxProperties | SelectProperties | RadioProperties): StringOptions | NumberOptions | undefined =>
 {
 	const {column_options, sheet_names} = definitions;
 
 	if (
 		column === 'device_type'
 		|| column === 'contents_type'
-		|| column === 'http_header_content_type'
+		|| column === 'use_template_engine'
 		|| column === 'state'
 		|| column === 'search_query_order_state'
 		|| column === 'search_query_order_rand'
 	)
 	{
 		return column_options[column];
+	}
+
+	if (column === 'http_header_content_type')
+	{
+		if (Array.isArray(column_options[column]))
+		{
+			return column_options[column] as StringOptions;
+		}
+		else
+		{
+			const record = column_options[column] as Record<string, StringOptions>;
+			return record?.[content.contents_type];
+		}
 	}
 
 	if (column === 'permission' || column === 'role_key')
@@ -197,6 +215,24 @@ export const updateDefaultValues = (definitions: Definitions, content: Content) 
 {
 	const columns = definitions.columns[content.contents_type]?.at(0)?.options;
 	if (!columns) return content;
+
+	if (columns.includes('use_template_engine'))
+	{
+		content.use_template_engine = 1;
+	}
+
+	if (columns.includes('http_header_content_type'))
+	{
+		content.http_header_content_type = content.contents_type === 'keep_js' ? 'javascript' : 'html';
+	}
+
+	if (columns.includes('role_key'))
+	{
+		const options = definitions.column_options.role_key?.[content.contents_type];
+		const defaultValue = options?.filter(c => c.default)?.at(0)?.key ?? '';
+
+		content.role_key = defaultValue;
+	}
 
 	if (columns.includes('state'))
 	{

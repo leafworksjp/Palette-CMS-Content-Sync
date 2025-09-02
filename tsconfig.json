@@ -1,21 +1,22 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "target": "ES2020",
-        "rootDir": "./",
-        "outDir": "./out",
-        "sourceMap": true,
-        "strict": true,
-        "allowJs": true,
-        "jsx": "react-jsx",
-        "moduleResolution": "node",
-        "esModuleInterop": true
-    },
-    "include": [
-        "extension/**/*.ts",
-        "webview/**/*.ts",
-        "webview/**/*.tsx",
-        "./node_modules/vscode/vscode.d.ts",
-        "./node_modules/vscode/lib/*"
-    ]
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2020",
+    "rootDir": "./",
+    "outDir": "./out",
+    "sourceMap": true,
+    "strict": true,
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "esModuleInterop": true
+  },
+  "include": [
+    "common/**/*.ts",
+    "extension/**/*.ts",
+    "webview/**/*.ts",
+    "webview/**/*.tsx",
+    "./node_modules/vscode/vscode.d.ts",
+    "./node_modules/vscode/lib/*"
+  ]
 }

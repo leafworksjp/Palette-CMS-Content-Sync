@@ -1,7 +1,7 @@
 import React from 'react';
 import {Locale} from '../locales/ja';
-import {Content} from '../types/Content';
-import {Definitions} from '../types/Definitions';
+import {Content} from '../../common/types/Content';
+import {Definitions} from '../../common//types/Definitions';
 
 type URLInputProps =
 {

@@ -1,21 +1,26 @@
-import {FileUtil} from '../../models/FileUtil';
-import {Api} from '../../models/Api';
-import {DefinitionsFile} from '../../models/DefinitionsFile';
-import {ContentFile} from '../../models/ContentFile';
-import {CodeFile} from '../../models/CodeFile';
-import {VariablesFile} from '../../models/VariablesFile';
-import {ApiResult} from '../../types/ApiResult';
-import {Locale} from '../../locales/ja';
+import {FileUtil} from './FileUtil';
+import {Api} from './Api';
+import {DefinitionsFile} from './DefinitionsFile';
+import {ContentFile} from './ContentFile';
+import {CodeFile} from './CodeFile';
+import {JsonFile} from './JsonFile';
+import {ApiResult} from '../../common/types/ApiResult';
+import {Locale} from '../locales/ja';
+import {getHotReloadServer, getUploadStatus} from './Services';
 
-export class SettingToolBar
+export class Command
 {
 	public async upload()
 	{
+		getUploadStatus().showUploading();
+		CodeFile.clearCompileErrors();
+
 		const definitions = await DefinitionsFile.read();
 		const content = await ContentFile.read();
 
 		if (!definitions || !content)
 		{
+			getUploadStatus().showError();
 			return ApiResult.generalFailure(Locale.pleaseOpenContent);
 		}
 
@@ -25,6 +30,8 @@ export class SettingToolBar
 
 		if (uploadResult.isSuccess())
 		{
+			getHotReloadServer().postMessage({type: 'reload', pageId: content.page_id});
+
 			await ContentFile.write(uploadResult.value.content);
 			await CodeFile.create(uploadResult.value.content);
 
@@ -37,35 +44,60 @@ export class SettingToolBar
 			}
 			else
 			{
+				getUploadStatus().showError();
 				return downloadResult;
 			}
 
-			const variablesResult = await Api.getVariables(uploadResult.value.content);
-
-			if (variablesResult.isSuccess())
+			if (content.use_template_engine)
 			{
-				await VariablesFile.write(variablesResult.value);
+				const snippetsResult = await Api.getSnippets(uploadResult.value.content);
+				if (snippetsResult.isSuccess())
+				{
+					await JsonFile.write('snippets', snippetsResult.value);
 
-				return ApiResult.success('アップロード完了');
+					getUploadStatus().showCompleted();
+					return ApiResult.success(undefined);
+				}
+				else
+				{
+					getUploadStatus().showError();
+					return snippetsResult;
+				}
 			}
 			else
 			{
-				return variablesResult;
+				const variablesResult = await Api.getVariables(uploadResult.value.content);
+
+				if (variablesResult.isSuccess())
+				{
+					await JsonFile.write('variables', variablesResult.value);
+
+					getUploadStatus().showCompleted();
+					return ApiResult.success(undefined);
+				}
+				else
+				{
+					getUploadStatus().showError();
+					return variablesResult;
+				}
 			}
 		}
 		else
 		{
+			getUploadStatus().showError();
 			return uploadResult;
 		}
 	}
 
 	public async uploadAll()
 	{
+		getUploadStatus().showUploading();
 		const workspace = FileUtil.getWorkspace();
 		const definitions = await DefinitionsFile.read();
 
 		if (!workspace || !definitions)
 		{
+			getUploadStatus().showError();
 			return ApiResult.generalFailure(Locale.pleaseOpenContent);
 		}
 
@@ -96,11 +128,13 @@ export class SettingToolBar
 
 		if (errors.length)
 		{
+			getUploadStatus().showError();
 			return ApiResult.generalFailure('アップロードに失敗したファイルがあります。');
 		}
 		else
 		{
-			return ApiResult.success('アップロード完了');
+			getUploadStatus().showCompleted();
+			return ApiResult.success('全てのコンテンツをアップロードしました。');
 		}
 	}
 
@@ -121,17 +155,34 @@ export class SettingToolBar
 			await ContentFile.write(downloadResult.value.content);
 			await CodeFile.write(downloadResult.value.content, downloadResult.value.codeList);
 
-			const variablesResult = await Api.getVariables(downloadResult.value.content);
-
-			if (variablesResult.isSuccess())
+			if (content.use_template_engine)
 			{
-				await VariablesFile.write(variablesResult.value);
+				const snippetsResult = await Api.getSnippets(downloadResult.value.content);
+				if (snippetsResult.isSuccess())
+				{
+					await JsonFile.write('snippets', snippetsResult.value);
 
-				return ApiResult.success('ダウンロード完了');
+					return ApiResult.success('ダウンロード完了');
+				}
+				else
+				{
+					return snippetsResult;
+				}
 			}
 			else
 			{
-				return variablesResult;
+				const variablesResult = await Api.getVariables(downloadResult.value.content);
+
+				if (variablesResult.isSuccess())
+				{
+					await JsonFile.write('variables', variablesResult.value);
+
+					return ApiResult.success('ダウンロード完了');
+				}
+				else
+				{
+					return variablesResult;
+				}
 			}
 		}
 		else
@@ -207,6 +258,29 @@ export class SettingToolBar
 		await CodeFile.changeExtensions(source, target);
 	}
 
+	public async downloadSnippets()
+	{
+		const content = await ContentFile.read();
+
+		if (!content || !content.id)
+		{
+			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
+		}
+
+		const result = await Api.getSnippets(content);
+
+		if (result.isSuccess())
+		{
+			await JsonFile.write('snippets', result.value);
+
+			return ApiResult.success('ダウンロード完了');
+		}
+		else
+		{
+			return result;
+		}
+	}
+
 	public async downloadVariables()
 	{
 		const content = await ContentFile.read();
@@ -220,7 +294,7 @@ export class SettingToolBar
 
 		if (result.isSuccess())
 		{
-			await VariablesFile.write(result.value);
+			await JsonFile.write('variables', result.value);
 
 			return ApiResult.success('ダウンロード完了');
 		}

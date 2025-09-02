@@ -1,7 +1,7 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, zContent} from '../types/Content';
-import {Definitions, zDefinitions} from '../types/Definitions';
+import {Content, zContent} from '../../common/types/Content';
+import {Definitions, zDefinitions} from '../../common//types/Definitions';
 import {Form} from './Form';
 import {Welcome} from './Welcome';
 

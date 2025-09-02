@@ -1,7 +1,8 @@
 import vscode from 'vscode';
 import {FileUtil} from './FileUtil';
 import {DefinitionsFile} from '../models/DefinitionsFile';
-import {Content, createContent, getColumns, zContent} from '../types/Content';
+import {Content, createContent, getColumns, zContent} from '../../common//types/Content';
+import {getLogger} from './Services';
 
 export class ContentFile
 {
@@ -33,7 +34,7 @@ export class ContentFile
 		catch (error)
 		{
 			vscode.window.showErrorMessage(`${ContentFile.fileName}のフォーマットが不正な形式です。`);
-			console.error(error);
+			getLogger().error(error);
 
 			return undefined;
 		}
@@ -102,7 +103,7 @@ export class ContentFile
 
 		if (oldDir.fsPath === newDir.fsPath) return;
 
-		await FileUtil.reaname(oldDir, newDir);
+		await FileUtil.rename(oldDir, newDir);
 	}
 
 	public static async getFilePath(uri: vscode.Uri|undefined = undefined)

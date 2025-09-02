@@ -19,10 +19,17 @@ export const zDefinitions = z.object({
 			key: z.string(),
 			name: z.string(),
 		})),
-		http_header_content_type: z.array(z.object({
-			key: z.string(),
-			name: z.string(),
-		})),
+		http_header_content_type:
+			z.union([
+				z.array(z.object({
+					key: z.string(),
+					name: z.string(),
+				})),
+				z.record(z.string(), z.array(z.object({
+					key: z.string(),
+					name: z.string(),
+				}))),
+			]),
 		sheet_id: z.record(z.string(), z.array(z.object({
 			key: z.string(),
 			options: z.array(z.string()),
@@ -30,6 +37,7 @@ export const zDefinitions = z.object({
 		role_key: z.record(z.string(), z.array(z.object({
 			key: z.string(),
 			name: z.string(),
+			default: z.boolean().optional(),
 		}))).optional(),
 		role_key_owner: z.record(z.string(), z.array(z.object({
 			key: z.string(),
@@ -54,6 +62,13 @@ export const zDefinitions = z.object({
 			key: z.string(),
 			name: z.string(),
 		})),
+		use_template_engine: z.array(z.object({
+			key: z.number(),
+			name: z.string(),
+		})).default([{
+			key: 0,
+			name: 'コンテンツ変数',
+		}]),
 		state: z.array(z.object({
 			key: z.number(),
 			name: z.string(),
@@ -76,6 +91,7 @@ export const zDefinitions = z.object({
 		})).optional(),
 	}),
 	code_types: z.record(z.string(), z.array(z.string())),
+	template_engine_code_types: z.record(z.string(), z.array(z.string())).default({}),
 	code_type_names: z.array(z.object({
 		key: z.string(),
 		name: z.string(),
@@ -99,15 +115,17 @@ export const createDefinitions = (): Definitions => ({
 	sheet_names: [],
 	column_options: {
 		contents_type: [],
-		http_header_content_type: [],
+		http_header_content_type: {},
 		permission: {},
 		device_type: [],
+		use_template_engine: [],
 		state: [],
 		search_query_where: [],
 		search_query_order: [],
 
 	},
 	code_types: {},
+	template_engine_code_types: {},
 	code_type_names: [],
 	search_query_keys: {},
 });

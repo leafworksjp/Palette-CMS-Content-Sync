@@ -1,8 +1,8 @@
 import React from 'react';
 import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, getColumns} from '../types/Content';
-import {Definitions} from '../types/Definitions';
+import {Content, getColumns} from '../../common/types/Content';
+import {Definitions} from '../../common//types/Definitions';
 
 type BasicAuthInputProps =
 {

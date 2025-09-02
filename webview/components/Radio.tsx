@@ -1,8 +1,8 @@
 import React from 'react';
 import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, RadioProperties, getOptions, getColumns, getColumnName} from '../types/Content';
-import {Definitions} from '../types/Definitions';
+import {Content, RadioProperties, getOptions, getColumns, getColumnName} from '../../common/types/Content';
+import {Definitions} from '../../common//types/Definitions';
 
 type RadioProps =
 {
@@ -10,9 +10,10 @@ type RadioProps =
 	content: Content,
 	definitions: Definitions,
 	required?: boolean,
+	readOnly?: boolean,
 };
 
-export const Radio = ({name, content, definitions, required}: RadioProps) =>
+export const Radio = ({name, content, definitions, required, readOnly}: RadioProps) =>
 {
 	const [value, setValue] = React.useState(String(content[name] ?? ''));
 
@@ -56,6 +57,7 @@ export const Radio = ({name, content, definitions, required}: RadioProps) =>
 									value={String(optionValue)}
 									checked={checked}
 									onChange={handleChange}
+									readOnly={readOnly ?? false}
 								/>
 								<label key={labelKey} htmlFor={radioKey}>{optionName}</label>
 							</div>

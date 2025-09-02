@@ -31,7 +31,7 @@
         "editor.defaultFormatter": "dbaeumer.vscode-eslint", // フォーマットに利用する拡張機能
         "editor.insertSpaces": false, // インデントはタブ
         "editor.codeActionsOnSave": {
-            "source.fixAll.eslint": true // ファイル保存時に自動フォーマット
+            "source.fixAll.eslint": "explicit"
         }
     },
     // JavaScriptの設定
@@ -39,7 +39,7 @@
         "editor.defaultFormatter": "dbaeumer.vscode-eslint", // フォーマットに利用する拡張機能
         "editor.insertSpaces": false, // インデントはタブ
         "editor.codeActionsOnSave": {
-            "source.fixAll.eslint": true // ファイル保存時に自動フォーマット
+            "source.fixAll.eslint": "explicit"
         }
     },
     // TypeScriptの設定
@@ -47,7 +47,7 @@
         "editor.defaultFormatter": "dbaeumer.vscode-eslint", // フォーマットに利用する拡張機能
         "editor.insertSpaces": false, // インデントはタブ
         "editor.codeActionsOnSave": {
-            "source.fixAll.eslint": true // ファイル保存時に自動フォーマット
+            "source.fixAll.eslint": "explicit"
         }
     },
     // TypeScriptの設定
@@ -55,7 +55,7 @@
         "editor.defaultFormatter": "dbaeumer.vscode-eslint", // フォーマットに利用する拡張機能
         "editor.insertSpaces": false, // インデントはタブ
         "editor.codeActionsOnSave": {
-            "source.fixAll.eslint": true // ファイル保存時に自動フォーマット
+            "source.fixAll.eslint": "explicit"
         }
     },
     // JSONの設定

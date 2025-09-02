@@ -1,7 +1,8 @@
 import vscode from 'vscode';
-import {VariablesFile} from '../models/VariablesFile';
-import {Is} from '../types/Is';
+import {JsonFile} from './JsonFile';
+import {Is} from '../../common/types/Is';
 import {FileUtil} from './FileUtil';
+import {CodeFile} from './CodeFile';
 
 type Variable = {key: string, value: string, dirName: string};
 
@@ -22,12 +23,17 @@ export class VariableCompletion
 		this.refresh();
 	}
 
-	public async refresh()
+	public dispose()
 	{
 		this.provider?.dispose();
 		this.provider = undefined;
+	}
 
-		const data = await this.loadVariablesFile();
+	public async refresh()
+	{
+		this.dispose();
+
+		const data = await this.loadJsonFile();
 
 		if (!data) return;
 
@@ -55,19 +61,19 @@ export class VariableCompletion
 		this.context.subscriptions.push(this.provider);
 	}
 
-	private async loadVariablesFile()
+	private async loadJsonFile()
 	{
 		try
 		{
 			const fileUri = vscode.window.activeTextEditor?.document?.uri;
 			if (!fileUri) return undefined;
 
-			const fileName = FileUtil.getName(fileUri);
+			const codeType = CodeFile.parseCodeType(fileUri);
 
-			const variablesFile = await VariablesFile.read();
-			if (!variablesFile) return undefined;
+			const json = await JsonFile.read('variables');
+			if (!json) return undefined;
 
-			const data = variablesFile[fileName];
+			const data = json[codeType];
 			if (!data || !Is.object(data)) return undefined;
 
 			return data;

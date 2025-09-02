@@ -15,7 +15,9 @@ module.exports = [{
 		devtoolModuleFilenameTemplate: '../[resource-path]',
 	},
 	externals: {
-		vscode: 'commonjs vscode'
+		vscode: 'commonjs vscode',
+		bufferutil: 'bufferutil',
+		'utf-8-validate': 'utf-8-validate'
 	},
 	resolve: {
 		extensions: ['.ts', '.js']

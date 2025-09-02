@@ -1,7 +1,7 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, SearchQueryForWhere, getColumns, getColumnName, getSearchQueryOptions} from '../types/Content';
-import {Definitions} from '../types/Definitions';
+import {Content, SearchQueryForWhere, getColumns, getColumnName, getSearchQueryOptions} from '../../common/types/Content';
+import {Definitions} from '../../common//types/Definitions';
 
 type SearchInputsProps =
 {

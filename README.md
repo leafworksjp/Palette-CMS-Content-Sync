@@ -34,14 +34,6 @@ Move it to the right side of the window to see the file browser and content sett
 
 1. Open *Palette CMS Content Sync* panel from side bar.
 
-### Preview
-
-1. Click `プレビュー` button from the toolbar.
-1. The preview automatically switches according to the opened HTML file.
-1. When you save a file, it is immediately reflected in the preview.
-
-![](/media/doc/preview.gif)
-
 ### Insert content variables
 
 1. Open downloaded HTML code.

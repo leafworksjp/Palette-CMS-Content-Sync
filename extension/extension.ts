@@ -2,145 +2,150 @@
 import vscode from 'vscode';
 import {SettingViewController} from './views/setting/SettingViewController';
 import {VariableCompletion} from './models/VariableCompletion';
-import {Preview} from './models/Preview';
+import {TemplateCompletion} from './models/TemplateCompletion';
+import {
+	createHotReloadServer,
+	createLogger,
+	createDiagnosticReporter,
+	createUploadStatus,
+	unregisterServices,
+} from './models/Services';
+import {PaletteSyntaxHighlighting} from './models/PaletteSyntaxHighlighting';
+import * as path from 'path';
+import * as fs from 'fs';
+import {HTMLFormatter} from './models/HTMLFormatter';
+
+const onDidChangeActiveTextEditorHandlers: ((editor: vscode.TextEditor) => void)[] = [];
+const onDidSaveTextDocumentHandlers:((document: vscode.TextDocument) => void)[] = [];
+let paletteSyntaxHighlighting: PaletteSyntaxHighlighting | undefined = undefined;
+let settingsViewController: SettingViewController | undefined = undefined;
+let variableCompletion: VariableCompletion | undefined = undefined;
+let templateCompletion: TemplateCompletion | undefined = undefined;
+let htmlFormatter: HTMLFormatter | undefined = undefined;
 
 export function activate(context: vscode.ExtensionContext)
 {
-	registerSettingView(context);
+	registerServices(context);
+	setLanguageConfiguration(context);
+	registerSyntaxHighlighting(context);
+	registerSettingsViewController(context);
 	registerVariableCompletionProvider(context);
-	registerPreview(context);
+	registerTemplateCompletionProvider(context);
+	registerHTMLFormatter(context);
+	bindEvents(context);
 }
 
-function registerSettingView(context: vscode.ExtensionContext)
+export function deactivate()
 {
-	const viewController = new SettingViewController(context);
+	unregisterServices();
+	onDidChangeActiveTextEditorHandlers.splice(0);
+	onDidSaveTextDocumentHandlers.splice(0);
+	paletteSyntaxHighlighting = undefined;
+	settingsViewController = undefined;
+	variableCompletion = undefined;
+	templateCompletion = undefined;
+	htmlFormatter = undefined;
+}
 
-	const commands = [
-		vscode.commands.registerCommand('paletteCmsContentSync.uploadContent', async _ =>
-		{
-			await viewController.upload();
-		}),
-		vscode.commands.registerCommand('paletteCmsContentSync.uploadAllContents', async _ =>
-		{
-			await viewController.uploadAll();
-		}),
-		vscode.commands.registerCommand('paletteCmsContentSync.downlaodContent', async _ =>
-		{
-			await viewController.download();
-		}),
-		vscode.commands.registerCommand('paletteCmsContentSync.createContent', async _ =>
-		{
-			await viewController.create();
-		}),
-		vscode.commands.registerCommand('paletteCmsContentSync.duplicateContent', async _ =>
-		{
-			await viewController.duplicate();
-		}),
-		vscode.commands.registerCommand('paletteCmsContentSync.deleteContent', async _ =>
-		{
-			await viewController.delete();
-		}),
-		vscode.commands.registerCommand('paletteCmsContentSync.changeLanguage', async _ =>
-		{
-			await viewController.changeLanguage();
-		}),
-		vscode.commands.registerCommand('paletteCmsContentSync.downloadVariables', async _ =>
-		{
-			await viewController.downloadVariables();
-		}),
-		vscode.commands.registerCommand('paletteCmsContentSync.downloadDefinitions', async _ =>
-		{
-			await viewController.downloadDefinitions();
-		}),
-		vscode.commands.registerCommand('paletteCmsContentSync.renameDirectory', async _ =>
-		{
-			await viewController.renameDirectory();
-		}),
-	];
+function registerServices(context: vscode.ExtensionContext)
+{
+	context.subscriptions.push(
+		createLogger(),
+		createHotReloadServer(),
+		createDiagnosticReporter(),
+		createUploadStatus()
+	);
+}
 
-	let lastDocument: vscode.Uri|undefined = undefined;
+function setLanguageConfiguration(context: vscode.ExtensionContext)
+{
+	const configPath = path.join(context.extensionPath, 'language-configuration.json');
+	const configContent = fs.readFileSync(configPath, 'utf8');
+	const config = JSON.parse(configContent);
+	vscode.languages.setLanguageConfiguration('html', config);
+}
 
-	const events = [
-		vscode.window.onDidChangeActiveTextEditor(event =>
-		{
-			if (!event?.document.uri) return;
+function registerSyntaxHighlighting(context: vscode.ExtensionContext)
+{
+	paletteSyntaxHighlighting = new PaletteSyntaxHighlighting(context);
+	context.subscriptions.push(paletteSyntaxHighlighting);
+}
 
-			if (lastDocument !== event.document.uri)
-			{
-				viewController.onDidChangeActiveTextEditor();
-			}
-			lastDocument = event.document.uri;
-		}),
-		vscode.workspace.onDidSaveTextDocument(document =>
-		{
-			viewController.onDidSaveTextDocument(document);
-		}),
-	];
+function registerHTMLFormatter(context: vscode.ExtensionContext)
+{
+	htmlFormatter = new HTMLFormatter();
+	context.subscriptions.push(htmlFormatter);
+}
 
-	context.subscriptions.push(...commands, ...events);
+function registerSettingsViewController(context: vscode.ExtensionContext)
+{
+	settingsViewController = new SettingViewController(context);
+	onDidChangeActiveTextEditorHandlers.push(textEditor => settingsViewController?.onDidChangeActiveTextEditor());
+	onDidSaveTextDocumentHandlers.push(document => settingsViewController?.onDidSaveTextDocument(document));
+	context.subscriptions.push(settingsViewController);
+
+	registerCommand(context, 'paletteCmsContentSync.uploadContent', () => settingsViewController?.upload());
+	registerCommand(context, 'paletteCmsContentSync.uploadAllContents', () => settingsViewController?.uploadAll());
+	registerCommand(context, 'paletteCmsContentSync.downloadContent', () => settingsViewController?.download());
+	registerCommand(context, 'paletteCmsContentSync.createContent', () => settingsViewController?.create());
+	registerCommand(context, 'paletteCmsContentSync.duplicateContent', () => settingsViewController?.duplicate());
+	registerCommand(context, 'paletteCmsContentSync.deleteContent', () => settingsViewController?.delete());
+	registerCommand(context, 'paletteCmsContentSync.changeLanguage', () => settingsViewController?.changeLanguage());
+	registerCommand(context, 'paletteCmsContentSync.downloadSnippets', () => settingsViewController?.downloadSnippets());
+	registerCommand(context, 'paletteCmsContentSync.downloadVariables', () => settingsViewController?.downloadVariables());
+	registerCommand(context, 'paletteCmsContentSync.downloadDefinitions', () => settingsViewController?.downloadDefinitions());
+	registerCommand(context, 'paletteCmsContentSync.renameDirectory', () => settingsViewController?.renameDirectory());
 }
 
 function registerVariableCompletionProvider(context: vscode.ExtensionContext)
 {
-	const completion = new VariableCompletion(context);
+	variableCompletion = new VariableCompletion(context);
+	onDidChangeActiveTextEditorHandlers.push(textEditor => variableCompletion?.refresh());
+	context.subscriptions.push(variableCompletion);
 
-	const commands = [
-		vscode.commands.registerCommand('paletteCmsContentSync.insertVariable', _ =>
-		{
-			completion.insertVariable();
-		}),
-	];
-
-	let lastDocument: vscode.Uri|undefined = undefined;
-
-	const events = [
-		vscode.window.onDidChangeActiveTextEditor(event =>
-		{
-			if (!event?.document.uri) return;
-
-			if (lastDocument !== event.document.uri)
-			{
-				completion.refresh();
-			}
-			lastDocument = event.document.uri;
-		}),
-	];
-
-	context.subscriptions.push(...commands, ...events);
+	registerCommand(context, 'paletteCmsContentSync.insertVariable', () => variableCompletion?.insertVariable());
 }
 
-function registerPreview(context: vscode.ExtensionContext)
+function registerTemplateCompletionProvider(context: vscode.ExtensionContext)
 {
-	const preview = new Preview(context.extensionUri);
-
-	const commands = [
-		vscode.commands.registerCommand('paletteCmsContentSync.previewContent', async _ =>
-		{
-			await preview.open().catch(e => vscode.window.showErrorMessage(e.message));
-		}),
-
-	];
-
-	let lastDocument: vscode.Uri|undefined = undefined;
-
-	const events = [
-		vscode.window.onDidChangeActiveTextEditor(async event =>
-		{
-			if (!event?.document.uri) return;
-
-			if (lastDocument !== event.document.uri)
-			{
-				await preview.update();
-			}
-			lastDocument = event.document.uri;
-		}),
-		vscode.workspace.onDidSaveTextDocument(async _ =>
-		{
-			await preview.update();
-		}),
-	];
-
-	context.subscriptions.push(...commands, ...events);
+	templateCompletion = new TemplateCompletion(context);
+	onDidChangeActiveTextEditorHandlers.push(textEditor => templateCompletion?.refresh());
+	context.subscriptions.push(templateCompletion);
 }
 
-export function deactivate() {}
+function bindEvents(context: vscode.ExtensionContext)
+{
+	let lastDocument: vscode.Uri|undefined = undefined;
+
+	const onDidChangeActiveTextEditor = vscode.window.onDidChangeActiveTextEditor(textEditor =>
+	{
+		if (!textEditor?.document.uri) return;
+
+		if (lastDocument !== textEditor.document.uri)
+		{
+			onDidChangeActiveTextEditorHandlers.forEach(callback => callback(textEditor));
+		}
+		lastDocument = textEditor.document.uri;
+	});
+
+	const	onDidSaveTextDocument =	vscode.workspace.onDidSaveTextDocument(document =>
+	{
+		onDidSaveTextDocumentHandlers.forEach(callback => callback(document));
+	});
+
+	context.subscriptions.push(
+		onDidChangeActiveTextEditor,
+		onDidSaveTextDocument
+	);
+}
+
+function registerCommand(
+	context: vscode.ExtensionContext,
+	command: string,
+	callback: () => void
+)
+{
+	context.subscriptions.push(
+		vscode.commands.registerCommand(command, callback)
+	);
+}

@@ -1,11 +1,13 @@
 import {z} from 'zod';
 import fetch, {Response, BodyInit, FetchError} from 'node-fetch';
 import {FileUtil} from './FileUtil';
-import {ApiResult} from '../types/ApiResult';
-import {Content, zContent} from '../types/Content';
-import {Code} from '../types/Code';
-import {zDefinitions} from '../types/Definitions';
-import {Is} from '../types/Is';
+import {ApiResult} from '../../common/types/ApiResult';
+import {Content, zContent} from '../../common//types/Content';
+import {Code} from '../../common/types/Code';
+import {zDefinitions} from '../../common/types/Definitions';
+import {Is} from '../../common/types/Is';
+import {zCompileErrors} from '../../common/types/CompileErrors';
+import {getLogger} from './Services';
 
 const zApiSettings = z.object({
 	url: z.string(),
@@ -41,16 +43,31 @@ export class Api
 
 		if (result.isSuccess())
 		{
-			const zResult = zContent.safeParse(result.value.contents);
-			if (zResult.success)
+			if (Is.undefined(result.value.contents))
 			{
-				return ApiResult.success({
-					content: zResult.data,
-				});
+				const zCompileErrorsResult = zCompileErrors.safeParse(result.value);
+				if (zCompileErrorsResult.success)
+				{
+					return ApiResult.compilationFailure(zCompileErrorsResult.data);
+				}
+				else
+				{
+					getLogger().error('API invalid response:', zCompileErrorsResult.error);
+					return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
+				}
 			}
 			else
 			{
-				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
+				const zResult = zContent.safeParse(result.value.contents);
+				if (zResult.success)
+				{
+					return ApiResult.success({content: zResult.data});
+				}
+				else
+				{
+					getLogger().error('API invalid response:', zResult.error);
+					return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
+				}
 			}
 		}
 		else
@@ -75,6 +92,7 @@ export class Api
 			}
 			else
 			{
+				getLogger().error('API invalid response:', result.value);
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 		}
@@ -110,6 +128,29 @@ export class Api
 			}
 			else
 			{
+				getLogger().error('API invalid response:', result.value);
+				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
+			}
+		}
+		else
+		{
+			return result;
+		}
+	}
+
+	public static async getSnippets(content: Content)
+	{
+		const result = await Api.fetch(`snippets?id=${content.id}`, 'GET');
+
+		if (result.isSuccess())
+		{
+			if (result.value.Snippets)
+			{
+				return ApiResult.success(result.value.Snippets);
+			}
+			else
+			{
+				getLogger().error('API invalid response:', result.value);
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 		}
@@ -132,7 +173,8 @@ export class Api
 			}
 			else
 			{
-				console.error(zResult.error);
+				getLogger().error('API invalid response:', zResult.error);
+
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 		}
@@ -160,22 +202,23 @@ export class Api
 		}
 		catch (error)
 		{
-			console.error(error);
+			getLogger().error('API invalid response:', error);
 			return undefined;
 		}
 	}
 
-	private static async fetch(endpoint: string, method: string, body: BodyInit|undefined = undefined)
+	private static async fetch(endpoint: string, method: string, body: BodyInit | undefined = undefined)
 	{
 		const settings = await Api.settings();
 
 		if (!settings)
 		{
-			return ApiResult.generalFailure(`${Api.fileName}のフォーマットが不正な形式です。`);
+			const message = `${Api.fileName}のフォーマットが不正な形式です。`;
+			getLogger().error('settings error:', message);
+			return ApiResult.generalFailure(message);
 		}
 
 		const url = `${settings.url}api/v1/m/contents/${endpoint}`;
-
 		const headers = {
 			'X-Auth-Token': `${settings.id}:${settings.pass}`,
 			'Content-Type': 'application/json'
@@ -189,13 +232,26 @@ export class Api
 				body,
 			});
 
+			const text = await response.text();
+
 			if (!isJsonResponse(response))
 			{
-				const text = await response.text();
+				getLogger().error('Non-JSON response:', text);
 				return ApiResult.generalFailure(text);
 			}
 
-			const data = await (response).json();
+			let data: any = undefined;
+
+			try
+			{
+				data = JSON.parse(text);
+			}
+			catch (jsonError)
+			{
+				getLogger().error('JSON parse error:', jsonError);
+				getLogger().error('Response body:', text);
+				return ApiResult.generalFailure('APIのレスポンスが不正なJSON形式です。');
+			}
 
 			if (data.error)
 			{
@@ -210,6 +266,7 @@ export class Api
 					return ApiResult.generalFailure(message);
 				}
 
+				getLogger().error('API error response:', data);
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 			else
@@ -219,6 +276,7 @@ export class Api
 		}
 		catch (error)
 		{
+			getLogger().error('Fetch exception:', error);
 			return ApiResult.generalFailure((error as FetchError).message);
 		}
 	}

@@ -1,5 +1,5 @@
 import vscode from 'vscode';
-import {Content} from '../../common//types/Content';
+import {Content} from '../../common/types/Content';
 import {Code} from '../../common/types/Code';
 import {Is} from '../../common/types/Is';
 import {DefinitionsFile} from './DefinitionsFile';
@@ -7,7 +7,6 @@ import {ContentFile} from './ContentFile';
 import {FileUtil} from './FileUtil';
 import {Definitions} from '../../common/types/Definitions';
 import {Locale} from '../locales/ja';
-import {DiagnosticReporter} from './DiagnosticReporter';
 import {CompileErrors} from '../../common/types/CompileErrors';
 import {getDiagnosticReporter} from './Services';
 

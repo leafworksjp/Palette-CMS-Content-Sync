@@ -1,9 +1,14 @@
 import vscode from 'vscode';
 import {SettingWebView} from './SettingWebView';
 import {Command} from '../../models/Command';
+import {Api} from '../../models/Api';
 import {FileUtil} from '../../models/FileUtil';
+import {LwContent} from '../../models/LwContent';
 import {ContentFile} from '../../models/ContentFile';
 import {CodeFile} from '../../models/CodeFile';
+import {getConnection, getContentContext, getDefinitionsContext, getLogger} from '../../models/Services';
+import {ValidationError} from '../../../common/types/Content';
+import {Definitions} from '../../../common/types/Definitions';
 import {Failure, Success} from '../../../common/types/Result';
 import {
 	CompilationFailureArgs,
@@ -22,7 +27,14 @@ export class SettingViewController
 		this.command = new Command();
 
 		context.subscriptions.push(
-			vscode.window.registerWebviewViewProvider(this.webview.id, this.webview)
+			vscode.window.registerWebviewViewProvider(this.webview.id, this.webview),
+			vscode.workspace.onDidChangeConfiguration(e =>
+			{
+				if (e.affectsConfiguration('paletteCMSContentSync.connection'))
+				{
+					this.webview.refresh();
+				}
+			})
 		);
 	}
 
@@ -143,6 +155,131 @@ export class SettingViewController
 	public async renameDirectory()
 	{
 		await this.command.renameDirectory();
+	}
+
+	public async changePageId()
+	{
+		const newFileName = await ContentFile.createNewFileName();
+
+		if (!newFileName) return;
+
+		const result = await this.command.changePageId(newFileName);
+
+		await this.webview.refresh();
+
+		this.showMessages(result);
+
+		if (result.isSuccess() && !getContentContext().isPageIdServerIdentifier())
+		{
+			const uploadNow = {title: 'はい(他の変更も送信されます)', isCloseAffordance: false};
+			const later = {title: '後で手動でアップロード', isCloseAffordance: true};
+
+			const answer = await vscode.window.showInformationMessage(
+				'サーバに反映するため、今すぐコンテンツをアップロードしますか？',
+				uploadNow,
+				later
+			);
+
+			if (answer?.title === uploadNow.title)
+			{
+				await this.upload();
+			}
+		}
+	}
+
+	public async selectConnection()
+	{
+		const lwDirUri = LwContent.dir();
+		if (!lwDirUri) return;
+
+		const connectionDirs = await FileUtil.listDirectories(lwDirUri);
+
+		if (!connectionDirs.length)
+		{
+			vscode.window.showWarningMessage(`${LwContent.directoryName}/ 配下に接続先ディレクトリが見つかりません`);
+			return;
+		}
+
+		const candidates = await Promise.all(connectionDirs.map(async dirUri =>
+		{
+			const subdir = FileUtil.getBase(dirUri);
+			const url = (await Api.settingsAt(dirUri))?.url;
+
+			return url ? {label: url, description: subdir, url, subdir} : undefined;
+		}));
+
+		const items = candidates.filter((item): item is NonNullable<typeof item> => item !== undefined);
+
+		if (!items.length)
+		{
+			vscode.window.showWarningMessage('有効な接続先が見つかりません');
+			return;
+		}
+
+		const selected = await vscode.window.showQuickPick(items, {
+			placeHolder: '接続先を選択してください',
+		});
+
+		if (!selected) return;
+
+		const validationErrors = await this.validateContentsAgainst(lwDirUri, selected.subdir);
+		if (validationErrors === undefined) return;
+		if (validationErrors.length > 0)
+		{
+			const logger = getLogger();
+			logger.error(`接続先切替不可: ${validationErrors.length} 件のコンテンツ定義不整合`);
+			validationErrors.forEach(e =>
+			{
+				logger.error(`  ${e.contentPath}: ${e.field} = ${JSON.stringify(e.value)} (${e.reason})`);
+			});
+			vscode.window.showErrorMessage(
+				`接続先を切り替えられません: ${validationErrors.length} 件のコンテンツ定義不整合があります（詳細はログを確認してください）`
+			);
+			return;
+		}
+
+		await getConnection().set({url: selected.url, subdir: selected.subdir});
+
+		await this.webview.refresh();
+	}
+
+	private async validateContentsAgainst(lwDirUri: vscode.Uri, subdir: string): Promise<ValidationError[] | undefined>
+	{
+		const targetDefinitionsUri = FileUtil.join(lwDirUri, subdir, 'definitions.json');
+		if (!await FileUtil.isFile(targetDefinitionsUri))
+		{
+			vscode.window.showErrorMessage('切替先の definitions.json が見つかりません');
+			return undefined;
+		}
+
+		const newDefinitions = await this.readTargetDefinitions(targetDefinitionsUri);
+		if (!newDefinitions) return undefined;
+
+		const contentFiles = await vscode.workspace.findFiles('**/contents.json', '**/node_modules/**');
+		const contentContext = getContentContext();
+
+		return (await Promise.all(contentFiles.map(async uri =>
+		{
+			const content = await ContentFile.read(uri);
+			if (!content) return [];
+			const result = contentContext.validate(content, newDefinitions);
+			return result.errors.map(e => ({...e, contentPath: uri.fsPath}));
+		}))).flat();
+	}
+
+	private async readTargetDefinitions(uri: vscode.Uri): Promise<Definitions | undefined>
+	{
+		try
+		{
+			const data = JSON.parse(await FileUtil.readFile(uri));
+			return getDefinitionsContext().parse(data);
+		}
+		catch (error)
+		{
+			getLogger().error('切替先 definitions パース失敗:', error);
+			vscode.window.showErrorMessage('切替先の definitions.json が不正な形式です');
+			return undefined;
+		}
 	}
 
 	public onDidChangeActiveTextEditor()

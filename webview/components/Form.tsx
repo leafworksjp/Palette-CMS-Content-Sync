@@ -10,19 +10,20 @@ import {Radio} from './Radio';
 import {BasicAuthInput} from './BasicAuthInput';
 import {SearchInputs} from './SearchInputs';
 import {OrderInputs} from './OrderInputs';
-import {Content} from '../../common/types/Content';
-import {Definitions} from '../../common//types/Definitions';
-import {getColumns} from '../../common//types/Content';
+import {Content, ContentContext, getColumns} from '../../common/types/Content';
+import {Definitions} from '../../common/types/Definitions';
 
 type FormProps =
 {
+	contentContext: ContentContext,
 	definitions: Definitions,
 	content: Content,
 	fileName: string,
+	url: string,
 };
 
 /*eslint-disable complexity*/
-export const Form = ({content, definitions, fileName}: FormProps) =>
+export const Form = ({contentContext, content, definitions, fileName, url}: FormProps) =>
 {
 	if (!content) return <></>;
 
@@ -60,7 +61,7 @@ export const Form = ({content, definitions, fileName}: FormProps) =>
 
 	const someColumnExists = (names: Array<string>) => names.some(name => getColumns(definitions, content)?.includes(name) ?? false);
 
-	const isReadOnly = Boolean(content.id);
+	const isReadOnly = contentContext.isUploaded(content);
 	const isSheetContent = definitions.columns[content.contents_type]?.at(0)?.options.includes('sheet_id');
 
 	return (
@@ -70,22 +71,18 @@ export const Form = ({content, definitions, fileName}: FormProps) =>
 			</div>
 			<Error />
 			{
-				someColumnExists(['id'])
-				&& content.contents_type !== 'parts'
+				isReadOnly
 				&& <div className="contents__inner">
 					<h2 className="contents__title">{Locale.title.contentInfo}</h2>
-					{
-						content.id && <Text name="id" readonly={true} content={content} definitions={definitions} />
-					}
+					<Text name="page_id" readonly={true} content={content} definitions={definitions} />
 					{
 						content.contents_type !== 'parts'
-						&& <URLInput content={content} definitions={definitions} />
+						&& <URLInput content={content} url={url} />
 					}
 				</div>
 			}
 			<div className="contents__inner">
 				<h2 className="contents__title">{Locale.title.contentSettings}</h2>
-				<Text name="page_id" content={content} definitions={definitions} />
 				<Text name="static_url" placeholder="/path/to/content/" content={content} definitions={definitions} />
 				<Text name="category" content={content} definitions={definitions} />
 				<Text name="name" required={true} content={content} definitions={definitions} />
@@ -135,7 +132,7 @@ export const Form = ({content, definitions, fileName}: FormProps) =>
 				someColumnExists(['search_query_where', 'search_query_order_state', 'search_query_order'])
 				&& <div className="contents__inner">
 					<h2 className="contents__title">{Locale.title.searchQuery}</h2>
-					<SearchInputs content={content} definitions={definitions} />
+					<SearchInputs contentContext={contentContext} content={content} definitions={definitions} />
 					<Radio name="search_query_order_state" content={content} definitions={definitions} />
 					{
 						(!searchQueryOrderState || searchQueryOrderState === 'col')

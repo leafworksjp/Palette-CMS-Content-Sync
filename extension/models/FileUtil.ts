@@ -3,8 +3,6 @@ import path from 'path';
 
 export class FileUtil
 {
-	public static LW_DIRECTORY_NAME = '.lwcontent';
-
 	public static getWorkspace = () => vscode.workspace.workspaceFolders?.[0].uri;
 
 	public static exists = async (uri: vscode.Uri) =>
@@ -46,17 +44,6 @@ export class FileUtil
 		{
 			return false;
 		}
-	};
-
-	public static isLwContent = async () =>
-	{
-		const ws = FileUtil.getWorkspace();
-
-		if (!ws) return false;
-
-		const dirPath = FileUtil.join(ws, FileUtil.LW_DIRECTORY_NAME);
-
-		return (await FileUtil.exists(dirPath) && await FileUtil.isDirectory(dirPath));
 	};
 
 	public static getDirectory = (uri: vscode.Uri) => FileUtil.join(uri, '..');
@@ -127,6 +114,17 @@ export class FileUtil
 		);
 
 		return result.flat();
+	};
+
+	public static listDirectories = async (uri: vscode.Uri): Promise<vscode.Uri[]> =>
+	{
+		if (!await FileUtil.isDirectory(uri)) return [];
+
+		const entries = await vscode.workspace.fs.readDirectory(uri);
+
+		return entries
+		.filter(([_, fileType]) => fileType === vscode.FileType.Directory)
+		.map(([name, _]) => FileUtil.join(uri, name));
 	};
 
 	public static findFiles = async (globPattern: string) => await vscode.workspace.findFiles(globPattern);

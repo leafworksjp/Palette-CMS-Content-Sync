@@ -1,11 +1,11 @@
 import vscode from 'vscode';
 import {FileUtil} from '../../models/FileUtil';
 import {SettingHtml} from './SettingHtml';
-import {} from '../../../common/types/Definitions';
-import {Content, updateDefaultValues} from '../../../common//types/Content';
+import {Content, updateDefaultValues} from '../../../common/types/Content';
 import {DefinitionsFile} from '../../models/DefinitionsFile';
 import {ContentFormatter} from '../../models/ContentFormatter';
 import {ContentFile} from '../../models/ContentFile';
+import {getConnection, getVersion} from '../../models/Services';
 
 export class SettingWebView implements vscode.WebviewViewProvider
 {
@@ -103,21 +103,26 @@ export class SettingWebView implements vscode.WebviewViewProvider
 		}
 	}
 
-	private async updateValue(key: keyof Content, value: any)
+	private async updateValue(key: Exclude<keyof Content, 'is_unsynced'>, value: any)
 	{
 		if (!this.webview || !this.content) return;
 
 		this.content = ContentFormatter.for(this.content).formatValue(key, value).content;
 
 		await ContentFile.write(this.content);
-
 		switch (key)
 		{
 			case 'contents_type':
 			case 'sheet_id':
 				{
+					const version = getVersion();
+					if (!version) break;
+
 					const definitions = await DefinitionsFile.read();
 					if (!definitions) break;
+
+					const url = getConnection().current;
+					if (!url) break;
 
 					this.content = updateDefaultValues(definitions, this.content);
 
@@ -130,6 +135,8 @@ export class SettingWebView implements vscode.WebviewViewProvider
 							definitions,
 							content: this.content,
 							fileName,
+							version,
+							url,
 						}
 					});
 				}
@@ -182,8 +189,14 @@ export class SettingWebView implements vscode.WebviewViewProvider
 
 	public async refresh()
 	{
+		const version = getVersion();
+		if (!version) return;
+
 		const definitions = await DefinitionsFile.read();
 		if (!this.webview || !definitions) return;
+
+		const url = getConnection().current;
+		if (!url) return;
 
 		this.content = await ContentFile.read();
 
@@ -196,6 +209,8 @@ export class SettingWebView implements vscode.WebviewViewProvider
 				definitions,
 				content: this.content,
 				fileName,
+				version,
+				url,
 			}
 		});
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
 import {Content, SearchQueryForOrder, getColumns, getColumnName, getSearchQueryOptions} from '../../common/types/Content';
-import {Definitions} from '../../common//types/Definitions';
+import {Definitions} from '../../common/types/Definitions';
 
 type OrderInputsProps =
 {

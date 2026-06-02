@@ -8,8 +8,14 @@ import {
 	createLogger,
 	createDiagnosticReporter,
 	createUploadStatus,
+	createConnection,
+	createLwContent,
+	createVersion,
+	createContentContext,
+	createDefinitionsContext,
 	unregisterServices,
 } from './models/Services';
+import {resolveVersion, initializeConnection} from './models/Bootstrap';
 import {PaletteSyntaxHighlighting} from './models/PaletteSyntaxHighlighting';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -23,15 +29,19 @@ let variableCompletion: VariableCompletion | undefined = undefined;
 let templateCompletion: TemplateCompletion | undefined = undefined;
 let htmlFormatter: HTMLFormatter | undefined = undefined;
 
-export function activate(context: vscode.ExtensionContext)
+export async function activate(context: vscode.ExtensionContext)
 {
 	registerServices(context);
 	setLanguageConfiguration(context);
 	registerSyntaxHighlighting(context);
+	registerHTMLFormatter(context);
+
+	const isReady = await detectVersion(context);
+	if (!isReady) return;
+
 	registerSettingsViewController(context);
 	registerVariableCompletionProvider(context);
 	registerTemplateCompletionProvider(context);
-	registerHTMLFormatter(context);
 	bindEvents(context);
 }
 
@@ -55,6 +65,24 @@ function registerServices(context: vscode.ExtensionContext)
 		createDiagnosticReporter(),
 		createUploadStatus()
 	);
+}
+
+async function detectVersion(context: vscode.ExtensionContext): Promise<boolean>
+{
+	const version = await resolveVersion();
+	if (!version) return false;
+
+	createVersion(version);
+	createContentContext(version);
+	createDefinitionsContext(version);
+	createLwContent(version);
+
+	const connection = createConnection();
+	context.subscriptions.push(connection);
+
+	await initializeConnection(connection);
+
+	return true;
 }
 
 function setLanguageConfiguration(context: vscode.ExtensionContext)
@@ -95,6 +123,8 @@ function registerSettingsViewController(context: vscode.ExtensionContext)
 	registerCommand(context, 'paletteCmsContentSync.downloadVariables', () => settingsViewController?.downloadVariables());
 	registerCommand(context, 'paletteCmsContentSync.downloadDefinitions', () => settingsViewController?.downloadDefinitions());
 	registerCommand(context, 'paletteCmsContentSync.renameDirectory', () => settingsViewController?.renameDirectory());
+	registerCommand(context, 'paletteCmsContentSync.selectConnection', () => settingsViewController?.selectConnection());
+	registerCommand(context, 'paletteCmsContentSync.changePageId', () => settingsViewController?.changePageId());
 }
 
 function registerVariableCompletionProvider(context: vscode.ExtensionContext)

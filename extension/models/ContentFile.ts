@@ -1,8 +1,8 @@
 import vscode from 'vscode';
 import {FileUtil} from './FileUtil';
 import {DefinitionsFile} from '../models/DefinitionsFile';
-import {Content, createContent, getColumns, zContent} from '../../common//types/Content';
-import {getLogger} from './Services';
+import {Content, getColumns, clientOnlyFields} from '../../common/types/Content';
+import {getLogger, getContentContext} from './Services';
 
 export class ContentFile
 {
@@ -17,14 +17,16 @@ export class ContentFile
 		try
 		{
 			const data = JSON.parse(await FileUtil.readFile(contentFile));
+			const content = getContentContext().parse(data);
 
-			const content = zContent.parse(data);
+			const definitions = await DefinitionsFile.read();
+			const allowedFields = definitions ? getColumns(definitions, content) : undefined;
 
-			if (!content.search_query_where?.length)
+			if (allowedFields?.includes('search_query_where') && !content.search_query_where?.length)
 			{
 				content.search_query_where = [{col: '', operator: '=', val: ''}];
 			}
-			if (!content.search_query_order?.length)
+			if (allowedFields?.includes('search_query_order') && !content.search_query_order?.length)
 			{
 				content.search_query_order = [{col: '', operator: 'ASC'}];
 			}
@@ -53,7 +55,7 @@ export class ContentFile
 		{
 			const contentObj = Object
 			.fromEntries(Object.entries(content)
-			.filter(([column]) => columns.includes(column)));
+			.filter(([column]) => columns.includes(column) || clientOnlyFields.some(f => f === column)));
 
 			const data = JSON.stringify(contentObj, undefined, 4);
 
@@ -65,10 +67,9 @@ export class ContentFile
 		}
 	}
 
-	public static async create()
+	public static async create(newFileName: string)
 	{
 		const workspace = FileUtil.getWorkspace();
-		const newFileName = await FileUtil.getNewFileName();
 
 		if (!workspace || !newFileName) return;
 
@@ -77,13 +78,7 @@ export class ContentFile
 		FileUtil.createDirectory(dirPath);
 		FileUtil.createDirectory(FileUtil.join(dirPath, 'src'));
 
-		const content = createContent();
-		content.page_id = newFileName;
-		content.category = '未設定';
-		content.http_header_content_type = 'html';
-		content.device_type = ['pc', 'smart'];
-		content.search_row = 10;
-
+		const content = getContentContext().createContent(newFileName);
 		const data = JSON.stringify(content, undefined, 4);
 
 		const contentFile = FileUtil.join(dirPath, ContentFile.fileName);
@@ -91,6 +86,28 @@ export class ContentFile
 		await FileUtil.writeFile(contentFile, data);
 
 		await FileUtil.openFileInEditor(contentFile);
+	}
+
+	public static async duplicate(newFileName: string)
+	{
+		const sourceDir = await ContentFile.getDirectoryPath();
+		if (!sourceDir || !await FileUtil.exists(sourceDir)) return;
+
+		const targetDir = FileUtil.join(sourceDir, '..', newFileName);
+
+		await FileUtil.copy(sourceDir, targetDir);
+
+		const targetContentFile = FileUtil.join(targetDir, ContentFile.fileName);
+
+		if (!await FileUtil.exists(targetContentFile)) return;
+
+		const content = await ContentFile.read(targetContentFile);
+		if (!content) return;
+
+		const duplicated = getContentContext().duplicateContent(content, newFileName);
+		await FileUtil.writeFile(targetContentFile, JSON.stringify(duplicated, undefined, 4));
+
+		await FileUtil.openFileInEditor(targetContentFile);
 	}
 
 	public static async changeDirectoryName(name: string)
@@ -140,4 +157,24 @@ export class ContentFile
 
 		return FileUtil.getDirectory(contentFilePath);
 	}
+
+	public static createNewFileName = async (): Promise<string> =>
+	{
+		const content = await ContentFile.read();
+		if (!content) return '';
+
+		const newPageId = await vscode.window.showInputBox({
+			prompt: '新しいコンテンツIDを入力してください',
+			value: content.page_id,
+			validateInput: value =>
+			{
+				if (!value) return '入力してください';
+				if (value === content.page_id) return '現在のIDと同じです';
+				if (!/^[a-zA-Z0-9_-]+$/.test(value)) return '半角英数字、ハイフン、アンダースコアのみ使用できます';
+				return null;
+			}
+		});
+
+		return newPageId ?? '';
+	};
 }

@@ -618,6 +618,49 @@ body {
   }
 }
 
+.contents dl .setting.setting--search {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.contents dl .setting.setting--search > select {
+  width: 100%;
+  margin: 0;
+}
+.contents dl .setting.setting--search .setting__operator {
+  flex: 0.5;
+}
+.contents dl .setting.setting--search .setting__val {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+.contents dl .setting.setting--search .val__kind {
+  width: 100%;
+  margin: 0 0 5px 0;
+}
+.contents dl .setting.setting--search .val__fields {
+  display: flex;
+  gap: 5px;
+}
+.contents dl .setting.setting--search .val__fields input[type="text"] {
+  flex: 1;
+  margin: 0;
+}
+.contents dl .setting.setting--search .btn {
+  margin: 0;
+}
+@media screen and (max-width: 400px) {
+  .contents dl .setting.setting--search {
+    grid-template-columns: 1fr;
+  }
+  .contents dl .setting.setting--search .val__fields input[type="text"] {
+    width: 100%;
+    margin: auto auto 5px;
+  }
+}
+
 .btn {
   display: flex;
   margin: auto 0 auto auto;

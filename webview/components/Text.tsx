@@ -1,20 +1,21 @@
 import React from 'react';
 import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, getColumnName, getColumns, TextProperties} from '../../common/types/Content';
-import {Definitions} from '../../common//types/Definitions';
+import {ContentFor, TextPropertiesFor, getColumnName, getColumns} from '../../common/types/Content';
+import {Definitions} from '../../common/types/Definitions';
+import {Version} from '../../common/types/Version';
 
-type TextProps =
+type TextProps<V extends Version> =
 {
-	name: TextProperties,
-	content: Content,
+	name: TextPropertiesFor<V>,
+	content: ContentFor<V>,
 	definitions: Definitions,
 	required?: boolean,
 	placeholder?: string,
 	readonly?: boolean,
 };
 
-export const Text = ({name, content, definitions, required, placeholder, readonly}: TextProps) =>
+export const Text = ({name, content, definitions, required, placeholder, readonly}: TextProps<Version>) =>
 {
 	const [value, setValue] = React.useState(content[name] ?? '');
 

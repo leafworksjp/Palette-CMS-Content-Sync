@@ -1,5 +1,4 @@
-import {Content} from '../../common//types/Content';
-import {getLogger} from './Services';
+import {Content} from '../../common/types/Content';
 
 export class ContentFormatter
 {
@@ -13,7 +12,7 @@ export class ContentFormatter
 
 	}
 
-	public formatValue(key: keyof Content, value: any)
+	public formatValue(key: Exclude<keyof Content, 'is_unsynced'>, value: any)
 	{
 		switch (key)
 		{

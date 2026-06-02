@@ -6,7 +6,7 @@ import {CodeFile} from './CodeFile';
 import {JsonFile} from './JsonFile';
 import {ApiResult} from '../../common/types/ApiResult';
 import {Locale} from '../locales/ja';
-import {getHotReloadServer, getUploadStatus} from './Services';
+import {getHotReloadServer, getUploadStatus, getContentContext} from './Services';
 
 export class Command
 {
@@ -193,33 +193,20 @@ export class Command
 
 	public async create()
 	{
-		await ContentFile.create();
+		const newFileName = await ContentFile.createNewFileName();
+
+		if (!newFileName) return;
+
+		await ContentFile.create(newFileName);
 	}
 
 	public async duplicate()
 	{
-		const sourceDir = await ContentFile.getDirectoryPath();
-		const newFileName = await FileUtil.getNewFileName();
+		const newFileName = await ContentFile.createNewFileName();
 
-		if (!sourceDir || !await FileUtil.exists(sourceDir) || !newFileName) return;
+		if (!newFileName) return;
 
-		const targetDir = FileUtil.join(sourceDir, '..', newFileName);
-
-		await FileUtil.copy(sourceDir, targetDir);
-
-		const targetContentFile = FileUtil.join(targetDir, ContentFile.fileName);
-
-		if (!await FileUtil.exists(targetContentFile)) return;
-
-		const content = JSON.parse(await FileUtil.readFile(targetContentFile));
-
-		content.id = '';
-		content.page_id = newFileName;
-		content.state = 0;
-
-		await FileUtil.writeFile(targetContentFile, JSON.stringify(content, undefined, 4));
-
-		await FileUtil.openFileInEditor(targetContentFile);
+		await ContentFile.duplicate(newFileName);
 	}
 
 	public async delete()
@@ -262,7 +249,7 @@ export class Command
 	{
 		const content = await ContentFile.read();
 
-		if (!content || !content.id)
+		if (!content || !getContentContext().isUploaded(content))
 		{
 			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
 		}
@@ -285,7 +272,7 @@ export class Command
 	{
 		const content = await ContentFile.read();
 
-		if (!content || !content.id)
+		if (!content || !getContentContext().isUploaded(content))
 		{
 			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
 		}
@@ -327,5 +314,34 @@ export class Command
 		if (!content) return;
 
 		await ContentFile.changeDirectoryName(content.page_id);
+	}
+
+	public async changePageId(newPageId: string)
+	{
+		const contentContext = getContentContext();
+
+		const content = await ContentFile.read();
+
+		if (!content) return ApiResult.generalFailure(Locale.pleaseOpenContent);
+
+		if (!contentContext.isUploaded(content))
+		{
+			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
+		}
+
+		if (contentContext.isPageIdServerIdentifier())
+		{
+			const result = await Api.changePageId(content, newPageId);
+			if (!result.isSuccess()) return result;
+
+			await ContentFile.write(result.value.content);
+		}
+		else
+		{
+			await ContentFile.write({...content, page_id: newPageId});
+		}
+
+		await ContentFile.changeDirectoryName(newPageId);
+		return ApiResult.success('コンテンツIDを更新しました。');
 	}
 }

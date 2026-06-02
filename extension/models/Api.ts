@@ -1,13 +1,13 @@
+import vscode from 'vscode';
 import {z} from 'zod';
 import fetch, {Response, BodyInit, FetchError} from 'node-fetch';
 import {FileUtil} from './FileUtil';
 import {ApiResult} from '../../common/types/ApiResult';
-import {Content, zContent} from '../../common//types/Content';
-import {Code} from '../../common/types/Code';
-import {zDefinitions} from '../../common/types/Definitions';
 import {Is} from '../../common/types/Is';
 import {zCompileErrors} from '../../common/types/CompileErrors';
-import {getLogger} from './Services';
+import {getLogger, getContentContext, getDefinitionsContext, getLwContent} from './Services';
+import {Content} from '../../common/types/Content';
+import {Code} from '../../common/types/Code';
 
 const zApiSettings = z.object({
 	url: z.string(),
@@ -32,10 +32,11 @@ export class Api
 
 	public static async upload(content: Content, codeList: Code[])
 	{
-		const endpoint = `${content.id ? 'update' : 'create'}`;
-		const method = content.id ? 'PUT' : 'POST';
+		const contentContext = getContentContext();
+		const endpoint = contentContext.uploadEndpoint(content);
+		const method = contentContext.uploadMethod(content);
 		const body = JSON.stringify({
-			contents: content,
+			contents: contentContext.toServerPayload(content),
 			contents_html: codeList
 		});
 
@@ -58,7 +59,7 @@ export class Api
 			}
 			else
 			{
-				const zResult = zContent.safeParse(result.value.contents);
+				const zResult = contentContext.safeParse(result.value.contents);
 				if (zResult.success)
 				{
 					return ApiResult.success({content: zResult.data});
@@ -78,11 +79,12 @@ export class Api
 
 	public static async download(content: Content)
 	{
-		const result = await Api.fetch(`info?id=${content.id}`, 'GET');
+		const contentContext = getContentContext();
+		const result = await Api.fetch(`info?${contentContext.connectParam(content)}`, 'GET');
 
 		if (result.isSuccess())
 		{
-			const zResult = zContent.safeParse(result.value.contents);
+			const zResult = contentContext.safeParse(result.value.contents);
 			if (zResult.success)
 			{
 				return ApiResult.success({
@@ -104,7 +106,7 @@ export class Api
 
 	public static async delete(content: Content)
 	{
-		const result = await Api.fetch(`delete?id=${content.id}`, 'DELETE');
+		const result = await Api.fetch(`delete?${getContentContext().connectParam(content)}`, 'DELETE');
 
 		if (result.isSuccess())
 		{
@@ -116,9 +118,36 @@ export class Api
 		}
 	}
 
+	public static async changePageId(content: Content, newPageId: string)
+	{
+		const contentContext = getContentContext();
+		const body = JSON.stringify({
+			contents: {page_id: newPageId}
+		});
+		const result = await Api.fetch(`changePageId?page_id=${content.page_id}`, 'PUT', body);
+
+		if (result.isSuccess())
+		{
+			const zResult = contentContext.safeParse(result.value.contents);
+			if (zResult.success)
+			{
+				return ApiResult.success({content: zResult.data});
+			}
+			else
+			{
+				getLogger().error('API invalid response:', result.value);
+				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
+			}
+		}
+		else
+		{
+			return result;
+		}
+	}
+
 	public static async getVariables(content: Content)
 	{
-		const result = await Api.fetch(`variables?id=${content.id}`, 'GET');
+		const result = await Api.fetch(`variables?${getContentContext().connectParam(content)}`, 'GET');
 
 		if (result.isSuccess())
 		{
@@ -140,7 +169,7 @@ export class Api
 
 	public static async getSnippets(content: Content)
 	{
-		const result = await Api.fetch(`snippets?id=${content.id}`, 'GET');
+		const result = await Api.fetch(`snippets?${getContentContext().connectParam(content)}`, 'GET');
 
 		if (result.isSuccess())
 		{
@@ -166,7 +195,7 @@ export class Api
 
 		if (result.isSuccess())
 		{
-			const zResult = zDefinitions.safeParse(result.value.definitions);
+			const zResult = getDefinitionsContext().safeParse(result.value.definitions);
 			if (zResult.success)
 			{
 				return ApiResult.success(zResult.data);
@@ -184,21 +213,24 @@ export class Api
 		}
 	}
 
-	public static async settings()
+	public static async settings(): Promise<ApiSettings | undefined>
 	{
-		const workspaceUri = FileUtil.getWorkspace();
+		const base = getLwContent().base();
+		if (!base) return undefined;
 
-		if (!workspaceUri) return undefined;
+		return Api.settingsAt(base);
+	}
 
-		const uri = FileUtil.join(workspaceUri, FileUtil.LW_DIRECTORY_NAME, Api.fileName);
+	public static async settingsAt(dirUri: vscode.Uri): Promise<ApiSettings | undefined>
+	{
+		const uri = FileUtil.join(dirUri, Api.fileName);
+		if (!await FileUtil.isFile(uri)) return undefined;
 
 		try
 		{
 			const data = JSON.parse(await FileUtil.readFile(uri));
 
-			const settings = zApiSettings.parse(data);
-
-			return settings;
+			return zApiSettings.parse(data);
 		}
 		catch (error)
 		{
@@ -213,7 +245,7 @@ export class Api
 
 		if (!settings)
 		{
-			const message = `${Api.fileName}のフォーマットが不正な形式です。`;
+			const message = `${Api.fileName}を読み込めません。環境設定を確認してください。`;
 			getLogger().error('settings error:', message);
 			return ApiResult.generalFailure(message);
 		}

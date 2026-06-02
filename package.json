@@ -46,6 +46,22 @@
                     "type": "boolean",
                     "default": false,
                     "description": "保存時にコンテンツを自動的にサーバーへアップロードします。"
+                },
+                "paletteCMSContentSync.connection": {
+                    "type": "object",
+                    "default": {},
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": "接続先URL (api.json の url)"
+                        },
+                        "subdir": {
+                            "type": "string",
+                            "description": "接続先ディレクトリ名 (.lwcontent/{subdir}/)"
+                        }
+                    },
+                    "description": "現在選択中の接続先",
+                    "scope": "window"
                 }
             }
         },
@@ -73,6 +89,12 @@
                 "category": "Palette CMS Content Sync",
                 "title": "フォルダ名を更新",
                 "icon": "$(replace)"
+            },
+            {
+                "command": "paletteCmsContentSync.selectConnection",
+                "category": "Palette CMS Content Sync",
+                "title": "接続先を選択",
+                "icon": "$(server)"
             },
             {
                 "command": "paletteCmsContentSync.createContent",
@@ -121,6 +143,12 @@
                 "category": "Palette CMS Content Sync",
                 "title": "コンテンツ変数を再取得",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "paletteCmsContentSync.changePageId",
+                "category": "Palette CMS Content Sync",
+                "title": "コンテンツIDを更新",
+                "icon": "$(edit)"
             }
         ],
         "menus": {
@@ -179,6 +207,11 @@
                     "command": "paletteCmsContentSync.downloadDefinitions",
                     "when": "view == paletteCmsContentSync.settingView",
                     "group": "menus@6"
+                },
+                {
+                    "command": "paletteCmsContentSync.changePageId",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "menus@7"
                 }
             ]
         }

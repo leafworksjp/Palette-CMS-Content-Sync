@@ -1,6 +1,6 @@
 import {FileUtil} from './FileUtil';
-import {Definitions, zDefinitions} from '../../common/types/Definitions';
-import {getLogger} from './Services';
+import {Definitions} from '../../common/types/Definitions';
+import {getLogger, getDefinitionsContext, getLwContent} from './Services';
 
 export class DefinitionsFile
 {
@@ -8,10 +8,8 @@ export class DefinitionsFile
 
 	private static uri()
 	{
-		const workspaceUri = FileUtil.getWorkspace();
-		if (!workspaceUri) return undefined;
-
-		return FileUtil.join(workspaceUri, FileUtil.LW_DIRECTORY_NAME, DefinitionsFile.fileName);
+		const base = getLwContent().base();
+		return base ? FileUtil.join(base, DefinitionsFile.fileName) : undefined;
 	}
 
 	public static async read()
@@ -24,7 +22,7 @@ export class DefinitionsFile
 		{
 			const data = JSON.parse(await FileUtil.readFile(uri));
 
-			return zDefinitions.parse(data);
+			return getDefinitionsContext().parse(data);
 		}
 		catch (error)
 		{

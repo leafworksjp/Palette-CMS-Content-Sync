@@ -8,7 +8,7 @@ export class DefinitionsFile
 
 	private static uri()
 	{
-		const base = getLwContent().base();
+		const base = getLwContent().baseDir();
 		return base ? FileUtil.join(base, DefinitionsFile.fileName) : undefined;
 	}
 

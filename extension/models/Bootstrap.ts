@@ -1,7 +1,7 @@
 import {Api} from './Api';
 import {FileUtil} from './FileUtil';
 import {LwContent} from './LwContent';
-import {Connection} from './Connection';
+import {ActiveConnection} from './ActiveConnection';
 import {Version} from '../../common/types/Version';
 
 export async function resolveVersion(): Promise<Version | undefined>
@@ -27,12 +27,12 @@ export async function defaultConnectionForV1(): Promise<string|undefined>
 	return (await Api.settingsAt(lwDir))?.url;
 }
 
-export async function initializeConnection(connection: Connection): Promise<void>
+export async function initializeConnection(activeConnection: ActiveConnection): Promise<void>
 {
-	if (connection.current) return;
+	if (activeConnection.current) return;
 
 	const url = await defaultConnectionForV1();
 	if (!url) return;
 
-	await connection.set({url});
+	await activeConnection.set({url});
 }

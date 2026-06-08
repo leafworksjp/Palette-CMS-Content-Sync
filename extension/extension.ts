@@ -8,7 +8,7 @@ import {
 	createLogger,
 	createDiagnosticReporter,
 	createUploadStatus,
-	createConnection,
+	createActiveConnection,
 	createLwContent,
 	createVersion,
 	createContentStrategy,
@@ -16,6 +16,7 @@ import {
 	unregisterServices,
 } from './models/Services';
 import {resolveVersion, initializeConnection} from './models/Bootstrap';
+import {ConnectionStatusBar} from './models/ConnectionStatusBar';
 import {PaletteSyntaxHighlighting} from './models/PaletteSyntaxHighlighting';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -77,10 +78,10 @@ async function detectVersion(context: vscode.ExtensionContext): Promise<boolean>
 	createDefinitionsStrategy(version);
 	createLwContent(version);
 
-	const connection = createConnection();
-	context.subscriptions.push(connection);
+	const activeConnection = createActiveConnection();
+	await initializeConnection(activeConnection);
 
-	await initializeConnection(connection);
+	context.subscriptions.push(new ConnectionStatusBar(activeConnection));
 
 	return true;
 }

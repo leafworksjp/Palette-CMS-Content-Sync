@@ -1,33 +1,9 @@
 import vscode from 'vscode';
 import {FileUtil} from './FileUtil';
-import {getConnection} from './Services';
+import {getActiveConnection} from './Services';
 import {Version} from '../../common/types/Version';
 
-export interface LwContentStrategy
-{
-	base(dir: vscode.Uri): vscode.Uri | undefined;
-}
-
-export class LwContentStrategyV1 implements LwContentStrategy
-{
-	public base(dir: vscode.Uri): vscode.Uri
-	{
-		return dir;
-	}
-}
-
-export class LwContentStrategyV2 implements LwContentStrategy
-{
-	public base(dir: vscode.Uri): vscode.Uri | undefined
-	{
-		const subdir = getConnection().subdir;
-		if (!subdir) return undefined;
-
-		return FileUtil.join(dir, subdir);
-	}
-}
-
-export class LwContent
+export abstract class LwContent
 {
 	public static readonly directoryName = '.lwcontent';
 
@@ -47,20 +23,40 @@ export class LwContent
 		return await FileUtil.isDirectory(lwDir);
 	}
 
-	public static init(version: Version)
+	public static init(version: Version): LwContent
 	{
 		return version === 1
-			? new LwContent(new LwContentStrategyV1())
-			: new LwContent(new LwContentStrategyV2());
+			? new LwContentV1()
+			: new LwContentV2();
 	}
 
-	constructor(private readonly strategy: LwContentStrategy) {}
+	abstract readonly version: Version;
 
-	public base(): vscode.Uri | undefined
+	public abstract baseDir(): vscode.Uri | undefined;
+}
+
+export class LwContentV1 extends LwContent
+{
+	readonly version = 1 as const;
+
+	public baseDir(): vscode.Uri | undefined
+	{
+		return LwContent.dir();
+	}
+}
+
+export class LwContentV2 extends LwContent
+{
+	readonly version = 2 as const;
+
+	public baseDir(): vscode.Uri | undefined
 	{
 		const lwDir = LwContent.dir();
 		if (!lwDir) return undefined;
 
-		return this.strategy.base(lwDir);
+		const subdir = getActiveConnection().subdir;
+		if (!subdir) return undefined;
+
+		return FileUtil.join(lwDir, subdir);
 	}
 }

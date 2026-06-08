@@ -215,7 +215,7 @@ export class Api
 
 	public static async settings(): Promise<ApiSettings | undefined>
 	{
-		const base = getLwContent().base();
+		const base = getLwContent().baseDir();
 		if (!base) return undefined;
 
 		return Api.settingsAt(base);

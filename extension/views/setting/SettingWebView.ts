@@ -5,7 +5,7 @@ import {Content, updateDefaultValues} from '../../../common/types/Content';
 import {DefinitionsFile} from '../../models/DefinitionsFile';
 import {ContentFormatter} from '../../models/ContentFormatter';
 import {ContentFile} from '../../models/ContentFile';
-import {getConnection, getContentStrategy, getVersion} from '../../models/Services';
+import {getActiveConnection, getContentStrategy, getVersion} from '../../models/Services';
 
 export class SettingWebView implements vscode.WebviewViewProvider
 {
@@ -145,7 +145,7 @@ export class SettingWebView implements vscode.WebviewViewProvider
 					const definitions = await DefinitionsFile.read();
 					if (!definitions) break;
 
-					const url = getConnection().current;
+					const url = getActiveConnection().current;
 					if (!url) break;
 
 					this.content = updateDefaultValues(definitions, this.content);
@@ -222,7 +222,7 @@ export class SettingWebView implements vscode.WebviewViewProvider
 		const definitions = await DefinitionsFile.read();
 		if (!this.webview || !definitions) return;
 
-		const url = getConnection().current;
+		const url = getActiveConnection().current;
 		if (!url) return;
 
 		const documentUri = vscode.window.activeTextEditor?.document?.uri;

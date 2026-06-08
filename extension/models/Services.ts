@@ -1,5 +1,5 @@
 import {DiagnosticReporter} from './DiagnosticReporter';
-import {Connection} from './Connection';
+import {ActiveConnection} from './ActiveConnection';
 import {LwContent} from './LwContent';
 import {Logger} from './Logger';
 import {UploadStatus} from './UploadStatus';
@@ -12,7 +12,7 @@ let hotReloadServer: WebSocketServer | undefined = undefined;
 let logger: Logger| undefined = undefined;
 let diagnosticReporter: DiagnosticReporter | undefined = undefined;
 let uploadStatus: UploadStatus | undefined = undefined;
-let connection: Connection | undefined = undefined;
+let activeConnection: ActiveConnection | undefined = undefined;
 let lwContent: LwContent | undefined = undefined;
 let contentStrategy: ContentStrategy | undefined = undefined;
 let definitionsStrategy: DefinitionsStrategy | undefined = undefined;
@@ -160,24 +160,24 @@ export const getDefinitionsStrategy = (): DefinitionsStrategy =>
 	return definitionsStrategy;
 };
 
-export const createConnection = (): Connection =>
+export const createActiveConnection = (): ActiveConnection =>
 {
-	if (connection)
+	if (activeConnection)
 	{
-		throw new Error('Connection is already registered.');
+		throw new Error('ActiveConnection is already registered.');
 	}
-	connection = new Connection();
+	activeConnection = new ActiveConnection();
 
-	return connection;
+	return activeConnection;
 };
 
-export const getConnection = (): Connection =>
+export const getActiveConnection = (): ActiveConnection =>
 {
-	if (!connection)
+	if (!activeConnection)
 	{
-		throw new Error('Connection is not registered.');
+		throw new Error('ActiveConnection is not registered.');
 	}
-	return connection;
+	return activeConnection;
 };
 
 export const createLwContent = (version: Version): LwContent =>
@@ -206,7 +206,7 @@ export const unregisterServices = (): void =>
 	logger = undefined;
 	diagnosticReporter = undefined;
 	uploadStatus = undefined;
-	connection = undefined;
+	activeConnection = undefined;
 	lwContent = undefined;
 	contentStrategy = undefined;
 	definitionsStrategy = undefined;

@@ -10,12 +10,13 @@ import {Radio} from './Radio';
 import {BasicAuthInput} from './BasicAuthInput';
 import {SearchInputs} from './SearchInputs';
 import {OrderInputs} from './OrderInputs';
-import {Content, ContentStrategy, getColumns} from '../../common/types/Content';
+import {Content, getColumns} from '../../common/types/Content';
 import {Definitions} from '../../common/types/Definitions';
 
 type FormProps =
 {
-	contentStrategy: ContentStrategy,
+	isReadOnly: boolean,
+	supportsSheetRefValue: boolean,
 	definitions: Definitions,
 	content: Content,
 	fileName: string,
@@ -23,7 +24,7 @@ type FormProps =
 };
 
 /*eslint-disable complexity*/
-export const Form = ({contentStrategy, content, definitions, fileName, url}: FormProps) =>
+export const Form = ({isReadOnly, supportsSheetRefValue, content, definitions, fileName, url}: FormProps) =>
 {
 	if (!content) return <></>;
 
@@ -61,7 +62,6 @@ export const Form = ({contentStrategy, content, definitions, fileName, url}: For
 
 	const someColumnExists = (names: Array<string>) => names.some(name => getColumns(definitions, content)?.includes(name) ?? false);
 
-	const isReadOnly = contentStrategy.isUploaded(content);
 	const isSheetContent = definitions.columns[content.contents_type]?.at(0)?.options.includes('sheet_id');
 
 	return (
@@ -132,7 +132,7 @@ export const Form = ({contentStrategy, content, definitions, fileName, url}: For
 				someColumnExists(['search_query_where', 'search_query_order_state', 'search_query_order'])
 				&& <div className="contents__inner">
 					<h2 className="contents__title">{Locale.title.searchQuery}</h2>
-					<SearchInputs contentStrategy={contentStrategy} content={content} definitions={definitions} />
+					<SearchInputs supportsSheetRefValue={supportsSheetRefValue} content={content} definitions={definitions} />
 					<Radio name="search_query_order_state" content={content} definitions={definitions} />
 					{
 						(!searchQueryOrderState || searchQueryOrderState === 'col')

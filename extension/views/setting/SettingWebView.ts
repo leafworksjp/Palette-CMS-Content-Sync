@@ -5,7 +5,7 @@ import {Content, updateDefaultValues} from '../../../common/types/Content';
 import {DefinitionsFile} from '../../models/DefinitionsFile';
 import {ContentFormatter} from '../../models/ContentFormatter';
 import {ContentFile} from '../../models/ContentFile';
-import {getConnection, getVersion} from '../../models/Services';
+import {getConnection, getContentStrategy, getVersion} from '../../models/Services';
 
 export class SettingWebView implements vscode.WebviewViewProvider
 {
@@ -129,6 +129,8 @@ export class SettingWebView implements vscode.WebviewViewProvider
 					const documentUri = vscode.window.activeTextEditor?.document?.uri;
 					const fileName = documentUri ? FileUtil.getName(documentUri) : '';
 
+					const contentStrategy = getContentStrategy();
+
 					this.webview.postMessage({
 						command: 'refresh',
 						value: {
@@ -137,6 +139,8 @@ export class SettingWebView implements vscode.WebviewViewProvider
 							fileName,
 							version,
 							url,
+							isReadOnly: contentStrategy.isUploaded(this.content),
+							supportsSheetRefValue: contentStrategy.supportsSheetRefValue(),
 						}
 					});
 				}
@@ -203,6 +207,8 @@ export class SettingWebView implements vscode.WebviewViewProvider
 		const documentUri = vscode.window.activeTextEditor?.document?.uri;
 		const fileName = documentUri ? FileUtil.getName(documentUri) : '';
 
+		const contentStrategy = getContentStrategy();
+
 		this.webview.postMessage({
 			command: 'refresh',
 			value: {
@@ -211,6 +217,8 @@ export class SettingWebView implements vscode.WebviewViewProvider
 				fileName,
 				version,
 				url,
+				isReadOnly: this.content ? contentStrategy.isUploaded(this.content) : false,
+				supportsSheetRefValue: contentStrategy.supportsSheetRefValue(),
 			}
 		});
 

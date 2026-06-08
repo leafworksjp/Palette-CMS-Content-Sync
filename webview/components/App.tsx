@@ -1,7 +1,7 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, ContentStrategy} from '../../common/types/Content';
-import {Definitions, DefinitionsStrategy} from '../../common/types/Definitions';
+import {Content, zContentV1, zContentV2} from '../../common/types/Content';
+import {Definitions, zDefinitionsV1, zDefinitionsV2} from '../../common/types/Definitions';
 import {zVersion} from '../../common/types/Version';
 import {Form} from './Form';
 import {Welcome} from './Welcome';
@@ -12,7 +12,8 @@ export const App = () =>
 	const [definitions, setDefinitions] = React.useState<Definitions|undefined>();
 	const [fileName, setFileName] = React.useState<string>('');
 	const [url, setUrl] = React.useState<string|undefined>();
-	const [contentStrategy, setContentStrategy] = React.useState<ContentStrategy|undefined>();
+	const [isReadOnly, setIsReadOnly] = React.useState<boolean>(false);
+	const [supportsSheetRefValue, setSupportsSheetRefValue] = React.useState<boolean>(false);
 
 	React.useEffect(() =>
 	{
@@ -26,13 +27,11 @@ export const App = () =>
 						const versionResult = zVersion.safeParse(message.value.version);
 						if (!versionResult.success) break;
 
-						const viewContentStrategy = ContentStrategy.init(versionResult.data);
-						const viewDefinitionsStrategy = DefinitionsStrategy.init(versionResult.data);
+						const zContent = versionResult.data === 1 ? zContentV1 : zContentV2;
+						const zDefinitions = versionResult.data === 1 ? zDefinitionsV1 : zDefinitionsV2;
 
-						const contentResult = viewContentStrategy.safeParse(message.value.content);
-						const definitionsResult = viewDefinitionsStrategy.safeParse(message.value.definitions);
-
-						setContentStrategy(viewContentStrategy);
+						const contentResult = zContent.safeParse(message.value.content);
+						const definitionsResult = zDefinitions.safeParse(message.value.definitions);
 
 						if (contentResult.success)
 						{
@@ -45,6 +44,8 @@ export const App = () =>
 
 						setFileName(message.value.fileName);
 						setUrl(message.value.url);
+						setIsReadOnly(Boolean(message.value.isReadOnly));
+						setSupportsSheetRefValue(Boolean(message.value.supportsSheetRefValue));
 					}
 					break;
 
@@ -56,7 +57,7 @@ export const App = () =>
 		Dispatcher.onLoad();
 	}, []);
 
-	return content && definitions && contentStrategy && url
-		? <Form contentStrategy={contentStrategy} content={content} definitions={definitions} fileName={fileName} url={url} />
+	return content && definitions && url
+		? <Form isReadOnly={isReadOnly} supportsSheetRefValue={supportsSheetRefValue} content={content} definitions={definitions} fileName={fileName} url={url} />
 		: <Welcome />;
 };

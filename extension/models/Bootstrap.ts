@@ -1,13 +1,11 @@
-import vscode from 'vscode';
 import {Api} from './Api';
 import {FileUtil} from './FileUtil';
 import {LwContent} from './LwContent';
 import {ActiveConnection} from './ActiveConnection';
-import {ConnectionStatusBar} from './ConnectionStatusBar';
 import {createActiveConnection, createVersionedServices} from './Services';
 import {Version} from '../../common/types/Version';
 
-export async function initializeVersionedServices(context: vscode.ExtensionContext): Promise<boolean>
+export async function initializeVersionedServices(): Promise<boolean>
 {
 	const version = await resolveVersion();
 	if (!version) return false;
@@ -16,8 +14,6 @@ export async function initializeVersionedServices(context: vscode.ExtensionConte
 
 	const activeConnection = createActiveConnection();
 	await initializeConnection(activeConnection);
-
-	context.subscriptions.push(new ConnectionStatusBar(activeConnection));
 
 	return true;
 }

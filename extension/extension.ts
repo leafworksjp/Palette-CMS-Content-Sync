@@ -8,9 +8,11 @@ import {
 	createLogger,
 	createDiagnosticReporter,
 	createUploadStatus,
+	getActiveConnection,
 	unregisterServices,
 } from './models/Services';
 import {initializeVersionedServices} from './models/Bootstrap';
+import {ConnectionStatusBar} from './models/ConnectionStatusBar';
 import {PaletteSyntaxHighlighting} from './models/PaletteSyntaxHighlighting';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -31,9 +33,10 @@ export async function activate(context: vscode.ExtensionContext)
 	registerSyntaxHighlighting(context);
 	registerHTMLFormatter(context);
 
-	const isReady = await initializeVersionedServices(context);
+	const isReady = await initializeVersionedServices();
 	if (!isReady) return;
 
+	registerConnectionStatusBar(context);
 	registerSettingsViewController(context);
 	registerVariableCompletionProvider(context);
 	registerTemplateCompletionProvider(context);
@@ -68,6 +71,11 @@ function setLanguageConfiguration(context: vscode.ExtensionContext)
 	const configContent = fs.readFileSync(configPath, 'utf8');
 	const config = JSON.parse(configContent);
 	vscode.languages.setLanguageConfiguration('html', config);
+}
+
+function registerConnectionStatusBar(context: vscode.ExtensionContext)
+{
+	context.subscriptions.push(new ConnectionStatusBar(getActiveConnection()));
 }
 
 function registerSyntaxHighlighting(context: vscode.ExtensionContext)

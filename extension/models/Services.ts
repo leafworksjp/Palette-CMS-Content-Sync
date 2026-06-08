@@ -98,15 +98,16 @@ export const getUploadStatus = (): UploadStatus =>
 	return uploadStatus;
 };
 
-export const createVersion = (version: Version): Version =>
+export const createVersionedServices = (version: Version): void =>
 {
 	if (currentVersion)
 	{
-		throw new Error('Version is already registered.');
+		throw new Error('Versioned services are already registered.');
 	}
 	currentVersion = version;
-
-	return currentVersion;
+	contentStrategy = ContentStrategy.init(version);
+	definitionsStrategy = DefinitionsStrategy.init(version);
+	lwContent = LwContent.init(version);
 };
 
 export const getVersion = (): Version =>
@@ -118,18 +119,6 @@ export const getVersion = (): Version =>
 	return currentVersion;
 };
 
-export const createContentStrategy = (version: Version): ContentStrategy =>
-{
-	if (contentStrategy)
-	{
-		throw new Error('ContentStrategy is already registered.');
-	}
-
-	contentStrategy = ContentStrategy.init(version);
-
-	return contentStrategy;
-};
-
 export const getContentStrategy = (): ContentStrategy =>
 {
 	if (!contentStrategy)
@@ -137,18 +126,6 @@ export const getContentStrategy = (): ContentStrategy =>
 		throw new Error('ContentStrategy is not registered.');
 	}
 	return contentStrategy;
-};
-
-export const createDefinitionsStrategy = (version: Version): DefinitionsStrategy =>
-{
-	if (definitionsStrategy)
-	{
-		throw new Error('DefinitionsStrategy is already registered.');
-	}
-
-	definitionsStrategy = DefinitionsStrategy.init(version);
-
-	return definitionsStrategy;
 };
 
 export const getDefinitionsStrategy = (): DefinitionsStrategy =>
@@ -178,17 +155,6 @@ export const getActiveConnection = (): ActiveConnection =>
 		throw new Error('ActiveConnection is not registered.');
 	}
 	return activeConnection;
-};
-
-export const createLwContent = (version: Version): LwContent =>
-{
-	if (lwContent)
-	{
-		throw new Error('LwContent is already registered.');
-	}
-	lwContent = LwContent.init(version);
-
-	return lwContent;
 };
 
 export const getLwContent = (): LwContent =>

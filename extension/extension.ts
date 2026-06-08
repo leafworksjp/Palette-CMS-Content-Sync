@@ -8,15 +8,9 @@ import {
 	createLogger,
 	createDiagnosticReporter,
 	createUploadStatus,
-	createActiveConnection,
-	createLwContent,
-	createVersion,
-	createContentStrategy,
-	createDefinitionsStrategy,
 	unregisterServices,
 } from './models/Services';
-import {resolveVersion, initializeConnection} from './models/Bootstrap';
-import {ConnectionStatusBar} from './models/ConnectionStatusBar';
+import {initializeVersionedServices} from './models/Bootstrap';
 import {PaletteSyntaxHighlighting} from './models/PaletteSyntaxHighlighting';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -37,7 +31,7 @@ export async function activate(context: vscode.ExtensionContext)
 	registerSyntaxHighlighting(context);
 	registerHTMLFormatter(context);
 
-	const isReady = await detectVersion(context);
+	const isReady = await initializeVersionedServices(context);
 	if (!isReady) return;
 
 	registerSettingsViewController(context);
@@ -66,24 +60,6 @@ function registerServices(context: vscode.ExtensionContext)
 		createDiagnosticReporter(),
 		createUploadStatus()
 	);
-}
-
-async function detectVersion(context: vscode.ExtensionContext): Promise<boolean>
-{
-	const version = await resolveVersion();
-	if (!version) return false;
-
-	createVersion(version);
-	createContentStrategy(version);
-	createDefinitionsStrategy(version);
-	createLwContent(version);
-
-	const activeConnection = createActiveConnection();
-	await initializeConnection(activeConnection);
-
-	context.subscriptions.push(new ConnectionStatusBar(activeConnection));
-
-	return true;
 }
 
 function setLanguageConfiguration(context: vscode.ExtensionContext)

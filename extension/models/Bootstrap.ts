@@ -1,10 +1,28 @@
+import vscode from 'vscode';
 import {Api} from './Api';
 import {FileUtil} from './FileUtil';
 import {LwContent} from './LwContent';
 import {ActiveConnection} from './ActiveConnection';
+import {ConnectionStatusBar} from './ConnectionStatusBar';
+import {createActiveConnection, createVersionedServices} from './Services';
 import {Version} from '../../common/types/Version';
 
-export async function resolveVersion(): Promise<Version | undefined>
+export async function initializeVersionedServices(context: vscode.ExtensionContext): Promise<boolean>
+{
+	const version = await resolveVersion();
+	if (!version) return false;
+
+	createVersionedServices(version);
+
+	const activeConnection = createActiveConnection();
+	await initializeConnection(activeConnection);
+
+	context.subscriptions.push(new ConnectionStatusBar(activeConnection));
+
+	return true;
+}
+
+async function resolveVersion(): Promise<Version | undefined>
 {
 	const lwDir = LwContent.dir();
 	if (!lwDir) return undefined;
@@ -19,15 +37,7 @@ export async function resolveVersion(): Promise<Version | undefined>
 	return undefined;
 }
 
-export async function defaultConnectionForV1(): Promise<string|undefined>
-{
-	const lwDir = LwContent.dir();
-	if (!lwDir) return undefined;
-
-	return (await Api.settingsAt(lwDir))?.url;
-}
-
-export async function initializeConnection(activeConnection: ActiveConnection): Promise<void>
+async function initializeConnection(activeConnection: ActiveConnection): Promise<void>
 {
 	if (activeConnection.current) return;
 
@@ -35,4 +45,12 @@ export async function initializeConnection(activeConnection: ActiveConnection): 
 	if (!url) return;
 
 	await activeConnection.set({url});
+}
+
+async function defaultConnectionForV1(): Promise<string | undefined>
+{
+	const lwDir = LwContent.dir();
+	if (!lwDir) return undefined;
+
+	return (await Api.settingsAt(lwDir))?.url;
 }

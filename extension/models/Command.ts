@@ -204,14 +204,10 @@ export class Command
 
 	public async create()
 	{
-		const uri = await ContentFile.resolveActive();
-		if (!uri) return;
+		const newPageId = await ContentFile.promptNewPageId();
+		if (!newPageId) return;
 
-		const newFileName = await ContentFile.createNewFileName(uri);
-
-		if (!newFileName) return;
-
-		await ContentFile.create(newFileName);
+		await ContentFile.create(newPageId);
 	}
 
 	public async duplicate()
@@ -219,11 +215,10 @@ export class Command
 		const uri = await ContentFile.resolveActive();
 		if (!uri) return;
 
-		const newFileName = await ContentFile.createNewFileName(uri);
+		const newPageId = await ContentFile.promptDifferentPageId(uri);
+		if (!newPageId) return;
 
-		if (!newFileName) return;
-
-		await ContentFile.duplicate(uri, newFileName);
+		await ContentFile.duplicate(uri, newPageId);
 	}
 
 	public async delete()

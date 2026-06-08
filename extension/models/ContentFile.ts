@@ -147,12 +147,25 @@ export class ContentFile
 		return undefined;
 	}
 
-	public static createNewFileName = async (uri: vscode.Uri): Promise<string> =>
+	public static promptNewPageId = async (): Promise<string | undefined> =>
+	{
+		return await vscode.window.showInputBox({
+			prompt: '新しいコンテンツIDを入力してください',
+			validateInput: value =>
+			{
+				if (!value) return '入力してください';
+				if (!/^[a-zA-Z0-9_-]+$/.test(value)) return '半角英数字、ハイフン、アンダースコアのみ使用できます';
+				return null;
+			}
+		});
+	};
+
+	public static promptDifferentPageId = async (uri: vscode.Uri): Promise<string | undefined> =>
 	{
 		const content = await ContentFile.read(uri);
-		if (!content) return '';
+		if (!content) return undefined;
 
-		const newPageId = await vscode.window.showInputBox({
+		return await vscode.window.showInputBox({
 			prompt: '新しいコンテンツIDを入力してください',
 			value: content.page_id,
 			validateInput: value =>
@@ -163,7 +176,5 @@ export class ContentFile
 				return null;
 			}
 		});
-
-		return newPageId ?? '';
 	};
 }

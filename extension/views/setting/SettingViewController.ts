@@ -162,11 +162,10 @@ export class SettingViewController
 		const uri = await ContentFile.resolveActive();
 		if (!uri) return;
 
-		const newFileName = await ContentFile.createNewFileName(uri);
+		const newPageId = await ContentFile.promptDifferentPageId(uri);
+		if (!newPageId) return;
 
-		if (!newFileName) return;
-
-		const result = await this.command.changePageId(newFileName);
+		const result = await this.command.changePageId(newPageId);
 
 		await this.webview.refresh();
 

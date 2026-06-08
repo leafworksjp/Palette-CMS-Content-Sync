@@ -137,13 +137,13 @@ export const getDefinitionsStrategy = (): DefinitionsStrategy =>
 	return definitionsStrategy;
 };
 
-export const createActiveConnection = (): ActiveConnection =>
+export const createActiveConnection = (instance: ActiveConnection): ActiveConnection =>
 {
 	if (activeConnection)
 	{
 		throw new Error('ActiveConnection is already registered.');
 	}
-	activeConnection = new ActiveConnection();
+	activeConnection = instance;
 
 	return activeConnection;
 };

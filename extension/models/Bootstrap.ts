@@ -1,52 +1,68 @@
+import vscode from 'vscode';
 import {Api} from './Api';
 import {FileUtil} from './FileUtil';
 import {LwContent} from './LwContent';
-import {ActiveConnection} from './ActiveConnection';
+import {ActiveConnection, ActiveConnectionV1, ActiveConnectionV2} from './ActiveConnection';
 import {createActiveConnection, createVersionedServices} from './Services';
 import {Version} from '../../common/types/Version';
 
-export async function initializeVersionedServices(): Promise<boolean>
+export type InitializationResult =
+	| { ok: true }
+	| { ok: false, message: string };
+
+type VersionResolution =
+	| { ok: true, version: Version, lwDir: vscode.Uri }
+	| { ok: false, message: string };
+
+export async function initializeVersionedServices(): Promise<InitializationResult>
 {
-	const version = await resolveVersion();
-	if (!version) return false;
+	const resolution = await resolveVersion();
+	if (!resolution.ok) return resolution;
 
-	createVersionedServices(version);
+	createVersionedServices(resolution.version);
 
-	const activeConnection = createActiveConnection();
-	await initializeConnection(activeConnection);
+	const activeConnection = await buildActiveConnection(resolution.version, resolution.lwDir);
+	createActiveConnection(activeConnection);
 
-	return true;
+	return {ok: true};
 }
 
-async function resolveVersion(): Promise<Version | undefined>
+async function resolveVersion(): Promise<VersionResolution>
 {
 	const lwDir = LwContent.dir();
-	if (!lwDir) return undefined;
+	if (!lwDir)
+	{
+		return {
+			ok: false,
+			message: 'ワークスペースが開かれていないため、Palette CMS Content Sync は利用できません。',
+		};
+	}
 
 	const hasV1 = Boolean(await Api.settingsAt(lwDir));
 	const hasV2 = (await FileUtil.listDirectories(lwDir)).length > 0;
 
-	if (hasV1 && hasV2) return undefined;
-	if (hasV1) return 1;
-	if (hasV2) return 2;
+	if (hasV1 && hasV2)
+	{
+		return {
+			ok: false,
+			message: '.lwcontent 配下に api.json と接続先サブディレクトリが混在しています。どちらか一方に整理して VS Code を再読み込みしてください。',
+		};
+	}
+	if (hasV1) return {ok: true, version: 1, lwDir};
+	if (hasV2) return {ok: true, version: 2, lwDir};
 
-	return undefined;
+	return {
+		ok: false,
+		message: '.lwcontent 配下に api.json または接続先サブディレクトリが必要です。配置してから VS Code を再読み込みしてください。',
+	};
 }
 
-async function initializeConnection(activeConnection: ActiveConnection): Promise<void>
+async function buildActiveConnection(version: Version, lwDir: vscode.Uri): Promise<ActiveConnection>
 {
-	if (activeConnection.current) return;
-
-	const url = await defaultConnectionForV1();
-	if (!url) return;
-
-	await activeConnection.set({url});
-}
-
-async function defaultConnectionForV1(): Promise<string | undefined>
-{
-	const lwDir = LwContent.dir();
-	if (!lwDir) return undefined;
-
-	return (await Api.settingsAt(lwDir))?.url;
+	if (version === 1)
+	{
+		const url = (await Api.settingsAt(lwDir))?.url;
+		return new ActiveConnectionV1(url);
+	}
+	return new ActiveConnectionV2();
 }

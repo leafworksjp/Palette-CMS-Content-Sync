@@ -33,8 +33,12 @@ export async function activate(context: vscode.ExtensionContext)
 	registerSyntaxHighlighting(context);
 	registerHTMLFormatter(context);
 
-	const isReady = await initializeVersionedServices();
-	if (!isReady) return;
+	const result = await initializeVersionedServices();
+	if (!result.ok)
+	{
+		vscode.window.showWarningMessage(result.message);
+		return;
+	}
 
 	registerConnectionStatusBar(context);
 	registerSettingsViewController(context);

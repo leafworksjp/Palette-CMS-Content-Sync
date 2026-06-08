@@ -1,5 +1,5 @@
 import vscode from 'vscode';
-import {ActiveConnection} from './ActiveConnection';
+import {ActiveConnection, ActiveConnectionV2} from './ActiveConnection';
 
 export class ConnectionStatusBar
 {
@@ -18,7 +18,7 @@ export class ConnectionStatusBar
 
 		this.configListener = vscode.workspace.onDidChangeConfiguration(e =>
 		{
-			if (e.affectsConfiguration(`${ActiveConnection.configSection}.${ActiveConnection.configKey}`))
+			if (e.affectsConfiguration(`${ActiveConnectionV2.configSection}.${ActiveConnectionV2.configKey}`))
 			{
 				this.refresh();
 			}

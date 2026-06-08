@@ -7,6 +7,7 @@ import {LwContent} from '../../models/LwContent';
 import {ContentFile} from '../../models/ContentFile';
 import {CodeFile} from '../../models/CodeFile';
 import {getActiveConnection, getContentStrategy, getDefinitionsStrategy, getLogger} from '../../models/Services';
+import {ActiveConnectionV2} from '../../models/ActiveConnection';
 import {ValidationError} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
 import {Failure, Success} from '../../../common/types/Result';
@@ -240,7 +241,10 @@ export class SettingViewController
 			return;
 		}
 
-		await getActiveConnection().set({url: selected.url, subdir: selected.subdir});
+		const activeConnection = getActiveConnection();
+		if (!(activeConnection instanceof ActiveConnectionV2)) return;
+
+		await activeConnection.set({url: selected.url, subdir: selected.subdir});
 
 		await this.webview.refresh();
 	}

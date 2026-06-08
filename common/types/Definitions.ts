@@ -117,7 +117,7 @@ export type Definitions = DefinitionsFor<Version>;
 
 export abstract class DefinitionsStrategy<V extends Version = Version>
 {
-	public static init(version: Version): DefinitionsStrategyV1 | DefinitionsStrategyV2
+	public static init(version: Version): DefinitionsStrategy
 	{
 		return version === 1
 			? new DefinitionsStrategyV1()

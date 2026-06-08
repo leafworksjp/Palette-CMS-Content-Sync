@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {Definitions, DefinitionsFor, DefinitionsV1, DefinitionsV2} from './Definitions';
+import {Definitions, DefinitionsFor} from './Definitions';
 import {Version} from './Version';
 
 export const zSearchQueryForWhereVal = z.union([
@@ -73,18 +73,6 @@ export type ContentV2 = z.infer<typeof zContentV2>;
 export type ContentFor<V extends Version> = V extends 1 ? ContentV1 : ContentV2;
 export type Content = ContentFor<Version>;
 
-type ContentDefaultKeys = 'id'
-	| 'page_id'
-	| 'category'
-	| 'name'
-	| 'contents_type'
-	| 'http_header_content_type'
-	| 'device_type'
-	| 'search_row';
-
-//Extract でキーを絞り込んだうえで、Pick でそのキーと値の型を持つオブジェクト型
-export type ContentDefaultsFor<V extends Version = Version> = Pick<ContentFor<V>, Extract<ContentDefaultKeys, keyof ContentFor<V>>>;
-
 type TextPropertyKeys = 'id'
 	| 'category'
 	| 'page_id'
@@ -103,17 +91,11 @@ type TextPropertyKeys = 'id'
 //TextPropertyKeys のうち ContentFor<V> に実在するキーだけを残した文字列リテラルのユニオン
 export type TextPropertiesFor<V extends Version = Version> = Extract<TextPropertyKeys, keyof ContentFor<V>>;
 
-type ConnectIdName = 'id' | 'page_id';
-//ConnectIdName のうち ContentFor<V> に実在するキーだけを残した文字列リテラルのユニオン
-export type ConnectIdNameFor<V extends Version = Version> = Extract<ConnectIdName, keyof ContentFor<V>>;
-
 export type RadioProperties = 'use_template_engine'|'state'|'role_key'|'role_key_owner'|'search_query_order_state';
 
 export type CheckBoxProperties = 'permission'|'permission_sheet'|'manager_permission_sheet'|'device_type';
 
 export type SelectProperties = 'contents_type'|'http_header_content_type'|'sheet_id'|'search_query_order_rand';
-
-export type SearchQueryProperties = 'search_query_where'|'search_query_order';
 
 export type ClientOnlyField = 'is_unsynced';
 export const clientOnlyFields: readonly ClientOnlyField[] = ['is_unsynced'];
@@ -410,7 +392,11 @@ const validateContent = <V extends Version>(
 
 export abstract class ContentStrategy<V extends Version = Version>
 {
-	public static init(version: Version): ContentStrategyV1 | ContentStrategyV2
+	//abstract メソッドの引数は Content (union) で受ける（V を引数位置に使わない）。
+	//これにより V が covariant のみで使われる形になり、
+	//ContentStrategy<1> を ContentStrategy<Version> に代入できる（invariance 回避）。
+	//サブクラスは内部で型 narrowing して V 専用の処理を実装する。
+	public static init(version: Version): ContentStrategy
 	{
 		return version === 1
 			? new ContentStrategyV1()
@@ -422,15 +408,15 @@ export abstract class ContentStrategy<V extends Version = Version>
 	public abstract parse(data: unknown): ContentFor<V>;
 	public abstract safeParse(data: unknown): z.SafeParseReturnType<ContentInputFor<V>, ContentFor<V>>;
 	public abstract create(newFileName: string): ContentFor<V>;
-	public abstract duplicate(content: ContentFor<V>, newFileName: string): ContentFor<V>;
-	public abstract serverIdField(): ConnectIdNameFor<V>;
-	public abstract serverId(content: ContentFor<V>): string;
-	public abstract isUploaded(content: ContentFor<V>): boolean;
-	public abstract uploadEndpoint(content: ContentFor<V>): string;
-	public abstract uploadMethod(content: ContentFor<V>): 'POST' | 'PUT';
+	public abstract duplicate(content: Content, newFileName: string): ContentFor<V>;
+	public abstract serverIdField(): 'id' | 'page_id';
+	public abstract serverId(content: Content): string;
+	public abstract isUploaded(content: Content): boolean;
+	public abstract uploadEndpoint(content: Content): string;
+	public abstract uploadMethod(content: Content): 'POST' | 'PUT';
 	public abstract supportsSheetRefValue(): boolean;
 
-	public serverIdParam(content: ContentFor<V>): string
+	public serverIdParam(content: Content): string
 	{
 		return `${this.serverIdField()}=${this.serverId(content)}`;
 	}
@@ -440,12 +426,12 @@ export abstract class ContentStrategy<V extends Version = Version>
 		return this.serverIdField() === 'page_id';
 	}
 
-	public validate(content: ContentFor<V>, definitions: DefinitionsFor<V>): ValidationResult
+	public validate(content: Content, definitions: Definitions): ValidationResult
 	{
 		return validateContent(content, definitions);
 	}
 
-	public toServerPayload(content: ContentFor<V>): ContentFor<V>
+	public toServerPayload(content: Content): ContentFor<V>
 	{
 		const payload = Object.fromEntries(
 			Object.entries(content).filter(([column]) => !clientOnlyFields.some(f => f === column))
@@ -458,6 +444,12 @@ export abstract class ContentStrategy<V extends Version = Version>
 export class ContentStrategyV1 extends ContentStrategy<1>
 {
 	readonly version = 1 as const;
+
+	private narrow(content: Content): ContentV1
+	{
+		if (!('id' in content)) throw new Error('ContentStrategyV1: ContentV1 expected');
+		return content;
+	}
 
 	public create(newFileName: string): ContentV1
 	{
@@ -474,9 +466,10 @@ export class ContentStrategyV1 extends ContentStrategy<1>
 		return zContentV1.safeParse(data);
 	}
 
-	public duplicate(content: ContentV1, newFileName: string): ContentV1
+	public duplicate(content: Content, newFileName: string): ContentV1
 	{
-		return zContentV1.parse({...content, id: '', page_id: newFileName, state: 0});
+		const v1 = this.narrow(content);
+		return zContentV1.parse({...v1, id: '', page_id: newFileName, state: 0});
 	}
 
 	public serverIdField(): 'id'
@@ -484,24 +477,24 @@ export class ContentStrategyV1 extends ContentStrategy<1>
 		return 'id' as const;
 	}
 
-	public serverId(content: ContentV1): string
+	public serverId(content: Content): string
 	{
-		return content.id;
+		return this.narrow(content).id;
 	}
 
-	public isUploaded(content: ContentV1): boolean
+	public isUploaded(content: Content): boolean
 	{
-		return Boolean(content.id);
+		return Boolean(this.narrow(content).id);
 	}
 
-	public uploadEndpoint(content: ContentV1): string
+	public uploadEndpoint(content: Content): string
 	{
-		return content.id ? 'update' : 'create';
+		return this.narrow(content).id ? 'update' : 'create';
 	}
 
-	public uploadMethod(content: ContentV1): 'POST' | 'PUT'
+	public uploadMethod(content: Content): 'POST' | 'PUT'
 	{
-		return content.id ? 'PUT' : 'POST';
+		return this.narrow(content).id ? 'PUT' : 'POST';
 	}
 
 	public supportsSheetRefValue(): boolean
@@ -513,6 +506,12 @@ export class ContentStrategyV1 extends ContentStrategy<1>
 export class ContentStrategyV2 extends ContentStrategy<2>
 {
 	readonly version = 2 as const;
+
+	private narrow(content: Content): ContentV2
+	{
+		if ('id' in content) throw new Error('ContentStrategyV2: ContentV2 expected');
+		return content;
+	}
 
 	public create(newFileName: string): ContentV2
 	{
@@ -529,9 +528,10 @@ export class ContentStrategyV2 extends ContentStrategy<2>
 		return zContentV2.safeParse(data);
 	}
 
-	public duplicate(content: ContentV2, newFileName: string): ContentV2
+	public duplicate(content: Content, newFileName: string): ContentV2
 	{
-		return zContentV2.parse({...content, page_id: newFileName, state: 0, is_unsynced: true});
+		const v2 = this.narrow(content);
+		return zContentV2.parse({...v2, page_id: newFileName, state: 0, is_unsynced: true});
 	}
 
 	public serverIdField(): 'page_id'
@@ -539,17 +539,17 @@ export class ContentStrategyV2 extends ContentStrategy<2>
 		return 'page_id' as const;
 	}
 
-	public serverId(content: ContentV2): string
+	public serverId(content: Content): string
 	{
-		return content.page_id;
+		return this.narrow(content).page_id;
 	}
 
-	public isUploaded(content: ContentV2): boolean
+	public isUploaded(content: Content): boolean
 	{
-		return !content.is_unsynced;
+		return !this.narrow(content).is_unsynced;
 	}
 
-	public uploadEndpoint(_content: ContentV2): string
+	public uploadEndpoint(_content: Content): string
 	{
 		return 'upsert';
 	}

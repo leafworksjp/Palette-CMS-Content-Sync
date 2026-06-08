@@ -5,7 +5,7 @@ import {FileUtil} from './FileUtil';
 import {ApiResult} from '../../common/types/ApiResult';
 import {Is} from '../../common/types/Is';
 import {zCompileErrors} from '../../common/types/CompileErrors';
-import {getLogger, getContentContext, getDefinitionsContext, getLwContent} from './Services';
+import {getLogger, getContentStrategy, getDefinitionsStrategy, getLwContent} from './Services';
 import {Content} from '../../common/types/Content';
 import {Code} from '../../common/types/Code';
 
@@ -32,11 +32,11 @@ export class Api
 
 	public static async upload(content: Content, codeList: Code[])
 	{
-		const contentContext = getContentContext();
-		const endpoint = contentContext.uploadEndpoint(content);
-		const method = contentContext.uploadMethod(content);
+		const contentStrategy = getContentStrategy();
+		const endpoint = contentStrategy.uploadEndpoint(content);
+		const method = contentStrategy.uploadMethod(content);
 		const body = JSON.stringify({
-			contents: contentContext.toServerPayload(content),
+			contents: contentStrategy.toServerPayload(content),
 			contents_html: codeList
 		});
 
@@ -59,7 +59,7 @@ export class Api
 			}
 			else
 			{
-				const zResult = contentContext.safeParse(result.value.contents);
+				const zResult = contentStrategy.safeParse(result.value.contents);
 				if (zResult.success)
 				{
 					return ApiResult.success({content: zResult.data});
@@ -79,12 +79,12 @@ export class Api
 
 	public static async download(content: Content)
 	{
-		const contentContext = getContentContext();
-		const result = await Api.fetch(`info?${contentContext.connectParam(content)}`, 'GET');
+		const contentStrategy = getContentStrategy();
+		const result = await Api.fetch(`info?${contentStrategy.serverIdParam(content)}`, 'GET');
 
 		if (result.isSuccess())
 		{
-			const zResult = contentContext.safeParse(result.value.contents);
+			const zResult = contentStrategy.safeParse(result.value.contents);
 			if (zResult.success)
 			{
 				return ApiResult.success({
@@ -106,7 +106,7 @@ export class Api
 
 	public static async delete(content: Content)
 	{
-		const result = await Api.fetch(`delete?${getContentContext().connectParam(content)}`, 'DELETE');
+		const result = await Api.fetch(`delete?${getContentStrategy().serverIdParam(content)}`, 'DELETE');
 
 		if (result.isSuccess())
 		{
@@ -120,7 +120,7 @@ export class Api
 
 	public static async changePageId(content: Content, newPageId: string)
 	{
-		const contentContext = getContentContext();
+		const contentStrategy = getContentStrategy();
 		const body = JSON.stringify({
 			contents: {page_id: newPageId}
 		});
@@ -128,7 +128,7 @@ export class Api
 
 		if (result.isSuccess())
 		{
-			const zResult = contentContext.safeParse(result.value.contents);
+			const zResult = contentStrategy.safeParse(result.value.contents);
 			if (zResult.success)
 			{
 				return ApiResult.success({content: zResult.data});
@@ -147,7 +147,7 @@ export class Api
 
 	public static async getVariables(content: Content)
 	{
-		const result = await Api.fetch(`variables?${getContentContext().connectParam(content)}`, 'GET');
+		const result = await Api.fetch(`variables?${getContentStrategy().serverIdParam(content)}`, 'GET');
 
 		if (result.isSuccess())
 		{
@@ -169,7 +169,7 @@ export class Api
 
 	public static async getSnippets(content: Content)
 	{
-		const result = await Api.fetch(`snippets?${getContentContext().connectParam(content)}`, 'GET');
+		const result = await Api.fetch(`snippets?${getContentStrategy().serverIdParam(content)}`, 'GET');
 
 		if (result.isSuccess())
 		{
@@ -195,7 +195,7 @@ export class Api
 
 		if (result.isSuccess())
 		{
-			const zResult = getDefinitionsContext().safeParse(result.value.definitions);
+			const zResult = getDefinitionsStrategy().safeParse(result.value.definitions);
 			if (zResult.success)
 			{
 				return ApiResult.success(zResult.data);

@@ -1,5 +1,4 @@
 import {
-	ContentContext,
 	ContentStrategyV2,
 	zContentV2,
 } from '../types/Content';
@@ -67,17 +66,17 @@ const baseContentData = {
 	search_query_order: [{col: 'date', operator: 'DESC'}],
 };
 
-const context = new ContentContext(new ContentStrategyV2());
+const strategy = new ContentStrategyV2();
 const definitions = zDefinitionsV2.parse(baseDefinitionsData);
 
-describe('ContentContext.validate', () =>
+describe('ContentStrategy.validate', () =>
 {
 	describe('正常系', () =>
 	{
 		test('整合する content / definitions で valid: true', () =>
 		{
 			const content = zContentV2.parse(baseContentData);
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(true);
 			expect(result.errors).toEqual([]);
 		});
@@ -88,7 +87,7 @@ describe('ContentContext.validate', () =>
 		test('contents_type 自体が定義にない → エラー', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, contents_type: 'nonexistent_type'});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(false);
 			expect(result.errors[0].field).toBe('contents_type');
 			expect(result.errors[0].reason).toBe('invalid_value');
@@ -100,7 +99,7 @@ describe('ContentContext.validate', () =>
 		test('単一値 (state) が許可リストにない', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, state: 999});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(false);
 			expect(result.errors.some(e => e.field === 'state' && e.value === 999 && e.reason === 'invalid_value')).toBe(true);
 		});
@@ -108,7 +107,7 @@ describe('ContentContext.validate', () =>
 		test('配列値 (permission) の一部要素が許可リストにない', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, permission: ['nobody', 'admin']});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(false);
 			expect(result.errors.some(e => e.field === 'permission' && e.value === 'admin' && e.reason === 'invalid_value')).toBe(true);
 		});
@@ -116,7 +115,7 @@ describe('ContentContext.validate', () =>
 		test('配列値 (device_type) の一部要素が許可リストにない', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, device_type: ['pc', 'tablet']});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(false);
 			expect(result.errors.some(e => e.field === 'device_type' && e.value === 'tablet')).toBe(true);
 		});
@@ -130,7 +129,7 @@ describe('ContentContext.validate', () =>
 				...baseContentData,
 				search_query_where: [{col: 'unknown_col', operator: '=', val: 'x'}],
 			});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(false);
 			expect(result.errors.some(e => e.field === 'search_query_where.col' && e.value === 'unknown_col' && e.reason === 'unknown_col')).toBe(true);
 		});
@@ -141,7 +140,7 @@ describe('ContentContext.validate', () =>
 				...baseContentData,
 				search_query_where: [{col: 'pre', operator: '~~', val: 'x'}],
 			});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(false);
 			expect(result.errors.some(e => e.field === 'search_query_where.operator' && e.value === '~~' && e.reason === 'invalid_value')).toBe(true);
 		});
@@ -152,7 +151,7 @@ describe('ContentContext.validate', () =>
 				...baseContentData,
 				search_query_where: [{col: 'pre', operator: '=', val: {sheet: 'whatever', col: 'whatever'}}],
 			});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(true);
 		});
 
@@ -162,7 +161,7 @@ describe('ContentContext.validate', () =>
 				...baseContentData,
 				search_query_where: [{col: '', operator: '=', val: ''}],
 			});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(true);
 		});
 
@@ -172,7 +171,7 @@ describe('ContentContext.validate', () =>
 				...baseContentData,
 				search_query_where: [{col: 'pre', operator: '', val: ''}],
 			});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(true);
 		});
 	});
@@ -185,7 +184,7 @@ describe('ContentContext.validate', () =>
 				...baseContentData,
 				search_query_order: [{col: 'unknown_col', operator: 'ASC'}],
 			});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(false);
 			expect(result.errors.some(e => e.field === 'search_query_order.col' && e.value === 'unknown_col' && e.reason === 'unknown_col')).toBe(true);
 		});
@@ -196,7 +195,7 @@ describe('ContentContext.validate', () =>
 				...baseContentData,
 				search_query_order: [{col: 'date', operator: 'RANDOM'}],
 			});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(false);
 			expect(result.errors.some(e => e.field === 'search_query_order.operator' && e.value === 'RANDOM')).toBe(true);
 		});
@@ -207,7 +206,7 @@ describe('ContentContext.validate', () =>
 				...baseContentData,
 				search_query_order: [{col: '', operator: 'ASC'}],
 			});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(true);
 		});
 	});
@@ -217,7 +216,7 @@ describe('ContentContext.validate', () =>
 		test('name に任意文字列が入っていても valid', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, name: '何でもいいテキスト'});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(true);
 		});
 	});
@@ -227,7 +226,7 @@ describe('ContentContext.validate', () =>
 		test('is_unsynced: true でも valid', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, is_unsynced: true});
-			const result = context.validate(content, definitions);
+			const result = strategy.validate(content, definitions);
 			expect(result.valid).toBe(true);
 		});
 	});

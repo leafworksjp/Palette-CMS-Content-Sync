@@ -11,8 +11,8 @@ import {
 	createConnection,
 	createLwContent,
 	createVersion,
-	createContentContext,
-	createDefinitionsContext,
+	createContentStrategy,
+	createDefinitionsStrategy,
 	unregisterServices,
 } from './models/Services';
 import {resolveVersion, initializeConnection} from './models/Bootstrap';
@@ -73,8 +73,8 @@ async function detectVersion(context: vscode.ExtensionContext): Promise<boolean>
 	if (!version) return false;
 
 	createVersion(version);
-	createContentContext(version);
-	createDefinitionsContext(version);
+	createContentStrategy(version);
+	createDefinitionsStrategy(version);
 	createLwContent(version);
 
 	const connection = createConnection();

@@ -1,7 +1,7 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, ContentContext} from '../../common/types/Content';
-import {Definitions, DefinitionsContext} from '../../common/types/Definitions';
+import {Content, ContentStrategy} from '../../common/types/Content';
+import {Definitions, DefinitionsStrategy} from '../../common/types/Definitions';
 import {zVersion} from '../../common/types/Version';
 import {Form} from './Form';
 import {Welcome} from './Welcome';
@@ -12,7 +12,7 @@ export const App = () =>
 	const [definitions, setDefinitions] = React.useState<Definitions|undefined>();
 	const [fileName, setFileName] = React.useState<string>('');
 	const [url, setUrl] = React.useState<string|undefined>();
-	const [contentContext, setContentContext] = React.useState<ContentContext|undefined>();
+	const [contentStrategy, setContentStrategy] = React.useState<ContentStrategy|undefined>();
 
 	React.useEffect(() =>
 	{
@@ -26,13 +26,13 @@ export const App = () =>
 						const versionResult = zVersion.safeParse(message.value.version);
 						if (!versionResult.success) break;
 
-						const viewContentContext = ContentContext.init(versionResult.data);
-						const viewDefinitionsContext = DefinitionsContext.init(versionResult.data);
+						const viewContentStrategy = ContentStrategy.init(versionResult.data);
+						const viewDefinitionsStrategy = DefinitionsStrategy.init(versionResult.data);
 
-						const contentResult = viewContentContext.safeParse(message.value.content);
-						const definitionsResult = viewDefinitionsContext.safeParse(message.value.definitions);
+						const contentResult = viewContentStrategy.safeParse(message.value.content);
+						const definitionsResult = viewDefinitionsStrategy.safeParse(message.value.definitions);
 
-						setContentContext(viewContentContext);
+						setContentStrategy(viewContentStrategy);
 
 						if (contentResult.success)
 						{
@@ -56,7 +56,7 @@ export const App = () =>
 		Dispatcher.onLoad();
 	}, []);
 
-	return content && definitions && contentContext && url
-		? <Form contentContext={contentContext} content={content} definitions={definitions} fileName={fileName} url={url} />
+	return content && definitions && contentStrategy && url
+		? <Form contentStrategy={contentStrategy} content={content} definitions={definitions} fileName={fileName} url={url} />
 		: <Welcome />;
 };

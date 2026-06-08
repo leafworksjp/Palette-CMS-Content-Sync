@@ -408,62 +408,93 @@ const validateContent = <V extends Version>(
 	return {valid: errors.length === 0, errors};
 };
 
-export interface ContentStrategy<V extends Version = Version>
+export abstract class ContentStrategy<V extends Version = Version>
 {
-	readonly version: V;
-	parse(data: unknown): ContentFor<V>;
-	safeParse(data: unknown): z.SafeParseReturnType<ContentInputFor<V>, ContentFor<V>>;
-	createContent(newFileName: string): ContentDefaultsFor<V>;
-	duplicateContent(content: ContentFor<V>, newFileName: string): ContentFor<V>;
-	connectIdName(): ConnectIdNameFor<V>;
-	connectId(content: ContentFor<V>): string;
-	isUploaded(content: ContentFor<V>): boolean;
-	uploadEndpoint(content: ContentFor<V>): string;
-	uploadMethod(content: ContentFor<V>): 'POST' | 'PUT';
-	supportsSheetRefVal(): boolean;
-	validate(content: ContentFor<V>, definitions: DefinitionsFor<V>): ValidationResult;
+	public static init(version: Version): ContentStrategyV1 | ContentStrategyV2
+	{
+		return version === 1
+			? new ContentStrategyV1()
+			: new ContentStrategyV2();
+	}
+
+	abstract readonly version: V;
+
+	public abstract parse(data: unknown): ContentFor<V>;
+	public abstract safeParse(data: unknown): z.SafeParseReturnType<ContentInputFor<V>, ContentFor<V>>;
+	public abstract create(newFileName: string): ContentFor<V>;
+	public abstract duplicate(content: ContentFor<V>, newFileName: string): ContentFor<V>;
+	public abstract serverIdField(): ConnectIdNameFor<V>;
+	public abstract serverId(content: ContentFor<V>): string;
+	public abstract isUploaded(content: ContentFor<V>): boolean;
+	public abstract uploadEndpoint(content: ContentFor<V>): string;
+	public abstract uploadMethod(content: ContentFor<V>): 'POST' | 'PUT';
+	public abstract supportsSheetRefValue(): boolean;
+
+	public serverIdParam(content: ContentFor<V>): string
+	{
+		return `${this.serverIdField()}=${this.serverId(content)}`;
+	}
+
+	public isPageIdServerIdentifier(): boolean
+	{
+		return this.serverIdField() === 'page_id';
+	}
+
+	public validate(content: ContentFor<V>, definitions: DefinitionsFor<V>): ValidationResult
+	{
+		return validateContent(content, definitions);
+	}
+
+	public toServerPayload(content: ContentFor<V>): ContentFor<V>
+	{
+		const payload = Object.fromEntries(
+			Object.entries(content).filter(([column]) => !clientOnlyFields.some(f => f === column))
+		);
+
+		return this.parse(payload);
+	}
 }
 
-export class ContentStrategyV1 implements ContentStrategy<1>
+export class ContentStrategyV1 extends ContentStrategy<1>
 {
 	readonly version = 1 as const;
 
-	public createContent(newFileName: string)
+	public create(newFileName: string): ContentV1
 	{
-		return {id: '', ...baseDefaults(newFileName)};
+		return zContentV1.parse({id: '', ...baseDefaults(newFileName)});
 	}
 
-	public parse(data: unknown)
+	public parse(data: unknown): ContentV1
 	{
 		return zContentV1.parse(data);
 	}
 
-	public safeParse(data: unknown)
+	public safeParse(data: unknown): z.SafeParseReturnType<ContentInputFor<1>, ContentV1>
 	{
 		return zContentV1.safeParse(data);
 	}
 
-	public duplicateContent(content: ContentV1, newFileName: string)
+	public duplicate(content: ContentV1, newFileName: string): ContentV1
 	{
-		return {...content, id: '', page_id: newFileName, state: 0};
+		return zContentV1.parse({...content, id: '', page_id: newFileName, state: 0});
 	}
 
-	public connectIdName()
+	public serverIdField(): 'id'
 	{
 		return 'id' as const;
 	}
 
-	public connectId(content: ContentV1)
+	public serverId(content: ContentV1): string
 	{
 		return content.id;
 	}
 
-	public isUploaded(content: ContentV1)
+	public isUploaded(content: ContentV1): boolean
 	{
 		return Boolean(content.id);
 	}
 
-	public uploadEndpoint(content: ContentV1)
+	public uploadEndpoint(content: ContentV1): string
 	{
 		return content.id ? 'update' : 'create';
 	}
@@ -473,57 +504,52 @@ export class ContentStrategyV1 implements ContentStrategy<1>
 		return content.id ? 'PUT' : 'POST';
 	}
 
-	public supportsSheetRefVal()
+	public supportsSheetRefValue(): boolean
 	{
 		return false;
 	}
-
-	public validate(content: ContentV1, definitions: DefinitionsV1)
-	{
-		return validateContent(content, definitions);
-	}
 }
 
-export class ContentStrategyV2 implements ContentStrategy<2>
+export class ContentStrategyV2 extends ContentStrategy<2>
 {
 	readonly version = 2 as const;
 
-	public createContent(newFileName: string)
+	public create(newFileName: string): ContentV2
 	{
-		return {...baseDefaults(newFileName), is_unsynced: true};
+		return zContentV2.parse({...baseDefaults(newFileName), is_unsynced: true});
 	}
 
-	public parse(data: unknown)
+	public parse(data: unknown): ContentV2
 	{
 		return zContentV2.parse(data);
 	}
 
-	public safeParse(data: unknown)
+	public safeParse(data: unknown): z.SafeParseReturnType<ContentInputFor<2>, ContentV2>
 	{
 		return zContentV2.safeParse(data);
 	}
 
-	public duplicateContent(content: ContentV2, newFileName: string)
+	public duplicate(content: ContentV2, newFileName: string): ContentV2
 	{
-		return {...content, page_id: newFileName, state: 0, is_unsynced: true};
+		return zContentV2.parse({...content, page_id: newFileName, state: 0, is_unsynced: true});
 	}
 
-	public connectIdName()
+	public serverIdField(): 'page_id'
 	{
 		return 'page_id' as const;
 	}
 
-	public connectId(content: ContentV2)
+	public serverId(content: ContentV2): string
 	{
 		return content.page_id;
 	}
 
-	public isUploaded(content: ContentV2)
+	public isUploaded(content: ContentV2): boolean
 	{
 		return !content.is_unsynced;
 	}
 
-	public uploadEndpoint(_content: ContentV2)
+	public uploadEndpoint(_content: ContentV2): string
 	{
 		return 'upsert';
 	}
@@ -533,104 +559,8 @@ export class ContentStrategyV2 implements ContentStrategy<2>
 		return 'PUT';
 	}
 
-	public supportsSheetRefVal()
+	public supportsSheetRefValue(): boolean
 	{
 		return true;
-	}
-
-	public validate(content: ContentV2, definitions: DefinitionsV2)
-	{
-		return validateContent(content, definitions);
-	}
-}
-
-export class ContentContext<V extends Version = Version>
-{
-	public static init(version: Version)
-	{
-		return version === 1
-			? new ContentContext(new ContentStrategyV1())
-			: new ContentContext(new ContentStrategyV2());
-	}
-
-	constructor(public strategy: ContentStrategy<V>) {}
-
-	public get version(): V
-	{
-		return this.strategy.version;
-	}
-
-	public createContent(newFileName: string): ContentDefaultsFor<V>
-	{
-		return this.strategy.createContent(newFileName);
-	}
-
-	public parse(data: unknown): ContentFor<V>
-	{
-		return this.strategy.parse(data);
-	}
-
-	public safeParse(data: unknown): z.SafeParseReturnType<ContentInputFor<V>, ContentFor<V>>
-	{
-		return this.strategy.safeParse(data);
-	}
-
-	public duplicateContent(content: ContentFor<V>, newFileName: string): ContentFor<V>
-	{
-		return this.strategy.duplicateContent(content, newFileName);
-	}
-
-	public connectIdName(): ConnectIdNameFor<V>
-	{
-		return this.strategy.connectIdName();
-	}
-
-	public connectId(content: ContentFor<V>): string
-	{
-		return this.strategy.connectId(content);
-	}
-
-	public connectParam(content: ContentFor<V>): string
-	{
-		return `${this.strategy.connectIdName()}=${this.strategy.connectId(content)}`;
-	}
-
-	public isPageIdServerIdentifier(): boolean
-	{
-		return this.strategy.connectIdName() === 'page_id';
-	}
-
-	public isUploaded(content: ContentFor<V>): boolean
-	{
-		return this.strategy.isUploaded(content);
-	}
-
-	public uploadEndpoint(content: ContentFor<V>): string
-	{
-		return this.strategy.uploadEndpoint(content);
-	}
-
-	public uploadMethod(content: ContentFor<V>): 'POST' | 'PUT'
-	{
-		return this.strategy.uploadMethod(content);
-	}
-
-	public supportsSheetRefVal(): boolean
-	{
-		return this.strategy.supportsSheetRefVal();
-	}
-
-	public validate(content: ContentFor<V>, definitions: DefinitionsFor<V>): ValidationResult
-	{
-		return this.strategy.validate(content, definitions);
-	}
-
-	public toServerPayload(content: ContentFor<V>): ContentFor<V>
-	{
-		const payload = Object.fromEntries(
-			Object.entries(content).filter(([column]) => !clientOnlyFields.some(f => f === column))
-		);
-
-		return this.strategy.parse(payload);
 	}
 }

@@ -1,6 +1,6 @@
 import {FileUtil} from './FileUtil';
 import {Definitions} from '../../common/types/Definitions';
-import {getLogger, getDefinitionsContext, getLwContent} from './Services';
+import {getLogger, getDefinitionsStrategy, getLwContent} from './Services';
 
 export class DefinitionsFile
 {
@@ -22,7 +22,7 @@ export class DefinitionsFile
 		{
 			const data = JSON.parse(await FileUtil.readFile(uri));
 
-			return getDefinitionsContext().parse(data);
+			return getDefinitionsStrategy().parse(data);
 		}
 		catch (error)
 		{

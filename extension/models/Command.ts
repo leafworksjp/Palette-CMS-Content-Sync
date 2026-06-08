@@ -6,7 +6,7 @@ import {CodeFile} from './CodeFile';
 import {JsonFile} from './JsonFile';
 import {ApiResult} from '../../common/types/ApiResult';
 import {Locale} from '../locales/ja';
-import {getHotReloadServer, getUploadStatus, getContentContext} from './Services';
+import {getHotReloadServer, getUploadStatus, getContentStrategy} from './Services';
 
 export class Command
 {
@@ -249,7 +249,7 @@ export class Command
 	{
 		const content = await ContentFile.read();
 
-		if (!content || !getContentContext().isUploaded(content))
+		if (!content || !getContentStrategy().isUploaded(content))
 		{
 			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
 		}
@@ -272,7 +272,7 @@ export class Command
 	{
 		const content = await ContentFile.read();
 
-		if (!content || !getContentContext().isUploaded(content))
+		if (!content || !getContentStrategy().isUploaded(content))
 		{
 			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
 		}
@@ -318,18 +318,18 @@ export class Command
 
 	public async changePageId(newPageId: string)
 	{
-		const contentContext = getContentContext();
+		const contentStrategy = getContentStrategy();
 
 		const content = await ContentFile.read();
 
 		if (!content) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
-		if (!contentContext.isUploaded(content))
+		if (!contentStrategy.isUploaded(content))
 		{
 			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
 		}
 
-		if (contentContext.isPageIdServerIdentifier())
+		if (contentStrategy.isPageIdServerIdentifier())
 		{
 			const result = await Api.changePageId(content, newPageId);
 			if (!result.isSuccess()) return result;

@@ -6,7 +6,7 @@ import {FileUtil} from '../../models/FileUtil';
 import {LwContent} from '../../models/LwContent';
 import {ContentFile} from '../../models/ContentFile';
 import {CodeFile} from '../../models/CodeFile';
-import {getConnection, getContentContext, getDefinitionsContext, getLogger} from '../../models/Services';
+import {getConnection, getContentStrategy, getDefinitionsStrategy, getLogger} from '../../models/Services';
 import {ValidationError} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
 import {Failure, Success} from '../../../common/types/Result';
@@ -169,7 +169,7 @@ export class SettingViewController
 
 		this.showMessages(result);
 
-		if (result.isSuccess() && !getContentContext().isPageIdServerIdentifier())
+		if (result.isSuccess() && !getContentStrategy().isPageIdServerIdentifier())
 		{
 			const uploadNow = {title: 'はい(他の変更も送信されます)', isCloseAffordance: false};
 			const later = {title: '後で手動でアップロード', isCloseAffordance: true};
@@ -256,13 +256,13 @@ export class SettingViewController
 		if (!newDefinitions) return undefined;
 
 		const contentFiles = await vscode.workspace.findFiles('**/contents.json', '**/node_modules/**');
-		const contentContext = getContentContext();
+		const contentStrategy = getContentStrategy();
 
 		return (await Promise.all(contentFiles.map(async uri =>
 		{
 			const content = await ContentFile.read(uri);
 			if (!content) return [];
-			const result = contentContext.validate(content, newDefinitions);
+			const result = contentStrategy.validate(content, newDefinitions);
 			return result.errors.map(e => ({...e, contentPath: uri.fsPath}));
 		}))).flat();
 	}
@@ -272,7 +272,7 @@ export class SettingViewController
 		try
 		{
 			const data = JSON.parse(await FileUtil.readFile(uri));
-			return getDefinitionsContext().parse(data);
+			return getDefinitionsStrategy().parse(data);
 		}
 		catch (error)
 		{

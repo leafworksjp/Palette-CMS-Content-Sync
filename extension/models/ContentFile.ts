@@ -2,7 +2,7 @@ import vscode from 'vscode';
 import {FileUtil} from './FileUtil';
 import {DefinitionsFile} from '../models/DefinitionsFile';
 import {Content, getColumns, clientOnlyFields} from '../../common/types/Content';
-import {getLogger, getContentContext} from './Services';
+import {getLogger, getContentStrategy} from './Services';
 
 export class ContentFile
 {
@@ -17,7 +17,7 @@ export class ContentFile
 		try
 		{
 			const data = JSON.parse(await FileUtil.readFile(contentFile));
-			const content = getContentContext().parse(data);
+			const content = getContentStrategy().parse(data);
 
 			const definitions = await DefinitionsFile.read();
 			const allowedFields = definitions ? getColumns(definitions, content) : undefined;
@@ -78,7 +78,7 @@ export class ContentFile
 		FileUtil.createDirectory(dirPath);
 		FileUtil.createDirectory(FileUtil.join(dirPath, 'src'));
 
-		const content = getContentContext().createContent(newFileName);
+		const content = getContentStrategy().create(newFileName);
 		const data = JSON.stringify(content, undefined, 4);
 
 		const contentFile = FileUtil.join(dirPath, ContentFile.fileName);
@@ -104,7 +104,7 @@ export class ContentFile
 		const content = await ContentFile.read(targetContentFile);
 		if (!content) return;
 
-		const duplicated = getContentContext().duplicateContent(content, newFileName);
+		const duplicated = getContentStrategy().duplicate(content, newFileName);
 		await FileUtil.writeFile(targetContentFile, JSON.stringify(duplicated, undefined, 4));
 
 		await FileUtil.openFileInEditor(targetContentFile);

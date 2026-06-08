@@ -1,18 +1,18 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, ContentContext, SearchQueryForWhere, getColumns, getColumnName, getSearchQueryOptions} from '../../common/types/Content';
+import {Content, ContentStrategy, SearchQueryForWhere, getColumns, getColumnName, getSearchQueryOptions} from '../../common/types/Content';
 import {Definitions} from '../../common/types/Definitions';
 
 type SearchInputsProps =
 {
-	contentContext: ContentContext,
+	contentStrategy: ContentStrategy,
 	content: Content,
 	definitions: Definitions,
 };
 
 const name = 'search_query_where';
 
-export const SearchInputs = ({contentContext, content, definitions}: SearchInputsProps) =>
+export const SearchInputs = ({contentStrategy, content, definitions}: SearchInputsProps) =>
 {
 	const [queries, setQueries] = React.useState(content.search_query_where);
 
@@ -41,24 +41,24 @@ export const SearchInputs = ({contentContext, content, definitions}: SearchInput
 					queries?.map((query, index) =>
 					{
 						const key = `search_input.${index}`;
-						return <SearchInput key={key} index={index} query={query} contentContext={contentContext} content={content} definitions={definitions} />;
+						return <SearchInput key={key} index={index} query={query} contentStrategy={contentStrategy} content={content} definitions={definitions} />;
 					})
 				}
 			</dd>
 		</dl>);
 };
 
-const SearchInput = ({index, query, contentContext, definitions, content}: {
+const SearchInput = ({index, query, contentStrategy, definitions, content}: {
 	index: number,
 	query: SearchQueryForWhere,
-	contentContext: ContentContext,
+	contentStrategy: ContentStrategy,
 	content: Content,
 	definitions: Definitions,
 }) => (
 	<div className="setting setting--search" key={`search_query_where.${index}`}>
 		<SelectCol index={index} query={query} content={content} definitions={definitions}/>
 		<SelectOperator index={index} query={query} definitions={definitions}/>
-		<ValInput index={index} query={query} contentContext={contentContext}/>
+		<ValInput index={index} query={query} contentStrategy={contentStrategy}/>
 		<div className="btn">
 			<div className="btn__add" onClick={() => Dispatcher.addSearchQuery(index)}>＋</div>
 			<div className="btn__subtract" onClick={() => Dispatcher.deleteSearchQuery(index)}>ー</div>
@@ -148,10 +148,10 @@ type ValKind = typeof valKindOptions[number];
 
 const isValKind = (value: string): value is ValKind => valKindOptions.some((k:string) => k === value);
 
-const ValInput = ({index, query, contentContext}: {
+const ValInput = ({index, query, contentStrategy}: {
 	index:number,
 	query: SearchQueryForWhere,
-	contentContext: ContentContext,
+	contentStrategy: ContentStrategy,
 }) =>
 {
 	const initial = parseVal(query.val);
@@ -195,7 +195,7 @@ const ValInput = ({index, query, contentContext}: {
 		updateValue();
 	};
 
-	if (!contentContext.supportsSheetRefVal())
+	if (!contentStrategy.supportsSheetRefValue())
 	{
 		return (
 			<input

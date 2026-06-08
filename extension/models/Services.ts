@@ -5,8 +5,8 @@ import {Logger} from './Logger';
 import {UploadStatus} from './UploadStatus';
 import {WebSocketServer} from './WebSocketServer';
 import {Version} from '../../common/types/Version';
-import {ContentContext} from '../../common/types/Content';
-import {DefinitionsContext} from '../../common/types/Definitions';
+import {ContentStrategy} from '../../common/types/Content';
+import {DefinitionsStrategy} from '../../common/types/Definitions';
 
 let hotReloadServer: WebSocketServer | undefined = undefined;
 let logger: Logger| undefined = undefined;
@@ -14,8 +14,8 @@ let diagnosticReporter: DiagnosticReporter | undefined = undefined;
 let uploadStatus: UploadStatus | undefined = undefined;
 let connection: Connection | undefined = undefined;
 let lwContent: LwContent | undefined = undefined;
-let contentContext: ContentContext | undefined = undefined;
-let definitionsContext: DefinitionsContext | undefined = undefined;
+let contentStrategy: ContentStrategy | undefined = undefined;
+let definitionsStrategy: DefinitionsStrategy | undefined = undefined;
 let currentVersion: Version | undefined = undefined;
 
 export const createHotReloadServer = (): WebSocketServer =>
@@ -118,46 +118,46 @@ export const getVersion = (): Version =>
 	return currentVersion;
 };
 
-export const createContentContext = (version: Version): ContentContext =>
+export const createContentStrategy = (version: Version): ContentStrategy =>
 {
-	if (contentContext)
+	if (contentStrategy)
 	{
-		throw new Error('ContentContext is already registered.');
+		throw new Error('ContentStrategy is already registered.');
 	}
 
-	contentContext = ContentContext.init(version);
+	contentStrategy = ContentStrategy.init(version);
 
-	return contentContext;
+	return contentStrategy;
 };
 
-export const getContentContext = (): ContentContext =>
+export const getContentStrategy = (): ContentStrategy =>
 {
-	if (!contentContext)
+	if (!contentStrategy)
 	{
-		throw new Error('ContentContext is not registered.');
+		throw new Error('ContentStrategy is not registered.');
 	}
-	return contentContext;
+	return contentStrategy;
 };
 
-export const createDefinitionsContext = (version: Version): DefinitionsContext =>
+export const createDefinitionsStrategy = (version: Version): DefinitionsStrategy =>
 {
-	if (definitionsContext)
+	if (definitionsStrategy)
 	{
-		throw new Error('DefinitionsContext is already registered.');
+		throw new Error('DefinitionsStrategy is already registered.');
 	}
 
-	definitionsContext = DefinitionsContext.init(version);
+	definitionsStrategy = DefinitionsStrategy.init(version);
 
-	return definitionsContext;
+	return definitionsStrategy;
 };
 
-export const getDefinitionsContext = (): DefinitionsContext =>
+export const getDefinitionsStrategy = (): DefinitionsStrategy =>
 {
-	if (!definitionsContext)
+	if (!definitionsStrategy)
 	{
-		throw new Error('DefinitionsContext is not registered.');
+		throw new Error('DefinitionsStrategy is not registered.');
 	}
-	return definitionsContext;
+	return definitionsStrategy;
 };
 
 export const createConnection = (): Connection =>
@@ -208,7 +208,7 @@ export const unregisterServices = (): void =>
 	uploadStatus = undefined;
 	connection = undefined;
 	lwContent = undefined;
-	contentContext = undefined;
-	definitionsContext = undefined;
+	contentStrategy = undefined;
+	definitionsStrategy = undefined;
 	currentVersion = undefined;
 };

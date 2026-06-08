@@ -109,11 +109,6 @@ export type ValidationError = {
 	reason: ValidationErrorReason,
 };
 
-export type ValidationResult = {
-	valid: boolean,
-	errors: ValidationError[],
-};
-
 export const baseDefaults = (newFileName: string) => ({
 	category: '未設定',
 	page_id: newFileName,
@@ -302,7 +297,7 @@ const enumFieldsForValidation: ReadonlyArray<RadioProperties | SelectProperties 
 const validateContent = <V extends Version>(
 	content: ContentFor<V>,
 	definitions: DefinitionsFor<V>
-): ValidationResult =>
+): ValidationError[] =>
 {
 	const allowedFields = getColumns(definitions, content);
 
@@ -310,14 +305,11 @@ const validateContent = <V extends Version>(
 	//テスト: common/tests/validateContent.test.ts > "R1: フィールド許可チェック (unknown_field)" > "contents_type 自体が定義にない → エラー"
 	if (!allowedFields)
 	{
-		return {
-			valid: false,
-			errors: [{
-				field: 'contents_type',
-				value: content.contents_type,
-				reason: 'invalid_value',
-			}],
-		};
+		return [{
+			field: 'contents_type',
+			value: content.contents_type,
+			reason: 'invalid_value',
+		}];
 	}
 
 	//R1: 動的キー走査で allowedFields にないキーを検出
@@ -385,9 +377,7 @@ const validateContent = <V extends Version>(
 		definitions.column_options.search_query_order
 	);
 
-	const errors = [...unknownFieldErrors, ...enumErrors, ...whereErrors, ...orderErrors];
-
-	return {valid: errors.length === 0, errors};
+	return [...unknownFieldErrors, ...enumErrors, ...whereErrors, ...orderErrors];
 };
 
 export abstract class ContentStrategy<V extends Version = Version>
@@ -426,7 +416,7 @@ export abstract class ContentStrategy<V extends Version = Version>
 		return this.serverIdField() === 'page_id';
 	}
 
-	public validate(content: Content, definitions: Definitions): ValidationResult
+	public validate(content: Content, definitions: Definitions): ValidationError[]
 	{
 		return validateContent(content, definitions);
 	}

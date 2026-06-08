@@ -405,8 +405,8 @@ export class Command
 		{
 			const content = await ContentFile.read(uri);
 			if (!content) return [];
-			const result = contentStrategy.validate(content, newDefinitions);
-			return result.errors.map(e => ({...e, contentPath: uri.fsPath}));
+			const errors = contentStrategy.validate(content, newDefinitions);
+			return errors.map(e => ({...e, contentPath: uri.fsPath}));
 		}))).flat();
 
 		if (validationErrors.length > 0)

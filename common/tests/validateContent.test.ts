@@ -77,8 +77,7 @@ describe('ContentStrategy.validate', () =>
 		{
 			const content = zContentV2.parse(baseContentData);
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(true);
-			expect(result.errors).toEqual([]);
+			expect(result).toEqual([]);
 		});
 	});
 
@@ -88,9 +87,8 @@ describe('ContentStrategy.validate', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, contents_type: 'nonexistent_type'});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(false);
-			expect(result.errors[0].field).toBe('contents_type');
-			expect(result.errors[0].reason).toBe('invalid_value');
+			expect(result[0].field).toBe('contents_type');
+			expect(result[0].reason).toBe('invalid_value');
 		});
 	});
 
@@ -100,24 +98,21 @@ describe('ContentStrategy.validate', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, state: 999});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(false);
-			expect(result.errors.some(e => e.field === 'state' && e.value === 999 && e.reason === 'invalid_value')).toBe(true);
+			expect(result.some(e => e.field === 'state' && e.value === 999 && e.reason === 'invalid_value')).toBe(true);
 		});
 
 		test('配列値 (permission) の一部要素が許可リストにない', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, permission: ['nobody', 'admin']});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(false);
-			expect(result.errors.some(e => e.field === 'permission' && e.value === 'admin' && e.reason === 'invalid_value')).toBe(true);
+			expect(result.some(e => e.field === 'permission' && e.value === 'admin' && e.reason === 'invalid_value')).toBe(true);
 		});
 
 		test('配列値 (device_type) の一部要素が許可リストにない', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, device_type: ['pc', 'tablet']});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(false);
-			expect(result.errors.some(e => e.field === 'device_type' && e.value === 'tablet')).toBe(true);
+			expect(result.some(e => e.field === 'device_type' && e.value === 'tablet')).toBe(true);
 		});
 	});
 
@@ -130,8 +125,7 @@ describe('ContentStrategy.validate', () =>
 				search_query_where: [{col: 'unknown_col', operator: '=', val: 'x'}],
 			});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(false);
-			expect(result.errors.some(e => e.field === 'search_query_where.col' && e.value === 'unknown_col' && e.reason === 'unknown_col')).toBe(true);
+			expect(result.some(e => e.field === 'search_query_where.col' && e.value === 'unknown_col' && e.reason === 'unknown_col')).toBe(true);
 		});
 
 		test('operator が column_options にない → invalid_value', () =>
@@ -141,8 +135,7 @@ describe('ContentStrategy.validate', () =>
 				search_query_where: [{col: 'pre', operator: '~~', val: 'x'}],
 			});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(false);
-			expect(result.errors.some(e => e.field === 'search_query_where.operator' && e.value === '~~' && e.reason === 'invalid_value')).toBe(true);
+			expect(result.some(e => e.field === 'search_query_where.operator' && e.value === '~~' && e.reason === 'invalid_value')).toBe(true);
 		});
 
 		test('val のシート参照は validate されない', () =>
@@ -152,7 +145,7 @@ describe('ContentStrategy.validate', () =>
 				search_query_where: [{col: 'pre', operator: '=', val: {sheet: 'whatever', col: 'whatever'}}],
 			});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(true);
+			expect(result).toEqual([]);
 		});
 
 		test('col が空文字列 (未入力) なら unknown_col にならない', () =>
@@ -162,7 +155,7 @@ describe('ContentStrategy.validate', () =>
 				search_query_where: [{col: '', operator: '=', val: ''}],
 			});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(true);
+			expect(result).toEqual([]);
 		});
 
 		test('operator が空文字列 (未入力) なら invalid_value にならない', () =>
@@ -172,7 +165,7 @@ describe('ContentStrategy.validate', () =>
 				search_query_where: [{col: 'pre', operator: '', val: ''}],
 			});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(true);
+			expect(result).toEqual([]);
 		});
 	});
 
@@ -185,8 +178,7 @@ describe('ContentStrategy.validate', () =>
 				search_query_order: [{col: 'unknown_col', operator: 'ASC'}],
 			});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(false);
-			expect(result.errors.some(e => e.field === 'search_query_order.col' && e.value === 'unknown_col' && e.reason === 'unknown_col')).toBe(true);
+			expect(result.some(e => e.field === 'search_query_order.col' && e.value === 'unknown_col' && e.reason === 'unknown_col')).toBe(true);
 		});
 
 		test('operator が column_options にない → invalid_value', () =>
@@ -196,8 +188,7 @@ describe('ContentStrategy.validate', () =>
 				search_query_order: [{col: 'date', operator: 'RANDOM'}],
 			});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(false);
-			expect(result.errors.some(e => e.field === 'search_query_order.operator' && e.value === 'RANDOM')).toBe(true);
+			expect(result.some(e => e.field === 'search_query_order.operator' && e.value === 'RANDOM')).toBe(true);
 		});
 
 		test('col が空文字列 (未入力) なら unknown_col にならない', () =>
@@ -207,7 +198,7 @@ describe('ContentStrategy.validate', () =>
 				search_query_order: [{col: '', operator: 'ASC'}],
 			});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(true);
+			expect(result).toEqual([]);
 		});
 	});
 
@@ -217,7 +208,7 @@ describe('ContentStrategy.validate', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, name: '何でもいいテキスト'});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(true);
+			expect(result).toEqual([]);
 		});
 	});
 
@@ -227,7 +218,7 @@ describe('ContentStrategy.validate', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, is_unsynced: true});
 			const result = strategy.validate(content, definitions);
-			expect(result.valid).toBe(true);
+			expect(result).toEqual([]);
 		});
 	});
 });

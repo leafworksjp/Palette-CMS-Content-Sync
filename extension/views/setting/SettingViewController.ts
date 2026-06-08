@@ -248,6 +248,9 @@ export class SettingViewController
 
 	private async validateContentsAgainst(lwDirUri: vscode.Uri, subdir: string): Promise<ValidationError[] | undefined>
 	{
+		const workspace = FileUtil.getWorkspace();
+		if (!workspace) return undefined;
+
 		const targetDefinitionsUri = FileUtil.join(lwDirUri, subdir, 'definitions.json');
 		if (!await FileUtil.isFile(targetDefinitionsUri))
 		{
@@ -258,7 +261,10 @@ export class SettingViewController
 		const newDefinitions = await this.readTargetDefinitions(targetDefinitionsUri);
 		if (!newDefinitions) return undefined;
 
-		const contentFiles = await vscode.workspace.findFiles('**/contents.json', '**/node_modules/**');
+		const contentFiles = await vscode.workspace.findFiles(
+			new vscode.RelativePattern(workspace, '**/contents.json'),
+			new vscode.RelativePattern(workspace, '**/node_modules/**')
+		);
 		const contentStrategy = getContentStrategy();
 
 		return (await Promise.all(contentFiles.map(async uri =>

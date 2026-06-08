@@ -140,7 +140,6 @@ export class SettingWebView implements vscode.WebviewViewProvider
 			case 'sheet_id':
 				{
 					const version = getVersion();
-					if (!version) break;
 
 					const definitions = await DefinitionsFile.read();
 					if (!definitions) break;
@@ -217,7 +216,6 @@ export class SettingWebView implements vscode.WebviewViewProvider
 	public async refresh()
 	{
 		const version = getVersion();
-		if (!version) return;
 
 		const definitions = await DefinitionsFile.read();
 		if (!this.webview || !definitions) return;

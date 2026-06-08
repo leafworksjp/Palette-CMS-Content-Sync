@@ -3,6 +3,7 @@ import path from 'path';
 
 export class FileUtil
 {
+	//Single-folder workspace is assumed. Multi-root is out of scope
 	public static getWorkspace = () => vscode.workspace.workspaceFolders?.[0].uri;
 
 	public static exists = async (uri: vscode.Uri) =>
@@ -97,6 +98,8 @@ export class FileUtil
 
 	public static listFiles = async (uri: vscode.Uri): Promise<vscode.Uri[]> =>
 	{
+		if (!await FileUtil.isDirectory(uri)) return [];
+
 		const files = await vscode.workspace.fs.readDirectory(uri);
 
 		const result = await Promise.all(

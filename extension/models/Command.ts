@@ -1,12 +1,22 @@
+import vscode from 'vscode';
 import {FileUtil} from './FileUtil';
 import {Api} from './Api';
 import {DefinitionsFile} from './DefinitionsFile';
 import {ContentFile} from './ContentFile';
 import {CodeFile} from './CodeFile';
 import {JsonFile} from './JsonFile';
+import {ActiveConnectionV2} from './ActiveConnection';
 import {ApiResult} from '../../common/types/ApiResult';
+import {Definitions} from '../../common/types/Definitions';
 import {Locale} from '../locales/ja';
-import {getHotReloadServer, getUploadStatus, getContentStrategy} from './Services';
+import {
+	getActiveConnection,
+	getContentStrategy,
+	getDefinitionsStrategy,
+	getHotReloadServer,
+	getLogger,
+	getUploadStatus,
+} from './Services';
 
 export class Command
 {
@@ -366,5 +376,73 @@ export class Command
 
 		await ContentFile.changeDirectoryName(uri, newPageId);
 		return ApiResult.success('コンテンツIDを更新しました。');
+	}
+
+	public async applyConnection(lwDirUri: vscode.Uri, url: string, subdir: string)
+	{
+		const workspace = FileUtil.getWorkspace();
+		if (!workspace) return ApiResult.generalFailure('ワークスペースが見つかりません');
+
+		const targetDefinitionsUri = FileUtil.join(lwDirUri, subdir, 'definitions.json');
+		if (!await FileUtil.isFile(targetDefinitionsUri))
+		{
+			return ApiResult.generalFailure('切替先の definitions.json が見つかりません');
+		}
+
+		const newDefinitions = await this.parseTargetDefinitions(targetDefinitionsUri);
+		if (!newDefinitions)
+		{
+			return ApiResult.generalFailure('切替先の definitions.json が不正な形式です');
+		}
+
+		const contentFiles = await vscode.workspace.findFiles(
+			new vscode.RelativePattern(workspace, '**/contents.json'),
+			new vscode.RelativePattern(workspace, '**/node_modules/**')
+		);
+		const contentStrategy = getContentStrategy();
+
+		const validationErrors = (await Promise.all(contentFiles.map(async uri =>
+		{
+			const content = await ContentFile.read(uri);
+			if (!content) return [];
+			const result = contentStrategy.validate(content, newDefinitions);
+			return result.errors.map(e => ({...e, contentPath: uri.fsPath}));
+		}))).flat();
+
+		if (validationErrors.length > 0)
+		{
+			const logger = getLogger();
+			logger.error(`接続先切替不可: ${validationErrors.length} 件のコンテンツ定義不整合`);
+			validationErrors.forEach(e =>
+			{
+				logger.error(`  ${e.contentPath}: ${e.field} = ${JSON.stringify(e.value)} (${e.reason})`);
+			});
+			return ApiResult.generalFailure(
+				`接続先を切り替えられません: ${validationErrors.length} 件のコンテンツ定義不整合があります（詳細はログを確認してください）`
+			);
+		}
+
+		const activeConnection = getActiveConnection();
+		if (!(activeConnection instanceof ActiveConnectionV2))
+		{
+			return ApiResult.generalFailure('V2 接続先のみ切替可能です');
+		}
+
+		await activeConnection.set({url, subdir});
+		return ApiResult.success(`接続先を ${url} に切り替えました。`);
+	}
+
+	private async parseTargetDefinitions(uri: vscode.Uri): Promise<Definitions | undefined>
+	{
+		try
+		{
+			const data = JSON.parse(await FileUtil.readFile(uri));
+			return getDefinitionsStrategy().parse(data);
+		}
+		catch (error)
+		{
+			getLogger().error('切替先 definitions パース失敗:', error);
+			return undefined;
+		}
 	}
 }

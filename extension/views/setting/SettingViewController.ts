@@ -6,10 +6,7 @@ import {FileUtil} from '../../models/FileUtil';
 import {LwContent} from '../../models/LwContent';
 import {ContentFile} from '../../models/ContentFile';
 import {CodeFile} from '../../models/CodeFile';
-import {getActiveConnection, getContentStrategy, getDefinitionsStrategy, getLogger} from '../../models/Services';
-import {ActiveConnectionV2} from '../../models/ActiveConnection';
-import {ValidationError} from '../../../common/types/Content';
-import {Definitions} from '../../../common/types/Definitions';
+import {getContentStrategy} from '../../models/Services';
 import {Failure, Success} from '../../../common/types/Result';
 import {
 	CompilationFailureArgs,
@@ -225,73 +222,9 @@ export class SettingViewController
 
 		if (!selected) return;
 
-		const validationErrors = await this.validateContentsAgainst(lwDirUri, selected.subdir);
-		if (validationErrors === undefined) return;
-		if (validationErrors.length > 0)
-		{
-			const logger = getLogger();
-			logger.error(`接続先切替不可: ${validationErrors.length} 件のコンテンツ定義不整合`);
-			validationErrors.forEach(e =>
-			{
-				logger.error(`  ${e.contentPath}: ${e.field} = ${JSON.stringify(e.value)} (${e.reason})`);
-			});
-			vscode.window.showErrorMessage(
-				`接続先を切り替えられません: ${validationErrors.length} 件のコンテンツ定義不整合があります（詳細はログを確認してください）`
-			);
-			return;
-		}
-
-		const activeConnection = getActiveConnection();
-		if (!(activeConnection instanceof ActiveConnectionV2)) return;
-
-		await activeConnection.set({url: selected.url, subdir: selected.subdir});
-
+		const result = await this.command.applyConnection(lwDirUri, selected.url, selected.subdir);
 		await this.webview.refresh();
-	}
-
-	private async validateContentsAgainst(lwDirUri: vscode.Uri, subdir: string): Promise<ValidationError[] | undefined>
-	{
-		const workspace = FileUtil.getWorkspace();
-		if (!workspace) return undefined;
-
-		const targetDefinitionsUri = FileUtil.join(lwDirUri, subdir, 'definitions.json');
-		if (!await FileUtil.isFile(targetDefinitionsUri))
-		{
-			vscode.window.showErrorMessage('切替先の definitions.json が見つかりません');
-			return undefined;
-		}
-
-		const newDefinitions = await this.readTargetDefinitions(targetDefinitionsUri);
-		if (!newDefinitions) return undefined;
-
-		const contentFiles = await vscode.workspace.findFiles(
-			new vscode.RelativePattern(workspace, '**/contents.json'),
-			new vscode.RelativePattern(workspace, '**/node_modules/**')
-		);
-		const contentStrategy = getContentStrategy();
-
-		return (await Promise.all(contentFiles.map(async uri =>
-		{
-			const content = await ContentFile.read(uri);
-			if (!content) return [];
-			const result = contentStrategy.validate(content, newDefinitions);
-			return result.errors.map(e => ({...e, contentPath: uri.fsPath}));
-		}))).flat();
-	}
-
-	private async readTargetDefinitions(uri: vscode.Uri): Promise<Definitions | undefined>
-	{
-		try
-		{
-			const data = JSON.parse(await FileUtil.readFile(uri));
-			return getDefinitionsStrategy().parse(data);
-		}
-		catch (error)
-		{
-			getLogger().error('切替先 definitions パース失敗:', error);
-			vscode.window.showErrorMessage('切替先の definitions.json が不正な形式です');
-			return undefined;
-		}
+		await this.showMessages(result);
 	}
 
 	public onDidChangeActiveTextEditor()

@@ -5,37 +5,27 @@ import {LwContent} from './LwContent';
 import {ActiveConnection, ActiveConnectionV1, ActiveConnectionV2} from './ActiveConnection';
 import {createActiveConnection, createVersionedServices} from './Services';
 import {Version} from '../../common/types/Version';
+import {ApiResult} from '../../common/types/ApiResult';
 
-export type InitializationResult =
-	| { ok: true }
-	| { ok: false, message: string };
-
-type VersionResolution =
-	| { ok: true, version: Version, lwDir: vscode.Uri }
-	| { ok: false, message: string };
-
-export async function initializeVersionedServices(): Promise<InitializationResult>
+export async function initializeVersionedServices()
 {
 	const resolution = await resolveVersion();
-	if (!resolution.ok) return resolution;
+	if (resolution.isFailure()) return resolution;
 
-	createVersionedServices(resolution.version);
+	createVersionedServices(resolution.value.version);
 
-	const activeConnection = await buildActiveConnection(resolution.version, resolution.lwDir);
+	const activeConnection = await buildActiveConnection(resolution.value.version, resolution.value.lwDir);
 	createActiveConnection(activeConnection);
 
-	return {ok: true};
+	return ApiResult.success(undefined);
 }
 
-async function resolveVersion(): Promise<VersionResolution>
+async function resolveVersion()
 {
 	const lwDir = LwContent.dir();
 	if (!lwDir)
 	{
-		return {
-			ok: false,
-			message: 'ワークスペースが開かれていないため、Palette CMS Content Sync は利用できません。',
-		};
+		return ApiResult.generalFailure('ワークスペースが開かれていないため、Palette CMS Content Sync は利用できません。');
 	}
 
 	const hasV1 = Boolean(await Api.settingsAt(lwDir));
@@ -43,18 +33,15 @@ async function resolveVersion(): Promise<VersionResolution>
 
 	if (hasV1 && hasV2)
 	{
-		return {
-			ok: false,
-			message: '.lwcontent 配下に api.json と接続先サブディレクトリが混在しています。どちらか一方に整理して VS Code を再読み込みしてください。',
-		};
+		return ApiResult.generalFailure('.lwcontent 配下に api.json と接続先サブディレクトリが混在しています。どちらか一方に整理して VS Code を再読み込みしてください。');
 	}
-	if (hasV1) return {ok: true, version: 1, lwDir};
-	if (hasV2) return {ok: true, version: 2, lwDir};
+	if (!hasV1 && !hasV2)
+	{
+		return ApiResult.generalFailure('.lwcontent 配下に api.json または接続先サブディレクトリが必要です。配置してから VS Code を再読み込みしてください。');
+	}
 
-	return {
-		ok: false,
-		message: '.lwcontent 配下に api.json または接続先サブディレクトリが必要です。配置してから VS Code を再読み込みしてください。',
-	};
+	const version: Version = hasV1 ? 1 : 2;
+	return ApiResult.success({version, lwDir});
 }
 
 async function buildActiveConnection(version: Version, lwDir: vscode.Uri): Promise<ActiveConnection>

@@ -34,9 +34,9 @@ export async function activate(context: vscode.ExtensionContext)
 	registerHTMLFormatter(context);
 
 	const result = await initializeVersionedServices();
-	if (!result.ok)
+	if (result.isFailure())
 	{
-		vscode.window.showWarningMessage(result.message);
+		vscode.window.showWarningMessage(result.error.message);
 		return;
 	}
 

@@ -49,7 +49,7 @@ export class SettingViewController
 
 		if (result.isFailure())
 		{
-			this.showMessages(result);
+			await this.showMessages(result);
 		}
 	}
 
@@ -66,7 +66,7 @@ export class SettingViewController
 		const result = await this.command.uploadAll();
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async download()
@@ -82,7 +82,7 @@ export class SettingViewController
 		const result = await this.command.download();
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async delete()
@@ -98,21 +98,21 @@ export class SettingViewController
 		const result = await this.command.delete();
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async downloadSnippets()
 	{
 		const result = await this.command.downloadSnippets();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async downloadVariables()
 	{
 		const result = await this.command.downloadVariables();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async downloadDefinitions()
@@ -120,7 +120,7 @@ export class SettingViewController
 		const result = await this.command.downloadDefinitions();
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	public async create()
@@ -159,7 +159,10 @@ export class SettingViewController
 
 	public async changePageId()
 	{
-		const newFileName = await ContentFile.createNewFileName();
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return;
+
+		const newFileName = await ContentFile.createNewFileName(uri);
 
 		if (!newFileName) return;
 
@@ -167,7 +170,7 @@ export class SettingViewController
 
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 
 		if (result.isSuccess() && !getContentStrategy().isPageIdServerIdentifier())
 		{
@@ -294,7 +297,8 @@ export class SettingViewController
 
 		if (uploadOnSave)
 		{
-			const content = await ContentFile.read();
+			const uri = await ContentFile.resolveActive(document.uri);
+			const content = uri ? await ContentFile.read(uri) : undefined;
 			if (content)
 			{
 				await this.upload();
@@ -307,7 +311,7 @@ export class SettingViewController
 		}
 	}
 
-	private showMessages(
+	private async showMessages(
 		result:
 			| Success<string>
 			| Failure<GeneralFailureArgs>
@@ -328,8 +332,14 @@ export class SettingViewController
 					break;
 
 				case 'CompilationErrorType':
-					this.webview.postMessage('setErrors', ['コンパイルエラーが発生しました。']);
-					CodeFile.appendCompileErrors(result.error.errors);
+					{
+						this.webview.postMessage('setErrors', ['コンパイルエラーが発生しました。']);
+						const uri = await ContentFile.resolveActive();
+						if (uri)
+						{
+							await CodeFile.appendCompileErrors(uri, result.error.errors);
+						}
+					}
 					break;
 
 				default:

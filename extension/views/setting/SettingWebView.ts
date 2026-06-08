@@ -40,62 +40,82 @@ export class SettingWebView implements vscode.WebviewViewProvider
 		this.refresh();
 	}
 
-	private handleMessage(message: any)
+	private async handleMessage(message: any)
 	{
 		if (!this.webview || !this.content) return;
 
 		switch (message.command)
 		{
 			case 'onLoad':
-				this.refresh();
+				await this.refresh();
 				break;
 
 			case 'updateValue':
-				this.updateValue(message.key, message.value);
+				await this.updateValue(message.key, message.value);
 				break;
 
 			case 'addSearchQuery':
-				this.content = ContentFormatter.for(this.content).addSearchQuery(message.index).content;
+				{
+					const uri = await ContentFile.resolveActive();
+					if (!uri) break;
 
-				ContentFile.write(this.content);
+					this.content = ContentFormatter.for(this.content).addSearchQuery(message.index).content;
 
-				this.webview.postMessage({
-					command: 'setSearchQueries',
-					value: this.content.search_query_where,
-				});
+					await ContentFile.write(uri, this.content);
+
+					this.webview.postMessage({
+						command: 'setSearchQueries',
+						value: this.content.search_query_where,
+					});
+				}
 				break;
 
 			case 'deleteSearchQuery':
-				this.content = ContentFormatter.for(this.content).deleteSearchQuery(message.index).content;
+				{
+					const uri = await ContentFile.resolveActive();
+					if (!uri) break;
 
-				ContentFile.write(this.content);
+					this.content = ContentFormatter.for(this.content).deleteSearchQuery(message.index).content;
 
-				this.webview.postMessage({
-					command: 'setSearchQueries',
-					value: this.content.search_query_where,
-				});
+					await ContentFile.write(uri, this.content);
+
+					this.webview.postMessage({
+						command: 'setSearchQueries',
+						value: this.content.search_query_where,
+					});
+				}
 				break;
 
 			case 'addOrderQuery':
-				this.content = ContentFormatter.for(this.content).addOrderQuery(message.index).content;
+				{
+					const uri = await ContentFile.resolveActive();
+					if (!uri) break;
 
-				ContentFile.write(this.content);
+					this.content = ContentFormatter.for(this.content).addOrderQuery(message.index).content;
 
-				this.webview.postMessage({
-					command: 'setOrderQueries',
-					value: this.content.search_query_order,
-				});
+					await ContentFile.write(uri, this.content);
+
+					this.webview.postMessage({
+						command: 'setOrderQueries',
+						value: this.content.search_query_order,
+					});
+				}
 				break;
 
 			case 'deleteOrderQuery':
-				this.content = ContentFormatter.for(this.content).deleteOrderQuery(message.index).content;
+				{
+					const uri = await ContentFile.resolveActive();
+					if (!uri) break;
 
-				ContentFile.write(this.content);
+					this.content = ContentFormatter.for(this.content).deleteOrderQuery(message.index).content;
 
-				this.webview.postMessage({
-					command: 'setOrderQueries',
-					value: this.content.search_query_order,
-				});
+					await ContentFile.write(uri, this.content);
+
+					this.webview.postMessage({
+						command: 'setOrderQueries',
+						value: this.content.search_query_order,
+					});
+				}
 				break;
 
 			default:
@@ -107,9 +127,13 @@ export class SettingWebView implements vscode.WebviewViewProvider
 	{
 		if (!this.webview || !this.content) return;
 
+		const documentUri = vscode.window.activeTextEditor?.document?.uri;
+		const uri = await ContentFile.resolveActive(documentUri);
+		if (!uri) return;
+
 		this.content = ContentFormatter.for(this.content).formatValue(key, value).content;
 
-		await ContentFile.write(this.content);
+		await ContentFile.write(uri, this.content);
 		switch (key)
 		{
 			case 'contents_type':
@@ -126,7 +150,6 @@ export class SettingWebView implements vscode.WebviewViewProvider
 
 					this.content = updateDefaultValues(definitions, this.content);
 
-					const documentUri = vscode.window.activeTextEditor?.document?.uri;
 					const fileName = documentUri ? FileUtil.getName(documentUri) : '';
 
 					const contentStrategy = getContentStrategy();
@@ -202,9 +225,10 @@ export class SettingWebView implements vscode.WebviewViewProvider
 		const url = getConnection().current;
 		if (!url) return;
 
-		this.content = await ContentFile.read();
-
 		const documentUri = vscode.window.activeTextEditor?.document?.uri;
+		const uri = await ContentFile.resolveActive(documentUri);
+		this.content = uri ? await ContentFile.read(uri) : undefined;
+
 		const fileName = documentUri ? FileUtil.getName(documentUri) : '';
 
 		const contentStrategy = getContentStrategy();

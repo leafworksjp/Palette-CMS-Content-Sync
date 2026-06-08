@@ -8,15 +8,11 @@ export class ContentFile
 {
 	public static fileName = 'contents.json';
 
-	public static async read(uri: vscode.Uri|undefined = undefined)
+	public static async read(uri: vscode.Uri)
 	{
-		const contentFile = uri ?? await ContentFile.getFilePath();
-
-		if (!contentFile) return undefined;
-
 		try
 		{
-			const data = JSON.parse(await FileUtil.readFile(contentFile));
+			const data = JSON.parse(await FileUtil.readFile(uri));
 			const content = getContentStrategy().parse(data);
 
 			const definitions = await DefinitionsFile.read();
@@ -42,11 +38,10 @@ export class ContentFile
 		}
 	}
 
-	public static async write(content: Content)
+	public static async write(uri: vscode.Uri, content: Content)
 	{
 		const definitions = await DefinitionsFile.read();
-		const contentFile = await ContentFile.getFilePath();
-		if (!contentFile || !definitions || !content) return;
+		if (!definitions || !content) return;
 
 		const columns = getColumns(definitions, content);
 		if (!columns) return;
@@ -59,7 +54,7 @@ export class ContentFile
 
 			const data = JSON.stringify(contentObj, undefined, 4);
 
-			await FileUtil.writeFile(contentFile, data);
+			await FileUtil.writeFile(uri, data);
 		}
 		catch (error)
 		{
@@ -88,10 +83,10 @@ export class ContentFile
 		await FileUtil.openFileInEditor(contentFile);
 	}
 
-	public static async duplicate(newFileName: string)
+	public static async duplicate(sourceUri: vscode.Uri, newFileName: string)
 	{
-		const sourceDir = await ContentFile.getDirectoryPath();
-		if (!sourceDir || !await FileUtil.exists(sourceDir)) return;
+		const sourceDir = FileUtil.getDirectory(sourceUri);
+		if (!await FileUtil.exists(sourceDir)) return;
 
 		const targetDir = FileUtil.join(sourceDir, '..', newFileName);
 
@@ -110,12 +105,9 @@ export class ContentFile
 		await FileUtil.openFileInEditor(targetContentFile);
 	}
 
-	public static async changeDirectoryName(name: string)
+	public static async changeDirectoryName(uri: vscode.Uri, name: string)
 	{
-		const oldDir = await ContentFile.getDirectoryPath();
-
-		if (!oldDir) return;
-
+		const oldDir = FileUtil.getDirectory(uri);
 		const newDir = FileUtil.join(FileUtil.getDirectory(oldDir), name);
 
 		if (oldDir.fsPath === newDir.fsPath) return;
@@ -123,14 +115,20 @@ export class ContentFile
 		await FileUtil.rename(oldDir, newDir);
 	}
 
-	public static async getFilePath(uri: vscode.Uri|undefined = undefined)
+	/**
+	 * 操作開始時に contents.json の URI を確定する。
+	 * 確定後の URI は以降の非同期処理（read/write/CodeFile 操作等）で明示的に引き回す。
+	 * これにより、通信中にユーザーがエディタを切り替えても別ファイルへ誤って書き込まないようにする。
+	 *
+	 * documentUri を省略した場合はアクティブエディタから取得する。
+	 */
+	public static async resolveActive(documentUri?: vscode.Uri): Promise<vscode.Uri | undefined>
 	{
-		const documentUri = uri ?? vscode.window.activeTextEditor?.document?.uri;
-
-		if (!documentUri) return undefined;
+		const baseUri = documentUri ?? vscode.window.activeTextEditor?.document?.uri;
+		if (!baseUri) return undefined;
 
 		{
-			const contentFilePath = FileUtil.join(FileUtil.getDirectory(documentUri), ContentFile.fileName);
+			const contentFilePath = FileUtil.join(FileUtil.getDirectory(baseUri), ContentFile.fileName);
 
 			if (await FileUtil.isFile(contentFilePath))
 			{
@@ -138,7 +136,7 @@ export class ContentFile
 			}
 		}
 		{
-			const contentFilePath = FileUtil.join(FileUtil.getDirectory(documentUri), '..', ContentFile.fileName);
+			const contentFilePath = FileUtil.join(FileUtil.getDirectory(baseUri), '..', ContentFile.fileName);
 
 			if (await FileUtil.isFile(contentFilePath))
 			{
@@ -149,18 +147,9 @@ export class ContentFile
 		return undefined;
 	}
 
-	public static async getDirectoryPath(uri: vscode.Uri|undefined = undefined)
+	public static createNewFileName = async (uri: vscode.Uri): Promise<string> =>
 	{
-		const contentFilePath = await ContentFile.getFilePath(uri);
-
-		if (!contentFilePath) return undefined;
-
-		return FileUtil.getDirectory(contentFilePath);
-	}
-
-	public static createNewFileName = async (): Promise<string> =>
-	{
-		const content = await ContentFile.read();
+		const content = await ContentFile.read(uri);
 		if (!content) return '';
 
 		const newPageId = await vscode.window.showInputBox({

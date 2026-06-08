@@ -20,13 +20,12 @@ class Resource
 	{
 	}
 
-	public static async build(uri: vscode.Uri|undefined = undefined)
+	public static async build(uri: vscode.Uri)
 	{
 		const definitions = await DefinitionsFile.read();
-		const contentDirectory = await ContentFile.getDirectoryPath(uri);
+		if (!definitions) return undefined;
 
-		if (!definitions || !contentDirectory) return undefined;
-
+		const contentDirectory = FileUtil.getDirectory(uri);
 		const srcDirectory = FileUtil.join(contentDirectory, 'src');
 
 		return new Resource(definitions, contentDirectory, srcDirectory);
@@ -45,7 +44,7 @@ export class CodeFile
 		xml: 'xml',
 	}));
 
-	public static async read(uri: vscode.Uri|undefined = undefined)
+	public static async read(uri: vscode.Uri)
 	{
 		const resource = await Resource.build(uri);
 		if (!resource) return [];
@@ -76,9 +75,9 @@ export class CodeFile
 		return codeList;
 	}
 
-	public static async create(content: Content)
+	public static async create(uri: vscode.Uri, content: Content)
 	{
-		const resource = await Resource.build();
+		const resource = await Resource.build(uri);
 		if (!resource) return;
 
 		const codeTypes = this.getCodeTypes(resource.definitions, content);
@@ -97,9 +96,9 @@ export class CodeFile
 		);
 	}
 
-	public static async write(content: Content, codeList: Code[])
+	public static async write(uri: vscode.Uri, content: Content, codeList: Code[])
 	{
-		const resource = await Resource.build();
+		const resource = await Resource.build(uri);
 		if (!resource) return;
 
 		const codeTypes = this.getCodeTypes(resource.definitions, content);
@@ -119,9 +118,9 @@ export class CodeFile
 		);
 	}
 
-	public static async getUris(content: Content)
+	public static async getUris(uri: vscode.Uri, content: Content)
 	{
-		const resource = await Resource.build();
+		const resource = await Resource.build(uri);
 		if (!resource) return [];
 
 		const codeTypes = this.getCodeTypes(resource.definitions, content);
@@ -135,12 +134,12 @@ export class CodeFile
 		});
 	}
 
-	public static async changeExtensions(oldLanguage: string, newLanguage: string)
+	public static async changeExtensions(uri: vscode.Uri, oldLanguage: string, newLanguage: string)
 	{
-		const resource = await Resource.build();
+		const resource = await Resource.build(uri);
 		if (!resource) return;
 
-		const content = await ContentFile.read();
+		const content = await ContentFile.read(uri);
 		if (!content) throw new Error(Locale.pleaseOpenContent);
 
 		const oldExtension = this.extensions.get(oldLanguage);
@@ -170,10 +169,7 @@ export class CodeFile
 		);
 	}
 
-	public static async appendCompileErrors(
-		compileErrors: CompileErrors,
-		uri: vscode.Uri|undefined = undefined
-	)
+	public static async appendCompileErrors(uri: vscode.Uri, compileErrors: CompileErrors)
 	{
 		const resource = await Resource.build(uri);
 		if (!resource) return;
@@ -195,9 +191,7 @@ export class CodeFile
 		});
 	}
 
-	public static async clearCompileErrors(
-		uri: vscode.Uri|undefined = undefined
-	)
+	public static async clearCompileErrors(uri: vscode.Uri)
 	{
 		const resource = await Resource.build(uri);
 		if (!resource) return;

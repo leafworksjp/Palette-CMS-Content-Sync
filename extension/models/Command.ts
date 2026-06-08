@@ -13,10 +13,18 @@ export class Command
 	public async upload()
 	{
 		getUploadStatus().showUploading();
-		CodeFile.clearCompileErrors();
+
+		const uri = await ContentFile.resolveActive();
+		if (!uri)
+		{
+			getUploadStatus().showError();
+			return ApiResult.generalFailure(Locale.pleaseOpenContent);
+		}
+
+		await CodeFile.clearCompileErrors(uri);
 
 		const definitions = await DefinitionsFile.read();
-		const content = await ContentFile.read();
+		const content = await ContentFile.read(uri);
 
 		if (!definitions || !content)
 		{
@@ -24,7 +32,7 @@ export class Command
 			return ApiResult.generalFailure(Locale.pleaseOpenContent);
 		}
 
-		const codeList = await CodeFile.read();
+		const codeList = await CodeFile.read(uri);
 
 		const uploadResult = await Api.upload(content, codeList);
 
@@ -32,15 +40,15 @@ export class Command
 		{
 			getHotReloadServer().postMessage({type: 'reload', pageId: content.page_id});
 
-			await ContentFile.write(uploadResult.value.content);
-			await CodeFile.create(uploadResult.value.content);
+			await ContentFile.write(uri, uploadResult.value.content);
+			await CodeFile.create(uri, uploadResult.value.content);
 
 			const downloadResult = await Api.download(uploadResult.value.content);
 
 			if (downloadResult.isSuccess())
 			{
-				await ContentFile.write(downloadResult.value.content);
-				await CodeFile.write(downloadResult.value.content, downloadResult.value.codeList);
+				await ContentFile.write(uri, downloadResult.value.content);
+				await CodeFile.write(uri, downloadResult.value.content, downloadResult.value.codeList);
 			}
 			else
 			{
@@ -53,7 +61,7 @@ export class Command
 				const snippetsResult = await Api.getSnippets(uploadResult.value.content);
 				if (snippetsResult.isSuccess())
 				{
-					await JsonFile.write('snippets', snippetsResult.value);
+					await JsonFile.write('snippets', snippetsResult.value, uri);
 
 					getUploadStatus().showCompleted();
 					return ApiResult.success(undefined);
@@ -70,7 +78,7 @@ export class Command
 
 				if (variablesResult.isSuccess())
 				{
-					await JsonFile.write('variables', variablesResult.value);
+					await JsonFile.write('variables', variablesResult.value, uri);
 
 					getUploadStatus().showCompleted();
 					return ApiResult.success(undefined);
@@ -140,8 +148,11 @@ export class Command
 
 	public async download()
 	{
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
+
 		const definitions = await DefinitionsFile.read();
-		const content = await ContentFile.read();
+		const content = await ContentFile.read(uri);
 
 		if (!definitions || !content)
 		{
@@ -152,15 +163,15 @@ export class Command
 
 		if (downloadResult.isSuccess())
 		{
-			await ContentFile.write(downloadResult.value.content);
-			await CodeFile.write(downloadResult.value.content, downloadResult.value.codeList);
+			await ContentFile.write(uri, downloadResult.value.content);
+			await CodeFile.write(uri, downloadResult.value.content, downloadResult.value.codeList);
 
 			if (content.use_template_engine)
 			{
 				const snippetsResult = await Api.getSnippets(downloadResult.value.content);
 				if (snippetsResult.isSuccess())
 				{
-					await JsonFile.write('snippets', snippetsResult.value);
+					await JsonFile.write('snippets', snippetsResult.value, uri);
 
 					return ApiResult.success('ダウンロード完了');
 				}
@@ -175,7 +186,7 @@ export class Command
 
 				if (variablesResult.isSuccess())
 				{
-					await JsonFile.write('variables', variablesResult.value);
+					await JsonFile.write('variables', variablesResult.value, uri);
 
 					return ApiResult.success('ダウンロード完了');
 				}
@@ -193,7 +204,10 @@ export class Command
 
 	public async create()
 	{
-		const newFileName = await ContentFile.createNewFileName();
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return;
+
+		const newFileName = await ContentFile.createNewFileName(uri);
 
 		if (!newFileName) return;
 
@@ -202,16 +216,22 @@ export class Command
 
 	public async duplicate()
 	{
-		const newFileName = await ContentFile.createNewFileName();
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return;
+
+		const newFileName = await ContentFile.createNewFileName(uri);
 
 		if (!newFileName) return;
 
-		await ContentFile.duplicate(newFileName);
+		await ContentFile.duplicate(uri, newFileName);
 	}
 
 	public async delete()
 	{
-		const content = await ContentFile.read();
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
+
+		const content = await ContentFile.read(uri);
 
 		if (!content)
 		{
@@ -222,17 +242,10 @@ export class Command
 
 		if (result.isSuccess())
 		{
-			const dirPath = await ContentFile.getDirectoryPath();
+			const dirPath = FileUtil.getDirectory(uri);
 
-			if (dirPath)
-			{
-				await FileUtil.deleteFile(dirPath, {recursive: true, useTrash: true});
-				return ApiResult.success('削除完了');
-			}
-			else
-			{
-				return ApiResult.generalFailure('コンテンツのフォルダが見つかりません。');
-			}
+			await FileUtil.deleteFile(dirPath, {recursive: true, useTrash: true});
+			return ApiResult.success('削除完了');
 		}
 		else
 		{
@@ -242,12 +255,18 @@ export class Command
 
 	public async changeExtensions(source: string, target: string)
 	{
-		await CodeFile.changeExtensions(source, target);
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return;
+
+		await CodeFile.changeExtensions(uri, source, target);
 	}
 
 	public async downloadSnippets()
 	{
-		const content = await ContentFile.read();
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
+
+		const content = await ContentFile.read(uri);
 
 		if (!content || !getContentStrategy().isUploaded(content))
 		{
@@ -258,7 +277,7 @@ export class Command
 
 		if (result.isSuccess())
 		{
-			await JsonFile.write('snippets', result.value);
+			await JsonFile.write('snippets', result.value, uri);
 
 			return ApiResult.success('ダウンロード完了');
 		}
@@ -270,7 +289,10 @@ export class Command
 
 	public async downloadVariables()
 	{
-		const content = await ContentFile.read();
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
+
+		const content = await ContentFile.read(uri);
 
 		if (!content || !getContentStrategy().isUploaded(content))
 		{
@@ -281,7 +303,7 @@ export class Command
 
 		if (result.isSuccess())
 		{
-			await JsonFile.write('variables', result.value);
+			await JsonFile.write('variables', result.value, uri);
 
 			return ApiResult.success('ダウンロード完了');
 		}
@@ -309,18 +331,24 @@ export class Command
 
 	public async renameDirectory()
 	{
-		const content = await ContentFile.read();
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return;
+
+		const content = await ContentFile.read(uri);
 
 		if (!content) return;
 
-		await ContentFile.changeDirectoryName(content.page_id);
+		await ContentFile.changeDirectoryName(uri, content.page_id);
 	}
 
 	public async changePageId(newPageId: string)
 	{
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
+
 		const contentStrategy = getContentStrategy();
 
-		const content = await ContentFile.read();
+		const content = await ContentFile.read(uri);
 
 		if (!content) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
@@ -334,14 +362,14 @@ export class Command
 			const result = await Api.changePageId(content, newPageId);
 			if (!result.isSuccess()) return result;
 
-			await ContentFile.write(result.value.content);
+			await ContentFile.write(uri, result.value.content);
 		}
 		else
 		{
-			await ContentFile.write({...content, page_id: newPageId});
+			await ContentFile.write(uri, {...content, page_id: newPageId});
 		}
 
-		await ContentFile.changeDirectoryName(newPageId);
+		await ContentFile.changeDirectoryName(uri, newPageId);
 		return ApiResult.success('コンテンツIDを更新しました。');
 	}
 }

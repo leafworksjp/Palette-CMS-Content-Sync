@@ -6,7 +6,7 @@ import {ApiResult} from '../../common/types/ApiResult';
 import {Is} from '../../common/types/Is';
 import {zCompileErrors} from '../../common/types/CompileErrors';
 import {getLogger, getContentStrategy, getDefinitionsStrategy, getLwContent} from './Services';
-import {Content} from '../../common/types/Content';
+import {Content, ContentStrategyV2} from '../../common/types/Content';
 import {Code} from '../../common/types/Code';
 
 const zApiSettings = z.object({
@@ -211,6 +211,27 @@ export class Api
 		{
 			return result;
 		}
+	}
+
+	public static async list()
+	{
+		const strategy = getContentStrategy();
+		if (!(strategy instanceof ContentStrategyV2))
+		{
+			return ApiResult.generalFailure('list API は V2 のみで利用可能です');
+		}
+
+		const result = await Api.fetch('list', 'GET');
+		if (result.isFailure()) return result;
+
+		const zResult = strategy.safeParseList(result.value.contents);
+		if (!zResult.success)
+		{
+			getLogger().error('API invalid response:', zResult.error);
+			return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
+		}
+
+		return ApiResult.success(zResult.data);
 	}
 
 	public static async settings(): Promise<ApiSettings | undefined>

@@ -1,21 +1,12 @@
-import vscode from 'vscode';
 import {z} from 'zod';
 import fetch, {Response, BodyInit, FetchError} from 'node-fetch';
-import {FileUtil} from './FileUtil';
+import {ApiFile} from './ApiFile';
 import {ApiResult} from '../../common/types/ApiResult';
 import {Is} from '../../common/types/Is';
 import {zCompileErrors} from '../../common/types/CompileErrors';
-import {getLogger, getContentStrategy, getDefinitionsStrategy, getLwContent} from './Services';
+import {getLogger, getContentStrategy, getDefinitionsStrategy} from './Services';
 import {Content, ContentStrategyV2} from '../../common/types/Content';
 import {Code} from '../../common/types/Code';
-
-const zApiSettings = z.object({
-	url: z.string(),
-	id: z.string(),
-	pass: z.string(),
-});
-
-export type ApiSettings = z.infer<typeof zApiSettings>;
 
 const isJsonResponse = (response: Response) =>
 {
@@ -28,8 +19,6 @@ const isJsonResponse = (response: Response) =>
 
 export class Api
 {
-	private static fileName = 'api.json';
-
 	public static async upload(content: Content, codeList: Code[])
 	{
 		const contentStrategy = getContentStrategy();
@@ -234,39 +223,13 @@ export class Api
 		return ApiResult.success(zResult.data);
 	}
 
-	public static async settings(): Promise<ApiSettings | undefined>
-	{
-		const base = getLwContent().baseDir();
-		if (!base) return undefined;
-
-		return Api.settingsAt(base);
-	}
-
-	public static async settingsAt(dirUri: vscode.Uri): Promise<ApiSettings | undefined>
-	{
-		const uri = FileUtil.join(dirUri, Api.fileName);
-		if (!await FileUtil.isFile(uri)) return undefined;
-
-		try
-		{
-			const data = JSON.parse(await FileUtil.readFile(uri));
-
-			return zApiSettings.parse(data);
-		}
-		catch (error)
-		{
-			getLogger().error('API invalid response:', error);
-			return undefined;
-		}
-	}
-
 	private static async fetch(endpoint: string, method: string, body: BodyInit | undefined = undefined)
 	{
-		const settings = await Api.settings();
+		const settings = await ApiFile.read();
 
 		if (!settings)
 		{
-			const message = `${Api.fileName}を読み込めません。環境設定を確認してください。`;
+			const message = `${ApiFile.fileName}を読み込めません。環境設定を確認してください。`;
 			getLogger().error('settings error:', message);
 			return ApiResult.generalFailure(message);
 		}

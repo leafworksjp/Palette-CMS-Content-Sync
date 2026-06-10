@@ -7,12 +7,10 @@ import {CodeFile} from './CodeFile';
 import {JsonFile} from './JsonFile';
 import {ActiveConnectionV2} from './ActiveConnection';
 import {ApiResult} from '../../common/types/ApiResult';
-import {Definitions} from '../../common/types/Definitions';
 import {Locale} from '../locales/ja';
 import {
 	getActiveConnection,
 	getContentStrategy,
-	getDefinitionsStrategy,
 	getHotReloadServer,
 	getListCache,
 	getLogger,
@@ -390,7 +388,7 @@ export class Command
 			return ApiResult.generalFailure('切替先の definitions.json が見つかりません');
 		}
 
-		const newDefinitions = await this.parseTargetDefinitions(targetDefinitionsUri);
+		const newDefinitions = await DefinitionsFile.readAt(targetDefinitionsUri);
 		if (!newDefinitions)
 		{
 			return ApiResult.generalFailure('切替先の definitions.json が不正な形式です');
@@ -436,19 +434,5 @@ export class Command
 		else getLogger().error('list 取得失敗:', listResult.error);
 
 		return ApiResult.success(`接続先を ${url} に切り替えました。`);
-	}
-
-	private async parseTargetDefinitions(uri: vscode.Uri): Promise<Definitions | undefined>
-	{
-		try
-		{
-			const data = JSON.parse(await FileUtil.readFile(uri));
-			return getDefinitionsStrategy().parse(data);
-		}
-		catch (error)
-		{
-			getLogger().error('切替先 definitions パース失敗:', error);
-			return undefined;
-		}
 	}
 }

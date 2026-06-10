@@ -1,4 +1,5 @@
 import {Api} from './Api';
+import {ApiFile} from './ApiFile';
 import {FileUtil} from './FileUtil';
 import {LwContent} from './LwContent';
 import {createVersionedServices, getActiveConnection, getListCache, getLogger} from './Services';
@@ -11,7 +12,7 @@ export async function initializeVersionedServices()
 	if (resolution.isFailure()) return resolution;
 
 	const v1Url = resolution.value.version === 1
-		? (await Api.settingsAt(resolution.value.lwDir))?.url
+		? (await ApiFile.readAt(resolution.value.lwDir))?.url
 		: undefined;
 
 	createVersionedServices(resolution.value.version, v1Url);
@@ -33,7 +34,7 @@ async function resolveVersion()
 		return ApiResult.generalFailure('ワークスペースが開かれていないため、Palette CMS Content Sync は利用できません。');
 	}
 
-	const hasV1 = Boolean(await Api.settingsAt(lwDir));
+	const hasV1 = Boolean(await ApiFile.readAt(lwDir));
 	const hasV2 = (await FileUtil.listDirectories(lwDir)).length > 0;
 
 	if (hasV1 && hasV2)

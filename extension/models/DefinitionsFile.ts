@@ -1,3 +1,4 @@
+import vscode from 'vscode';
 import {FileUtil} from './FileUtil';
 import {Definitions} from '../../common/types/Definitions';
 import {getLogger, getDefinitionsStrategy, getLwContent} from './Services';
@@ -12,10 +13,16 @@ export class DefinitionsFile
 		return base ? FileUtil.join(base, DefinitionsFile.fileName) : undefined;
 	}
 
-	public static async read()
+	public static async read(): Promise<Definitions | undefined>
 	{
 		const uri = DefinitionsFile.uri();
 		if (!uri) return undefined;
+
+		return DefinitionsFile.readAt(uri);
+	}
+
+	public static async readAt(uri: vscode.Uri): Promise<Definitions | undefined>
+	{
 		if (!await FileUtil.exists(uri)) return undefined;
 
 		try
@@ -26,8 +33,7 @@ export class DefinitionsFile
 		}
 		catch (error)
 		{
-			console.error(error);
-			getLogger().error(error);
+			getLogger().error('definitions.json パース失敗:', error);
 			return undefined;
 		}
 	}

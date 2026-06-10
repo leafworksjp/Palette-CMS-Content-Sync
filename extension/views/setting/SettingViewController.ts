@@ -1,7 +1,7 @@
 import vscode from 'vscode';
 import {SettingWebView} from './SettingWebView';
 import {Command} from '../../models/Command';
-import {Api} from '../../models/Api';
+import {ApiFile} from '../../models/ApiFile';
 import {FileUtil} from '../../models/FileUtil';
 import {LwContent} from '../../models/LwContent';
 import {ContentFile} from '../../models/ContentFile';
@@ -203,7 +203,7 @@ export class SettingViewController
 		const candidates = await Promise.all(connectionDirs.map(async dirUri =>
 		{
 			const subdir = FileUtil.getBase(dirUri);
-			const url = (await Api.settingsAt(dirUri))?.url;
+			const url = (await ApiFile.readAt(dirUri))?.url;
 
 			return url ? {label: url, description: subdir, url, subdir} : undefined;
 		}));

@@ -14,6 +14,7 @@ import {
 	getContentStrategy,
 	getDefinitionsStrategy,
 	getHotReloadServer,
+	getListCache,
 	getLogger,
 	getUploadStatus,
 } from './Services';
@@ -429,6 +430,11 @@ export class Command
 		}
 
 		await activeConnection.set({url, subdir});
+
+		const listResult = await Api.list();
+		if (listResult.isSuccess()) getListCache().set(subdir, listResult.value);
+		else getLogger().error('list 取得失敗:', listResult.error);
+
 		return ApiResult.success(`接続先を ${url} に切り替えました。`);
 	}
 

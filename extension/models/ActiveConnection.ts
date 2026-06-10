@@ -8,6 +8,12 @@ type ConnectionValue = {
 
 export abstract class ActiveConnection
 {
+	public static init(version: Version, v1Url?: string): ActiveConnection
+	{
+		if (version === 1) return new ActiveConnectionV1(v1Url);
+		return new ActiveConnectionV2();
+	}
+
 	abstract readonly version: Version;
 
 	public abstract get current(): string | undefined;

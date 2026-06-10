@@ -518,6 +518,11 @@ export class ContentStrategyV2 extends ContentStrategy<2>
 		return zContentV2.safeParse(data);
 	}
 
+	public safeParseList(data: unknown): z.SafeParseReturnType<ContentInputFor<2>[], ContentV2[]>
+	{
+		return z.array(zContentV2).safeParse(data);
+	}
+
 	public duplicate(content: Content, newFileName: string): ContentV2
 	{
 		const v2 = this.narrow(content);

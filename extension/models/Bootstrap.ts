@@ -1,9 +1,7 @@
-import vscode from 'vscode';
 import {Api} from './Api';
 import {FileUtil} from './FileUtil';
 import {LwContent} from './LwContent';
-import {ActiveConnection, ActiveConnectionV1, ActiveConnectionV2} from './ActiveConnection';
-import {createActiveConnection, createVersionedServices} from './Services';
+import {createVersionedServices} from './Services';
 import {Version} from '../../common/types/Version';
 import {ApiResult} from '../../common/types/ApiResult';
 
@@ -12,10 +10,11 @@ export async function initializeVersionedServices()
 	const resolution = await resolveVersion();
 	if (resolution.isFailure()) return resolution;
 
-	createVersionedServices(resolution.value.version);
+	const v1Url = resolution.value.version === 1
+		? (await Api.settingsAt(resolution.value.lwDir))?.url
+		: undefined;
 
-	const activeConnection = await buildActiveConnection(resolution.value.version, resolution.value.lwDir);
-	createActiveConnection(activeConnection);
+	createVersionedServices(resolution.value.version, v1Url);
 
 	return ApiResult.success(undefined);
 }
@@ -42,14 +41,4 @@ async function resolveVersion()
 
 	const version: Version = hasV1 ? 1 : 2;
 	return ApiResult.success({version, lwDir});
-}
-
-async function buildActiveConnection(version: Version, lwDir: vscode.Uri): Promise<ActiveConnection>
-{
-	if (version === 1)
-	{
-		const url = (await Api.settingsAt(lwDir))?.url;
-		return new ActiveConnectionV1(url);
-	}
-	return new ActiveConnectionV2();
 }

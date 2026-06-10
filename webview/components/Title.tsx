@@ -1,6 +1,6 @@
 import React from 'react';
 import {Content, getCodeTypeName} from '../../common/types/Content';
-import {Definitions} from '../../common//types/Definitions';
+import {Definitions} from '../../common/types/Definitions';
 
 type TitleProps =
 {

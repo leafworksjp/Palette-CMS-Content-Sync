@@ -1,12 +1,24 @@
 import {DiagnosticReporter} from './DiagnosticReporter';
+import {ActiveConnection} from './ActiveConnection';
+import {ListCache} from './ListCache';
+import {LwContent} from './LwContent';
 import {Logger} from './Logger';
 import {UploadStatus} from './UploadStatus';
 import {WebSocketServer} from './WebSocketServer';
+import {Version} from '../../common/types/Version';
+import {ContentStrategy} from '../../common/types/Content';
+import {DefinitionsStrategy} from '../../common/types/Definitions';
 
 let hotReloadServer: WebSocketServer | undefined = undefined;
 let logger: Logger| undefined = undefined;
 let diagnosticReporter: DiagnosticReporter | undefined = undefined;
 let uploadStatus: UploadStatus | undefined = undefined;
+let activeConnection: ActiveConnection | undefined = undefined;
+let listCache: ListCache | undefined = undefined;
+let lwContent: LwContent | undefined = undefined;
+let contentStrategy: ContentStrategy | undefined = undefined;
+let definitionsStrategy: DefinitionsStrategy | undefined = undefined;
+let currentVersion: Version | undefined = undefined;
 
 export const createHotReloadServer = (): WebSocketServer =>
 {
@@ -88,10 +100,85 @@ export const getUploadStatus = (): UploadStatus =>
 	return uploadStatus;
 };
 
+export const createVersionedServices = (version: Version, v1Url?: string): void =>
+{
+	if (currentVersion)
+	{
+		throw new Error('Versioned services are already registered.');
+	}
+	currentVersion = version;
+	contentStrategy = ContentStrategy.init(version);
+	definitionsStrategy = DefinitionsStrategy.init(version);
+	lwContent = LwContent.init(version);
+	activeConnection = ActiveConnection.init(version, v1Url);
+
+	if (version === 2) listCache = new ListCache();
+};
+
+export const getVersion = (): Version =>
+{
+	if (!currentVersion)
+	{
+		throw new Error('Version is not registered.');
+	}
+	return currentVersion;
+};
+
+export const getContentStrategy = (): ContentStrategy =>
+{
+	if (!contentStrategy)
+	{
+		throw new Error('ContentStrategy is not registered.');
+	}
+	return contentStrategy;
+};
+
+export const getDefinitionsStrategy = (): DefinitionsStrategy =>
+{
+	if (!definitionsStrategy)
+	{
+		throw new Error('DefinitionsStrategy is not registered.');
+	}
+	return definitionsStrategy;
+};
+
+export const getActiveConnection = (): ActiveConnection =>
+{
+	if (!activeConnection)
+	{
+		throw new Error('ActiveConnection is not registered.');
+	}
+	return activeConnection;
+};
+
+export const getLwContent = (): LwContent =>
+{
+	if (!lwContent)
+	{
+		throw new Error('LwContent is not registered.');
+	}
+	return lwContent;
+};
+
+export const getListCache = (): ListCache =>
+{
+	if (!listCache)
+	{
+		throw new Error('ListCache is not registered.');
+	}
+	return listCache;
+};
+
 export const unregisterServices = (): void =>
 {
 	hotReloadServer = undefined;
 	logger = undefined;
 	diagnosticReporter = undefined;
 	uploadStatus = undefined;
+	activeConnection = undefined;
+	listCache = undefined;
+	lwContent = undefined;
+	contentStrategy = undefined;
+	definitionsStrategy = undefined;
+	currentVersion = undefined;
 };

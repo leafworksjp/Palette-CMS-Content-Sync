@@ -3,6 +3,7 @@ import {JsonFile} from './JsonFile';
 import {Is} from '../../common/types/Is';
 import {FileUtil} from './FileUtil';
 import {CodeFile} from './CodeFile';
+import {ContentFile} from './ContentFile';
 
 type Variable = {key: string, value: string, dirName: string};
 
@@ -70,7 +71,10 @@ export class VariableCompletion
 
 			const codeType = CodeFile.parseCodeType(fileUri);
 
-			const json = await JsonFile.read('variables');
+			const contentUri = await ContentFile.resolveActive(fileUri);
+			if (!contentUri) return undefined;
+
+			const json = await JsonFile.read('variables', contentUri);
 			if (!json) return undefined;
 
 			const data = json[codeType];

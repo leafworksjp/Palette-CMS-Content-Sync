@@ -1,17 +1,15 @@
 import React from 'react';
 import {Locale} from '../locales/ja';
 import {Content} from '../../common/types/Content';
-import {Definitions} from '../../common//types/Definitions';
 
 type URLInputProps =
 {
 	content: Content,
-	definitions: Definitions,
+	url: string,
 };
 
-export const URLInput = ({content, definitions}: URLInputProps) =>
+export const URLInput = ({content, url}: URLInputProps) =>
 {
-	const {url} = definitions;
 	const [pageId, setPageId] = React.useState(content.page_id);
 
 	React.useEffect(() => setPageId(content.page_id), [content.page_id]);

@@ -2,7 +2,7 @@ import React from 'react';
 import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
 import {Content, CheckBoxProperties, getOptions, getColumns, getColumnName} from '../../common/types/Content';
-import {Definitions} from '../../common//types/Definitions';
+import {Definitions} from '../../common/types/Definitions';
 
 type CheckProps =
 {

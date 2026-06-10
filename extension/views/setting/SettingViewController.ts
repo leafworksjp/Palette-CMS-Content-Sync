@@ -1,9 +1,12 @@
 import vscode from 'vscode';
 import {SettingWebView} from './SettingWebView';
 import {Command} from '../../models/Command';
+import {Api} from '../../models/Api';
 import {FileUtil} from '../../models/FileUtil';
+import {LwContent} from '../../models/LwContent';
 import {ContentFile} from '../../models/ContentFile';
 import {CodeFile} from '../../models/CodeFile';
+import {getContentStrategy} from '../../models/Services';
 import {Failure, Success} from '../../../common/types/Result';
 import {
 	CompilationFailureArgs,
@@ -22,7 +25,14 @@ export class SettingViewController
 		this.command = new Command();
 
 		context.subscriptions.push(
-			vscode.window.registerWebviewViewProvider(this.webview.id, this.webview)
+			vscode.window.registerWebviewViewProvider(this.webview.id, this.webview),
+			vscode.workspace.onDidChangeConfiguration(e =>
+			{
+				if (e.affectsConfiguration('paletteCMSContentSync.connection'))
+				{
+					this.webview.refresh();
+				}
+			})
 		);
 	}
 
@@ -37,7 +47,7 @@ export class SettingViewController
 
 		if (result.isFailure())
 		{
-			this.showMessages(result);
+			await this.showMessages(result);
 		}
 	}
 
@@ -54,7 +64,7 @@ export class SettingViewController
 		const result = await this.command.uploadAll();
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async download()
@@ -70,7 +80,7 @@ export class SettingViewController
 		const result = await this.command.download();
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async delete()
@@ -86,21 +96,21 @@ export class SettingViewController
 		const result = await this.command.delete();
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async downloadSnippets()
 	{
 		const result = await this.command.downloadSnippets();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async downloadVariables()
 	{
 		const result = await this.command.downloadVariables();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	async downloadDefinitions()
@@ -108,7 +118,7 @@ export class SettingViewController
 		const result = await this.command.downloadDefinitions();
 		await this.webview.refresh();
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
 	public async create()
@@ -145,6 +155,78 @@ export class SettingViewController
 		await this.command.renameDirectory();
 	}
 
+	public async changePageId()
+	{
+		const uri = await ContentFile.resolveActive();
+		if (!uri) return;
+
+		const newPageId = await ContentFile.promptDifferentPageId(uri);
+		if (!newPageId) return;
+
+		const result = await this.command.changePageId(newPageId);
+
+		await this.webview.refresh();
+
+		await this.showMessages(result);
+
+		if (result.isSuccess() && !getContentStrategy().isPageIdServerIdentifier())
+		{
+			const uploadNow = {title: 'はい(他の変更も送信されます)', isCloseAffordance: false};
+			const later = {title: '後で手動でアップロード', isCloseAffordance: true};
+
+			const answer = await vscode.window.showInformationMessage(
+				'サーバに反映するため、今すぐコンテンツをアップロードしますか？',
+				uploadNow,
+				later
+			);
+
+			if (answer?.title === uploadNow.title)
+			{
+				await this.upload();
+			}
+		}
+	}
+
+	public async selectConnection()
+	{
+		const lwDirUri = LwContent.dir();
+		if (!lwDirUri) return;
+
+		const connectionDirs = await FileUtil.listDirectories(lwDirUri);
+
+		if (!connectionDirs.length)
+		{
+			vscode.window.showWarningMessage(`${LwContent.directoryName}/ 配下に接続先ディレクトリが見つかりません`);
+			return;
+		}
+
+		const candidates = await Promise.all(connectionDirs.map(async dirUri =>
+		{
+			const subdir = FileUtil.getBase(dirUri);
+			const url = (await Api.settingsAt(dirUri))?.url;
+
+			return url ? {label: url, description: subdir, url, subdir} : undefined;
+		}));
+
+		const items = candidates.filter((item): item is NonNullable<typeof item> => item !== undefined);
+
+		if (!items.length)
+		{
+			vscode.window.showWarningMessage('有効な接続先が見つかりません');
+			return;
+		}
+
+		const selected = await vscode.window.showQuickPick(items, {
+			placeHolder: '接続先を選択してください',
+		});
+
+		if (!selected) return;
+
+		const result = await this.command.applyConnection(lwDirUri, selected.url, selected.subdir);
+		await this.webview.refresh();
+		await this.showMessages(result);
+	}
+
 	public onDidChangeActiveTextEditor()
 	{
 		this.webview.refresh();
@@ -157,7 +239,8 @@ export class SettingViewController
 
 		if (uploadOnSave)
 		{
-			const content = await ContentFile.read();
+			const uri = await ContentFile.resolveActive(document.uri);
+			const content = uri ? await ContentFile.read(uri) : undefined;
 			if (content)
 			{
 				await this.upload();
@@ -170,7 +253,7 @@ export class SettingViewController
 		}
 	}
 
-	private showMessages(
+	private async showMessages(
 		result:
 			| Success<string>
 			| Failure<GeneralFailureArgs>
@@ -191,8 +274,14 @@ export class SettingViewController
 					break;
 
 				case 'CompilationErrorType':
-					this.webview.postMessage('setErrors', ['コンパイルエラーが発生しました。']);
-					CodeFile.appendCompileErrors(result.error.errors);
+					{
+						this.webview.postMessage('setErrors', ['コンパイルエラーが発生しました。']);
+						const uri = await ContentFile.resolveActive();
+						if (uri)
+						{
+							await CodeFile.appendCompileErrors(uri, result.error.errors);
+						}
+					}
 					break;
 
 				default:

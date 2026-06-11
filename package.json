@@ -143,12 +143,6 @@
                 "category": "Palette CMS Content Sync",
                 "title": "コンテンツ変数を再取得",
                 "icon": "$(refresh)"
-            },
-            {
-                "command": "paletteCmsContentSync.changePageId",
-                "category": "Palette CMS Content Sync",
-                "title": "コンテンツIDを更新",
-                "icon": "$(edit)"
             }
         ],
         "menus": {
@@ -207,11 +201,6 @@
                     "command": "paletteCmsContentSync.downloadDefinitions",
                     "when": "view == paletteCmsContentSync.settingView",
                     "group": "menus@6"
-                },
-                {
-                    "command": "paletteCmsContentSync.changePageId",
-                    "when": "view == paletteCmsContentSync.settingView",
-                    "group": "menus@7"
                 }
             ]
         }

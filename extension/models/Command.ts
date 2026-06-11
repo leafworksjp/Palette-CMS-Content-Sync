@@ -448,8 +448,16 @@ export class Command
 		await activeConnection.set({url, subdir});
 
 		const listResult = await Api.list();
-		if (listResult.isSuccess()) getContentCache().set(subdir, listResult.value);
-		else getLogger().error('list 取得失敗:', listResult.error);
+		if (listResult.isSuccess())
+		{
+			getContentCache().set(subdir, listResult.value);
+		}
+		else
+		{
+			getLogger().error('list 取得失敗:', listResult.error);
+			getContentCache().clear(subdir);
+			vscode.window.showWarningMessage(`接続先 (${subdir}) の list 取得に失敗しました。アップロード判定など一部機能が無効化されます。`);
+		}
 
 		return ApiResult.success(`接続先を ${url} に切り替えました。`);
 	}

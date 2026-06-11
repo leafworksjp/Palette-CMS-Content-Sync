@@ -1,3 +1,4 @@
+import vscode from 'vscode';
 import {Api} from './Api';
 import {ApiFile} from './ApiFile';
 import {FileUtil} from './FileUtil';
@@ -56,9 +57,10 @@ async function fetchContentCache(subdir: string): Promise<void>
 	if (result.isSuccess())
 	{
 		getContentCache().set(subdir, result.value);
+		return;
 	}
-	else
-	{
-		getLogger().error('初期 list 取得失敗:', result.error);
-	}
+
+	getLogger().error('初期 list 取得失敗:', result.error);
+	getContentCache().clear(subdir);
+	vscode.window.showWarningMessage(`接続先 (${subdir}) の list 取得に失敗しました。アップロード判定など一部機能が無効化されます。`);
 }

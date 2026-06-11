@@ -5,7 +5,8 @@ import {ApiResult} from '../../common/types/ApiResult';
 import {Is} from '../../common/types/Is';
 import {zCompileErrors} from '../../common/types/CompileErrors';
 import {getLogger, getContentStrategy, getDefinitionsStrategy} from './Services';
-import {Content, ContentStrategyV2} from '../../common/types/Content';
+import {Content} from '../../common/types/Content';
+import {ContentStrategyV2} from './ContentStrategy';
 import {Code} from '../../common/types/Code';
 
 const isJsonResponse = (response: Response) =>
@@ -25,7 +26,7 @@ export class Api
 		const endpoint = contentStrategy.uploadEndpoint(content);
 		const method = contentStrategy.uploadMethod(content);
 		const body = JSON.stringify({
-			contents: contentStrategy.toServerPayload(content),
+			contents: contentStrategy.parse(content),
 			contents_html: codeList
 		});
 

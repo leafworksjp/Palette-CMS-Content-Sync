@@ -6,6 +6,7 @@ import {DefinitionsFile} from '../../models/DefinitionsFile';
 import {ContentFormatter} from '../../models/ContentFormatter';
 import {ContentFile} from '../../models/ContentFile';
 import {getActiveConnection, getContentStrategy, getVersion} from '../../models/Services';
+import {Is} from '../../../common/types/Is';
 
 export class SettingWebView implements vscode.WebviewViewProvider
 {
@@ -123,7 +124,7 @@ export class SettingWebView implements vscode.WebviewViewProvider
 		}
 	}
 
-	private async updateValue(key: Exclude<keyof Content, 'is_unsynced'>, value: any)
+	private async updateValue(key: keyof Content, value: any)
 	{
 		if (!this.webview || !this.content) return;
 
@@ -152,6 +153,8 @@ export class SettingWebView implements vscode.WebviewViewProvider
 					const fileName = documentUri ? FileUtil.getName(documentUri) : '';
 
 					const contentStrategy = getContentStrategy();
+					const uploaded = contentStrategy.isUploaded(this.content);
+					if (Is.undefined(uploaded)) break;
 
 					this.webview.postMessage({
 						command: 'refresh',
@@ -161,7 +164,7 @@ export class SettingWebView implements vscode.WebviewViewProvider
 							fileName,
 							version,
 							url,
-							isReadOnly: contentStrategy.isUploaded(this.content),
+							isReadOnly: uploaded,
 							supportsSheetRefValue: contentStrategy.supportsSheetRefValue(),
 						}
 					});
@@ -230,6 +233,8 @@ export class SettingWebView implements vscode.WebviewViewProvider
 		const fileName = documentUri ? FileUtil.getName(documentUri) : '';
 
 		const contentStrategy = getContentStrategy();
+		const uploaded = this.content ? contentStrategy.isUploaded(this.content) : false;
+		if (Is.undefined(uploaded)) return;
 
 		this.webview.postMessage({
 			command: 'refresh',
@@ -239,7 +244,7 @@ export class SettingWebView implements vscode.WebviewViewProvider
 				fileName,
 				version,
 				url,
-				isReadOnly: this.content ? contentStrategy.isUploaded(this.content) : false,
+				isReadOnly: uploaded,
 				supportsSheetRefValue: contentStrategy.supportsSheetRefValue(),
 			}
 		});

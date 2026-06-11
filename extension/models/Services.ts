@@ -1,12 +1,12 @@
 import {DiagnosticReporter} from './DiagnosticReporter';
 import {ActiveConnection} from './ActiveConnection';
-import {ListCache} from './ListCache';
+import {ContentCache} from './ContentCache';
 import {LwContent} from './LwContent';
 import {Logger} from './Logger';
 import {UploadStatus} from './UploadStatus';
 import {WebSocketServer} from './WebSocketServer';
 import {Version} from '../../common/types/Version';
-import {ContentStrategy} from '../../common/types/Content';
+import {ContentStrategy} from './ContentStrategy';
 import {DefinitionsStrategy} from '../../common/types/Definitions';
 
 let hotReloadServer: WebSocketServer | undefined = undefined;
@@ -14,7 +14,7 @@ let logger: Logger| undefined = undefined;
 let diagnosticReporter: DiagnosticReporter | undefined = undefined;
 let uploadStatus: UploadStatus | undefined = undefined;
 let activeConnection: ActiveConnection | undefined = undefined;
-let listCache: ListCache | undefined = undefined;
+let contentCache: ContentCache | undefined = undefined;
 let lwContent: LwContent | undefined = undefined;
 let contentStrategy: ContentStrategy | undefined = undefined;
 let definitionsStrategy: DefinitionsStrategy | undefined = undefined;
@@ -112,7 +112,7 @@ export const createVersionedServices = (version: Version, v1Url?: string): void 
 	lwContent = LwContent.init(version);
 	activeConnection = ActiveConnection.init(version, v1Url);
 
-	if (version === 2) listCache = new ListCache();
+	if (version === 2) contentCache = new ContentCache();
 };
 
 export const getVersion = (): Version =>
@@ -160,13 +160,13 @@ export const getLwContent = (): LwContent =>
 	return lwContent;
 };
 
-export const getListCache = (): ListCache =>
+export const getContentCache = (): ContentCache =>
 {
-	if (!listCache)
+	if (!contentCache)
 	{
-		throw new Error('ListCache is not registered.');
+		throw new Error('ContentCache is not registered.');
 	}
-	return listCache;
+	return contentCache;
 };
 
 export const unregisterServices = (): void =>
@@ -176,7 +176,7 @@ export const unregisterServices = (): void =>
 	diagnosticReporter = undefined;
 	uploadStatus = undefined;
 	activeConnection = undefined;
-	listCache = undefined;
+	contentCache = undefined;
 	lwContent = undefined;
 	contentStrategy = undefined;
 	definitionsStrategy = undefined;

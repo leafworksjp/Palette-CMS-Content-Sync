@@ -12,7 +12,7 @@ export class ContentFormatter
 
 	}
 
-	public formatValue(key: Exclude<keyof Content, 'is_unsynced'>, value: any)
+	public formatValue(key: keyof Content, value: any)
 	{
 		switch (key)
 		{

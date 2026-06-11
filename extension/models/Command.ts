@@ -7,12 +7,13 @@ import {CodeFile} from './CodeFile';
 import {JsonFile} from './JsonFile';
 import {ActiveConnectionV2} from './ActiveConnection';
 import {ApiResult} from '../../common/types/ApiResult';
+import {Is} from '../../common/types/Is';
 import {Locale} from '../locales/ja';
 import {
 	getActiveConnection,
 	getContentStrategy,
 	getHotReloadServer,
-	getListCache,
+	getContentCache,
 	getLogger,
 	getUploadStatus,
 } from './Services';
@@ -271,8 +272,14 @@ export class Command
 		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
 		const content = await ContentFile.read(uri);
+		if (!content) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
-		if (!content || !getContentStrategy().isUploaded(content))
+		const uploaded = getContentStrategy().isUploaded(content);
+		if (Is.undefined(uploaded))
+		{
+			return ApiResult.generalFailure('接続先の list が取得できていません。再試行してください。');
+		}
+		if (!uploaded)
 		{
 			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
 		}
@@ -297,8 +304,14 @@ export class Command
 		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
 		const content = await ContentFile.read(uri);
+		if (!content) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
-		if (!content || !getContentStrategy().isUploaded(content))
+		const uploaded = getContentStrategy().isUploaded(content);
+		if (Is.undefined(uploaded))
+		{
+			return ApiResult.generalFailure('接続先の list が取得できていません。再試行してください。');
+		}
+		if (!uploaded)
 		{
 			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
 		}
@@ -356,7 +369,12 @@ export class Command
 
 		if (!content) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
-		if (!contentStrategy.isUploaded(content))
+		const uploaded = contentStrategy.isUploaded(content);
+		if (Is.undefined(uploaded))
+		{
+			return ApiResult.generalFailure('接続先の list が取得できていません。再試行してください。');
+		}
+		if (!uploaded)
 		{
 			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
 		}
@@ -430,7 +448,7 @@ export class Command
 		await activeConnection.set({url, subdir});
 
 		const listResult = await Api.list();
-		if (listResult.isSuccess()) getListCache().set(subdir, listResult.value);
+		if (listResult.isSuccess()) getContentCache().set(subdir, listResult.value);
 		else getLogger().error('list 取得失敗:', listResult.error);
 
 		return ApiResult.success(`接続先を ${url} に切り替えました。`);

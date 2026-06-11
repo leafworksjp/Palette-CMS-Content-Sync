@@ -2,7 +2,7 @@ import {Api} from './Api';
 import {ApiFile} from './ApiFile';
 import {FileUtil} from './FileUtil';
 import {LwContent} from './LwContent';
-import {createVersionedServices, getActiveConnection, getListCache, getLogger} from './Services';
+import {createVersionedServices, getActiveConnection, getContentCache, getLogger} from './Services';
 import {Version} from '../../common/types/Version';
 import {ApiResult} from '../../common/types/ApiResult';
 
@@ -20,7 +20,7 @@ export async function initializeVersionedServices()
 	if (resolution.value.version === 2)
 	{
 		const subdir = getActiveConnection().subdir;
-		if (subdir) await fetchListCache(subdir);
+		if (subdir) await fetchContentCache(subdir);
 	}
 
 	return ApiResult.success(undefined);
@@ -50,12 +50,12 @@ async function resolveVersion()
 	return ApiResult.success({version, lwDir});
 }
 
-async function fetchListCache(subdir: string): Promise<void>
+async function fetchContentCache(subdir: string): Promise<void>
 {
 	const result = await Api.list();
 	if (result.isSuccess())
 	{
-		getListCache().set(subdir, result.value);
+		getContentCache().set(subdir, result.value);
 	}
 	else
 	{

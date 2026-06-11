@@ -1,9 +1,11 @@
 import {
 	ContentStrategyV1,
 	ContentStrategyV2,
+} from '../../extension/models/ContentStrategy';
+import {
 	zContentV1,
 	zContentV2,
-} from '../types/Content';
+} from '../../common/types/Content';
 
 const baseFields = {
 	category: 'cat',
@@ -37,16 +39,9 @@ describe('ContentStrategy.uploadEndpoint / uploadMethod', () =>
 	{
 		const strategy = new ContentStrategyV2();
 
-		test('is_unsynced: true でも upsert / PUT', () =>
+		test('content の状態によらず upsert / PUT', () =>
 		{
-			const content = zContentV2.parse({...baseFields, is_unsynced: true});
-			expect(strategy.uploadEndpoint(content)).toBe('upsert');
-			expect(strategy.uploadMethod(content)).toBe('PUT');
-		});
-
-		test('is_unsynced 未設定でも upsert / PUT', () =>
-		{
-			const content = zContentV2.parse({...baseFields});
+			const content = zContentV2.parse(baseFields);
 			expect(strategy.uploadEndpoint(content)).toBe('upsert');
 			expect(strategy.uploadMethod(content)).toBe('PUT');
 		});

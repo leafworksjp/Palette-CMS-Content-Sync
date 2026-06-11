@@ -1,6 +1,6 @@
 import {Content} from '../../common/types/Content';
 
-export class ListCache
+export class ContentCache
 {
 	private readonly cache = new Map<string, Content[]>();
 

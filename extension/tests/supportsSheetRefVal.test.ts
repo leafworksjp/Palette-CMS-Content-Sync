@@ -1,7 +1,7 @@
 import {
 	ContentStrategyV1,
 	ContentStrategyV2,
-} from '../types/Content';
+} from '../../extension/models/ContentStrategy';
 
 describe('ContentStrategy.supportsSheetRefValue', () =>
 {

@@ -1,8 +1,8 @@
 import {
 	ContentStrategyV2,
-	zContentV2,
-} from '../types/Content';
-import {zDefinitionsV2} from '../types/Definitions';
+} from '../../extension/models/ContentStrategy';
+import {zContentV2} from '../../common/types/Content';
+import {zDefinitionsV2} from '../../common/types/Definitions';
 
 const baseDefinitionsData = {
 	columns: {
@@ -207,16 +207,6 @@ describe('ContentStrategy.validate', () =>
 		test('name に任意文字列が入っていても valid', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, name: '何でもいいテキスト'});
-			const result = strategy.validate(content, definitions);
-			expect(result).toEqual([]);
-		});
-	});
-
-	describe('R6: clientOnlyFields は対象外', () =>
-	{
-		test('is_unsynced: true でも valid', () =>
-		{
-			const content = zContentV2.parse({...baseContentData, is_unsynced: true});
 			const result = strategy.validate(content, definitions);
 			expect(result).toEqual([]);
 		});

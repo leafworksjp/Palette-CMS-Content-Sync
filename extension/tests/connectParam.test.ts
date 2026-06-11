@@ -1,9 +1,11 @@
 import {
 	ContentStrategyV1,
 	ContentStrategyV2,
+} from '../../extension/models/ContentStrategy';
+import {
 	zContentV1,
 	zContentV2,
-} from '../types/Content';
+} from '../../common/types/Content';
 
 const baseFields = {
 	category: 'cat',

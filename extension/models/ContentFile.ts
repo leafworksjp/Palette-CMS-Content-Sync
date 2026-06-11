@@ -1,7 +1,7 @@
 import vscode from 'vscode';
 import {FileUtil} from './FileUtil';
 import {DefinitionsFile} from '../models/DefinitionsFile';
-import {Content, getColumns, clientOnlyFields} from '../../common/types/Content';
+import {Content, getColumns} from '../../common/types/Content';
 import {getLogger, getContentStrategy} from './Services';
 
 export class ContentFile
@@ -50,7 +50,7 @@ export class ContentFile
 		{
 			const contentObj = Object
 			.fromEntries(Object.entries(content)
-			.filter(([column]) => columns.includes(column) || clientOnlyFields.some(f => f === column)));
+			.filter(([column]) => columns.includes(column)));
 
 			const data = JSON.stringify(contentObj, undefined, 4);
 

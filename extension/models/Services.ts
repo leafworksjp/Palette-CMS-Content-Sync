@@ -7,7 +7,7 @@ import {UploadStatus} from './UploadStatus';
 import {WebSocketServer} from './WebSocketServer';
 import {Version} from '../../common/types/Version';
 import {ContentStrategy} from './ContentStrategy';
-import {DefinitionsStrategy} from '../../common/types/Definitions';
+import {DefinitionsStrategy} from './DefinitionsStrategy';
 
 let hotReloadServer: WebSocketServer | undefined = undefined;
 let logger: Logger| undefined = undefined;

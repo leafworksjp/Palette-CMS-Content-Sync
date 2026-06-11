@@ -1,8 +1,8 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, zContentV1, zContentV2} from '../../common/types/Content';
-import {Definitions, zDefinitionsV1, zDefinitionsV2} from '../../common/types/Definitions';
-import {zVersion} from '../../common/types/Version';
+import {Content, zContentV1, zContentV2} from '../../../common/types/Content';
+import {Definitions, zDefinitionsV1, zDefinitionsV2} from '../../../common/types/Definitions';
+import {zVersion} from '../../../common/types/Version';
 import {Form} from './Form';
 import {Welcome} from './Welcome';
 

@@ -9,7 +9,7 @@ export class SettingHtml
 		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'reset.css'));
 		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'vscode.css'));
 		const styleSettingUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'setting.css'));
-		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'webview.bundle.js'));
+		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'setting.bundle.js'));
 
 		return `
 			<!DOCTYPE html>

@@ -10,8 +10,8 @@ import {Radio} from './Radio';
 import {BasicAuthInput} from './BasicAuthInput';
 import {SearchInputs} from './SearchInputs';
 import {OrderInputs} from './OrderInputs';
-import {Content, getColumns} from '../../common/types/Content';
-import {Definitions} from '../../common/types/Definitions';
+import {Content, getColumns} from '../../../common/types/Content';
+import {Definitions} from '../../../common/types/Definitions';
 
 type FormProps =
 {

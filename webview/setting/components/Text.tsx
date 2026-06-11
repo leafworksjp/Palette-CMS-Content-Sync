@@ -1,9 +1,9 @@
 import React from 'react';
 import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
-import {ContentFor, TextPropertiesFor, getColumnName, getColumns} from '../../common/types/Content';
-import {Definitions} from '../../common/types/Definitions';
-import {Version} from '../../common/types/Version';
+import {ContentFor, TextPropertiesFor, getColumnName, getColumns} from '../../../common/types/Content';
+import {Definitions} from '../../../common/types/Definitions';
+import {Version} from '../../../common/types/Version';
 
 type TextProps<V extends Version> =
 {

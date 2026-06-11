@@ -29,6 +29,12 @@ export class Dispatcher
 		});
 	}
 
+	/**
+	 * blur 時にフィールド値を Extension に通知する。
+	 *
+	 * Extension 側のハンドラは現状未実装で送信内容は破棄される。
+	 * テキスト系入力で確定・トリミング等の処理が必要になった時のために残しているプロトコル。
+	 */
 	static onBlur(key: string, value: Array<any>|string)
 	{
 		vscode.postMessage({

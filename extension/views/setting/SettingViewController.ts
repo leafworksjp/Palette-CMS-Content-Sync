@@ -6,7 +6,6 @@ import {FileUtil} from '../../models/FileUtil';
 import {LwContent} from '../../models/LwContent';
 import {ContentFile} from '../../models/ContentFile';
 import {CodeFile} from '../../models/CodeFile';
-import {getContentStrategy} from '../../models/Services';
 import {Failure, Success} from '../../../common/types/Result';
 import {
 	CompilationFailureArgs,
@@ -153,38 +152,6 @@ export class SettingViewController
 	public async renameDirectory()
 	{
 		await this.command.renameDirectory();
-	}
-
-	public async changePageId()
-	{
-		const uri = await ContentFile.resolveActive();
-		if (!uri) return;
-
-		const newPageId = await ContentFile.promptDifferentPageId(uri);
-		if (!newPageId) return;
-
-		const result = await this.command.changePageId(newPageId);
-
-		await this.webview.refresh();
-
-		await this.showMessages(result);
-
-		if (result.isSuccess() && !getContentStrategy().isPageIdServerIdentifier())
-		{
-			const uploadNow = {title: 'はい(他の変更も送信されます)', isCloseAffordance: false};
-			const later = {title: '後で手動でアップロード', isCloseAffordance: true};
-
-			const answer = await vscode.window.showInformationMessage(
-				'サーバに反映するため、今すぐコンテンツをアップロードしますか？',
-				uploadNow,
-				later
-			);
-
-			if (answer?.title === uploadNow.title)
-			{
-				await this.upload();
-			}
-		}
 	}
 
 	public async selectConnection()

@@ -29,6 +29,12 @@ export type ValidationError = {
 	reason: ValidationErrorReason,
 };
 
+export type UploadPlan =
+	| {kind: 'create'}
+	| {kind: 'update'}
+	| {kind: 'choose', candidates: Content[]}
+	| {kind: 'unjudgable'};
+
 const enumFieldsForValidation: ReadonlyArray<RadioProperties | SelectProperties | CheckBoxProperties> = [
 	'use_template_engine',
 	'state',
@@ -153,6 +159,7 @@ export abstract class ContentStrategy<V extends Version = Version>
 	public abstract serverIdField(): 'id' | 'page_id';
 	public abstract serverId(content: Content): string;
 	public abstract isUploaded(content: Content): boolean | undefined;
+	public abstract uploadPlan(content: Content): UploadPlan;
 	public abstract uploadEndpoint(content: Content): string;
 	public abstract uploadMethod(content: Content): 'POST' | 'PUT';
 	public abstract supportsSheetRefValue(): boolean;
@@ -160,11 +167,6 @@ export abstract class ContentStrategy<V extends Version = Version>
 	public serverIdParam(content: Content): string
 	{
 		return `${this.serverIdField()}=${this.serverId(content)}`;
-	}
-
-	public isPageIdServerIdentifier(): boolean
-	{
-		return this.serverIdField() === 'page_id';
 	}
 
 	public validate(content: Content, definitions: Definitions): ValidationError[]
@@ -217,6 +219,11 @@ export class ContentStrategyV1 extends ContentStrategy<1>
 	public isUploaded(content: Content): boolean
 	{
 		return Boolean(this.narrow(content).id);
+	}
+
+	public uploadPlan(content: Content): UploadPlan
+	{
+		return this.narrow(content).id ? {kind: 'update'} : {kind: 'create'};
 	}
 
 	public uploadEndpoint(content: Content): string
@@ -290,6 +297,27 @@ export class ContentStrategyV2 extends ContentStrategy<2>
 		if (!list) return undefined;
 
 		return list.some(c => c.page_id === this.narrow(content).page_id);
+	}
+
+	public uploadPlan(content: Content): UploadPlan
+	{
+		const ac = getActiveConnection();
+		if (!(ac instanceof ActiveConnectionV2) || !ac.subdir) return {kind: 'unjudgable'};
+
+		const list = getContentCache().get(ac.subdir);
+		if (!list) return {kind: 'unjudgable'};
+
+		const v2 = this.narrow(content);
+		if (list.some(c => c.page_id === v2.page_id)) return {kind: 'update'};
+
+		const candidates = list.filter(c =>
+		{
+			return c.page_id !== v2.page_id
+				&& c.contents_type === v2.contents_type
+				&& c.sheet_id === v2.sheet_id
+				&& c.use_template_engine === v2.use_template_engine;
+		});
+		return {kind: 'choose', candidates};
 	}
 
 	public uploadEndpoint(_content: Content): string

@@ -6,7 +6,10 @@ import {ContentFile} from './ContentFile';
 import {CodeFile} from './CodeFile';
 import {JsonFile} from './JsonFile';
 import {ActiveConnectionV2} from './ActiveConnection';
+import {ContentStrategyV2, UploadPlan} from './ContentStrategy';
 import {ApiResult} from '../../common/types/ApiResult';
+import {Content} from '../../common/types/Content';
+import {Code} from '../../common/types/Code';
 import {Is} from '../../common/types/Is';
 import {Locale} from '../locales/ja';
 import {
@@ -43,68 +46,132 @@ export class Command
 		}
 
 		const codeList = await CodeFile.read(uri);
+		const strategy = getContentStrategy();
+		const plan = strategy.uploadPlan(content);
 
-		const uploadResult = await Api.upload(content, codeList);
+		const dispatched = await this.dispatchUpload(plan, content, codeList);
+		const uploadResult = dispatched.result;
 
-		if (uploadResult.isSuccess())
-		{
-			getHotReloadServer().postMessage({type: 'reload', pageId: content.page_id});
-
-			await ContentFile.write(uri, uploadResult.value.content);
-			await CodeFile.create(uri, uploadResult.value.content);
-
-			const downloadResult = await Api.download(uploadResult.value.content);
-
-			if (downloadResult.isSuccess())
-			{
-				await ContentFile.write(uri, downloadResult.value.content);
-				await CodeFile.write(uri, downloadResult.value.content, downloadResult.value.codeList);
-			}
-			else
-			{
-				getUploadStatus().showError();
-				return downloadResult;
-			}
-
-			if (content.use_template_engine)
-			{
-				const snippetsResult = await Api.getSnippets(uploadResult.value.content);
-				if (snippetsResult.isSuccess())
-				{
-					await JsonFile.write('snippets', snippetsResult.value, uri);
-
-					getUploadStatus().showCompleted();
-					return ApiResult.success(undefined);
-				}
-				else
-				{
-					getUploadStatus().showError();
-					return snippetsResult;
-				}
-			}
-			else
-			{
-				const variablesResult = await Api.getVariables(uploadResult.value.content);
-
-				if (variablesResult.isSuccess())
-				{
-					await JsonFile.write('variables', variablesResult.value, uri);
-
-					getUploadStatus().showCompleted();
-					return ApiResult.success(undefined);
-				}
-				else
-				{
-					getUploadStatus().showError();
-					return variablesResult;
-				}
-			}
-		}
-		else
+		if (uploadResult.isFailure())
 		{
 			getUploadStatus().showError();
 			return uploadResult;
 		}
+
+		getHotReloadServer().postMessage({type: 'reload', pageId: uploadResult.value.content.page_id});
+
+		await ContentFile.write(uri, uploadResult.value.content);
+		await CodeFile.create(uri, uploadResult.value.content);
+
+		if (strategy instanceof ContentStrategyV2)
+		{
+			const ac = getActiveConnection();
+			if (ac instanceof ActiveConnectionV2 && ac.subdir)
+			{
+				if (dispatched.replacedPageId) getContentCache().remove(ac.subdir, dispatched.replacedPageId);
+				getContentCache().add(ac.subdir, uploadResult.value.content);
+			}
+		}
+
+		const downloadResult = await Api.download(uploadResult.value.content);
+
+		if (downloadResult.isFailure())
+		{
+			getUploadStatus().showError();
+			return downloadResult;
+		}
+
+		await ContentFile.write(uri, downloadResult.value.content);
+		await CodeFile.write(uri, downloadResult.value.content, downloadResult.value.codeList);
+
+		if (content.use_template_engine)
+		{
+			const snippetsResult = await Api.getSnippets(uploadResult.value.content);
+			if (snippetsResult.isFailure())
+			{
+				getUploadStatus().showError();
+				return snippetsResult;
+			}
+			await JsonFile.write('snippets', snippetsResult.value, uri);
+		}
+		else
+		{
+			const variablesResult = await Api.getVariables(uploadResult.value.content);
+			if (variablesResult.isFailure())
+			{
+				getUploadStatus().showError();
+				return variablesResult;
+			}
+			await JsonFile.write('variables', variablesResult.value, uri);
+		}
+
+		getUploadStatus().showCompleted();
+		return ApiResult.success(undefined);
+	}
+
+	private async dispatchUpload(plan: UploadPlan, content: Content, codeList: Code[])
+	{
+		switch (plan.kind)
+		{
+			case 'update':
+				return {
+					result: await Api.update(content, codeList),
+					replacedPageId: undefined
+				};
+			case 'create':
+				return {
+					result: await Api.create(content, codeList),
+					replacedPageId: undefined
+				};
+			case 'choose':
+				return this.handleChoose(plan.candidates, content, codeList);
+			default:
+				return {
+					result: ApiResult.generalFailure('接続先の list が取得できていません。再試行してください。'),
+					replacedPageId: undefined,
+				};
+		}
+	}
+
+	private async handleChoose(candidates: Content[], content: Content, codeList: Code[])
+	{
+		type Choice =
+			| {action: 'create', label: string}
+			| {action: 'replace', label: string, targetPageId: string};
+
+		const items: Choice[] = [
+			{action: 'create', label: '新規作成'},
+			...candidates.map(c => ({
+				action: 'replace' as const,
+				label: `置き換え: ${c.page_id}`,
+				targetPageId: c.page_id,
+			})),
+		];
+
+		const choice = await vscode.window.showQuickPick(items, {
+			placeHolder: `対象: ${content.page_id}`,
+		});
+
+		if (!choice)
+		{
+			return {
+				result: ApiResult.generalFailure('アップロードをキャンセルしました。'),
+				replacedPageId: undefined,
+			};
+		}
+
+		if (choice.action === 'create')
+		{
+			return {
+				result: await Api.create(content, codeList),
+				replacedPageId: undefined
+			};
+		}
+
+		return {
+			result: await Api.replace(content, codeList, choice.targetPageId),
+			replacedPageId: choice.targetPageId,
+		};
 	}
 
 	public async uploadAll()
@@ -356,43 +423,6 @@ export class Command
 		if (!content) return;
 
 		await ContentFile.changeDirectoryName(uri, content.page_id);
-	}
-
-	public async changePageId(newPageId: string)
-	{
-		const uri = await ContentFile.resolveActive();
-		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
-
-		const contentStrategy = getContentStrategy();
-
-		const content = await ContentFile.read(uri);
-
-		if (!content) return ApiResult.generalFailure(Locale.pleaseOpenContent);
-
-		const uploaded = contentStrategy.isUploaded(content);
-		if (Is.undefined(uploaded))
-		{
-			return ApiResult.generalFailure('接続先の list が取得できていません。再試行してください。');
-		}
-		if (!uploaded)
-		{
-			return ApiResult.generalFailure('コンテンツをアップロードしてください。');
-		}
-
-		if (contentStrategy.isPageIdServerIdentifier())
-		{
-			const result = await Api.changePageId(content, newPageId);
-			if (!result.isSuccess()) return result;
-
-			await ContentFile.write(uri, result.value.content);
-		}
-		else
-		{
-			await ContentFile.write(uri, {...content, page_id: newPageId});
-		}
-
-		await ContentFile.changeDirectoryName(uri, newPageId);
-		return ApiResult.success('コンテンツIDを更新しました。');
 	}
 
 	public async applyConnection(lwDirUri: vscode.Uri, url: string, subdir: string)

@@ -113,7 +113,6 @@ function registerSettingsViewController(context: vscode.ExtensionContext)
 	registerCommand(context, 'paletteCmsContentSync.downloadDefinitions', () => settingsViewController?.downloadDefinitions());
 	registerCommand(context, 'paletteCmsContentSync.renameDirectory', () => settingsViewController?.renameDirectory());
 	registerCommand(context, 'paletteCmsContentSync.selectConnection', () => settingsViewController?.selectConnection());
-	registerCommand(context, 'paletteCmsContentSync.changePageId', () => settingsViewController?.changePageId());
 }
 
 function registerVariableCompletionProvider(context: vscode.ExtensionContext)

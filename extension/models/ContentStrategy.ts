@@ -18,6 +18,7 @@ import {
 import {Version} from '../../common/types/Version';
 import {Definitions, DefinitionsFor} from '../../common/types/Definitions';
 import {ActiveConnectionV2} from './ActiveConnection';
+import {findReplaceCandidates} from './SyncDiff';
 import {getActiveConnection, getContentCache} from './Services';
 
 export type ValidationErrorReason = 'unknown_field' | 'invalid_value' | 'unknown_col';
@@ -310,14 +311,7 @@ export class ContentStrategyV2 extends ContentStrategy<2>
 		const v2 = this.narrow(content);
 		if (list.some(c => c.page_id === v2.page_id)) return {kind: 'update'};
 
-		const candidates = list.filter(c =>
-		{
-			return c.page_id !== v2.page_id
-				&& c.contents_type === v2.contents_type
-				&& c.sheet_id === v2.sheet_id
-				&& c.use_template_engine === v2.use_template_engine;
-		});
-		return {kind: 'choose', candidates};
+		return {kind: 'choose', candidates: findReplaceCandidates(v2, list)};
 	}
 
 	public uploadEndpoint(_content: Content): string

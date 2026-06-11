@@ -1,4 +1,4 @@
-import {computeSyncDiff, findReplaceCandidates, predictConflicts, SyncAction} from '../../extension/models/SyncDiff';
+import {computeSyncDiff, findReplaceCandidates, orderActions, predictConflicts, SyncAction} from '../../extension/models/SyncDiff';
 import {zContentV2} from '../../common/types/Content';
 
 const make = (pageId: string, overrides: Record<string, unknown> = {}) => zContentV2.parse({
@@ -182,5 +182,51 @@ describe('predictConflicts', () =>
 			{kind: 'delete', pageId: 'c'},
 		];
 		expect(predictConflicts(actions)).toEqual([]);
+	});
+});
+
+describe('orderActions', () =>
+{
+	test('空 → 空', () =>
+	{
+		expect(orderActions([])).toEqual([]);
+	});
+
+	test('削除のみ → そのまま', () =>
+	{
+		const actions: SyncAction[] = [
+			{kind: 'delete', pageId: 'a'},
+			{kind: 'delete', pageId: 'b'},
+		];
+		expect(orderActions(actions)).toEqual(actions);
+	});
+
+	test('非削除のみ → そのまま', () =>
+	{
+		const actions: SyncAction[] = [
+			{kind: 'update', local: make('a')},
+			{kind: 'create', local: make('b')},
+		];
+		expect(orderActions(actions)).toEqual(actions);
+	});
+
+	test('混在 → 非削除が先、削除が後', () =>
+	{
+		const update: SyncAction = {kind: 'update', local: make('a')};
+		const del1: SyncAction = {kind: 'delete', pageId: 'x'};
+		const create: SyncAction = {kind: 'create', local: make('b')};
+		const del2: SyncAction = {kind: 'delete', pageId: 'y'};
+		const replace: SyncAction = {kind: 'replace', local: make('c'), targetPageId: 'z'};
+
+		const ordered = orderActions([del1, update, del2, create, replace]);
+		expect(ordered).toEqual([update, create, replace, del1, del2]);
+	});
+
+	test('同種内の順序は保持 (stable)', () =>
+	{
+		const a: SyncAction = {kind: 'update', local: make('a')};
+		const b: SyncAction = {kind: 'update', local: make('b')};
+		const c: SyncAction = {kind: 'update', local: make('c')};
+		expect(orderActions([a, b, c])).toEqual([a, b, c]);
 	});
 });

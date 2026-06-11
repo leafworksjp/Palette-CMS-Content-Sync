@@ -61,3 +61,13 @@ export function predictConflicts(actions: SyncAction[]): Conflict[]
 
 	return duplicates.map(pageId => ({pageId}));
 }
+
+export function orderActions(actions: SyncAction[]): SyncAction[]
+{
+	return [...actions].sort((a, b) =>
+	{
+		if (a.kind === 'delete' && b.kind !== 'delete') return 1;
+		if (a.kind !== 'delete' && b.kind === 'delete') return -1;
+		return 0;
+	});
+}

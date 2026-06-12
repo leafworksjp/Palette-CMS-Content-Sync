@@ -5,6 +5,7 @@ import {DefinitionsFile} from './DefinitionsFile';
 import {ContentFile} from './ContentFile';
 import {CodeFile} from './CodeFile';
 import {JsonFile} from './JsonFile';
+import {LwContent} from './LwContent';
 import {ActiveConnectionV2} from './ActiveConnection';
 import {ContentStrategyV2, UploadPlan} from './ContentStrategy';
 import {ApiResult} from '../../common/types/ApiResult';
@@ -68,7 +69,11 @@ export class Command
 			const ac = getActiveConnection();
 			if (ac instanceof ActiveConnectionV2 && ac.subdir)
 			{
-				if (dispatched.replacedPageId) getContentCache().remove(ac.subdir, dispatched.replacedPageId);
+				if (dispatched.replacedPageId)
+				{
+					getContentCache().remove(ac.subdir, dispatched.replacedPageId);
+					await this.deleteReplacedLocalDir(ac.subdir, dispatched.replacedPageId);
+				}
 				getContentCache().add(ac.subdir, uploadResult.value.content);
 			}
 		}
@@ -172,6 +177,18 @@ export class Command
 			result: await Api.replace(content, codeList, choice.targetPageId),
 			replacedPageId: choice.targetPageId,
 		};
+	}
+
+	private async deleteReplacedLocalDir(subdir: string, replacedPageId: string)
+	{
+		const lwDir = LwContent.dir();
+		if (!lwDir) return;
+
+		const oldDirUri = FileUtil.join(lwDir, subdir, replacedPageId);
+		if (await FileUtil.exists(oldDirUri))
+		{
+			await FileUtil.deleteFile(oldDirUri, {recursive: true, useTrash: true});
+		}
 	}
 
 	public async uploadAll()

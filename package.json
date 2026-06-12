@@ -36,6 +36,11 @@
                     "type": "webview",
                     "id": "paletteCmsContentSync.settingView",
                     "name": "コンテンツ設定"
+                },
+                {
+                    "type": "webview",
+                    "id": "paletteCmsContentSync.syncView",
+                    "name": "同期"
                 }
             ]
         },

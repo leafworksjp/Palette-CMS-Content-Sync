@@ -1,6 +1,7 @@
 
 import vscode from 'vscode';
 import {SettingViewController} from './views/setting/SettingViewController';
+import {SyncViewController} from './views/sync/SyncViewController';
 import {VariableCompletion} from './models/VariableCompletion';
 import {TemplateCompletion} from './models/TemplateCompletion';
 import {
@@ -22,6 +23,7 @@ const onDidChangeActiveTextEditorHandlers: ((editor: vscode.TextEditor) => void)
 const onDidSaveTextDocumentHandlers:((document: vscode.TextDocument) => void)[] = [];
 let paletteSyntaxHighlighting: PaletteSyntaxHighlighting | undefined = undefined;
 let settingsViewController: SettingViewController | undefined = undefined;
+let syncViewController: SyncViewController | undefined = undefined;
 let variableCompletion: VariableCompletion | undefined = undefined;
 let templateCompletion: TemplateCompletion | undefined = undefined;
 let htmlFormatter: HTMLFormatter | undefined = undefined;
@@ -42,6 +44,7 @@ export async function activate(context: vscode.ExtensionContext)
 
 	registerConnectionStatusBar(context);
 	registerSettingsViewController(context);
+	registerSyncViewController(context);
 	registerVariableCompletionProvider(context);
 	registerTemplateCompletionProvider(context);
 	bindEvents(context);
@@ -54,6 +57,7 @@ export function deactivate()
 	onDidSaveTextDocumentHandlers.splice(0);
 	paletteSyntaxHighlighting = undefined;
 	settingsViewController = undefined;
+	syncViewController = undefined;
 	variableCompletion = undefined;
 	templateCompletion = undefined;
 	htmlFormatter = undefined;
@@ -113,6 +117,12 @@ function registerSettingsViewController(context: vscode.ExtensionContext)
 	registerCommand(context, 'paletteCmsContentSync.downloadDefinitions', () => settingsViewController?.downloadDefinitions());
 	registerCommand(context, 'paletteCmsContentSync.renameDirectory', () => settingsViewController?.renameDirectory());
 	registerCommand(context, 'paletteCmsContentSync.selectConnection', () => settingsViewController?.selectConnection());
+}
+
+function registerSyncViewController(context: vscode.ExtensionContext)
+{
+	syncViewController = new SyncViewController(context);
+	context.subscriptions.push(syncViewController);
 }
 
 function registerVariableCompletionProvider(context: vscode.ExtensionContext)

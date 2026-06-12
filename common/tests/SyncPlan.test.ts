@@ -1,5 +1,5 @@
-import {computeSyncDiff, findReplaceCandidates, orderActions, predictConflicts, SyncAction} from '../../extension/models/SyncDiff';
-import {zContentV2} from '../../common/types/Content';
+import {computeSyncDiff, findReplaceCandidates, orderActions, predictConflicts, SyncAction} from '../types/SyncPlan';
+import {zContentV2} from '../types/Content';
 
 const make = (pageId: string, overrides: Record<string, unknown> = {}) => zContentV2.parse({
 	category: 'cat',

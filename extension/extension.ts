@@ -123,6 +123,8 @@ function registerSyncViewController(context: vscode.ExtensionContext)
 {
 	syncViewController = new SyncViewController(context);
 	context.subscriptions.push(syncViewController);
+
+	registerCommand(context, 'paletteCmsContentSync.sync', () => syncViewController?.sync());
 }
 
 function registerVariableCompletionProvider(context: vscode.ExtensionContext)

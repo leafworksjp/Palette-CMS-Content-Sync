@@ -1,15 +1,15 @@
-import {Content} from '../../common/types/Content';
+import {ContentV2} from '../../common/types/Content';
 
 export class ContentCache
 {
-	private readonly cache = new Map<string, Content[]>();
+	private readonly cache = new Map<string, ContentV2[]>();
 
-	public get(subdir: string): Content[] | undefined
+	public get(subdir: string): ContentV2[] | undefined
 	{
 		return this.cache.get(subdir);
 	}
 
-	public set(subdir: string, contents: Content[]): void
+	public set(subdir: string, contents: ContentV2[]): void
 	{
 		this.cache.set(subdir, contents);
 	}
@@ -19,7 +19,7 @@ export class ContentCache
 		this.cache.delete(subdir);
 	}
 
-	public add(subdir: string, content: Content): void
+	public add(subdir: string, content: ContentV2): void
 	{
 		const list = this.cache.get(subdir);
 		if (!list) return;

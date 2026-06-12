@@ -18,7 +18,7 @@ import {
 import {Version} from '../../common/types/Version';
 import {Definitions, DefinitionsFor} from '../../common/types/Definitions';
 import {ActiveConnectionV2} from './ActiveConnection';
-import {findReplaceCandidates} from './SyncDiff';
+import {findReplaceCandidates} from '../../common/types/SyncPlan';
 import {getActiveConnection, getContentCache} from './Services';
 
 export type ValidationErrorReason = 'unknown_field' | 'invalid_value' | 'unknown_col';
@@ -33,7 +33,7 @@ export type ValidationError = {
 export type UploadPlan =
 	| {kind: 'create'}
 	| {kind: 'update'}
-	| {kind: 'choose', candidates: Content[]}
+	| {kind: 'choose', candidates: ContentV2[]}
 	| {kind: 'unjudgable'};
 
 const enumFieldsForValidation: ReadonlyArray<RadioProperties | SelectProperties | CheckBoxProperties> = [

@@ -96,6 +96,10 @@ export type CheckBoxProperties = 'permission'|'permission_sheet'|'manager_permis
 
 export type SelectProperties = 'contents_type'|'http_header_content_type'|'sheet_id'|'search_query_order_rand';
 
+export type UploadChoice =
+	| {action: 'create', label: string}
+	| {action: 'replace', label: string, targetPageId: string};
+
 export const baseDefaults = (newFileName: string) => ({
 	category: '未設定',
 	page_id: newFileName,

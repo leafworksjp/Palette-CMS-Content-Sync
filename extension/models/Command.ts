@@ -9,7 +9,7 @@ import {LwContent} from './LwContent';
 import {ActiveConnectionV2} from './ActiveConnection';
 import {ContentStrategyV2, UploadPlan} from './ContentStrategy';
 import {ApiResult} from '../../common/types/ApiResult';
-import {Content} from '../../common/types/Content';
+import {Content, ContentV2, UploadChoice} from '../../common/types/Content';
 import {Code} from '../../common/types/Code';
 import {Is} from '../../common/types/Is';
 import {Locale} from '../locales/ja';
@@ -69,12 +69,16 @@ export class Command
 			const ac = getActiveConnection();
 			if (ac instanceof ActiveConnectionV2 && ac.subdir)
 			{
-				if (dispatched.replacedPageId)
+				const v2Result = strategy.safeParse(uploadResult.value.content);
+				if (v2Result.success)
 				{
-					getContentCache().remove(ac.subdir, dispatched.replacedPageId);
-					await this.deleteReplacedLocalDir(ac.subdir, dispatched.replacedPageId);
+					if (dispatched.replacedPageId)
+					{
+						getContentCache().remove(ac.subdir, dispatched.replacedPageId);
+						await this.deleteReplacedLocalDir(ac.subdir, dispatched.replacedPageId);
+					}
+					getContentCache().add(ac.subdir, v2Result.data);
 				}
-				getContentCache().add(ac.subdir, uploadResult.value.content);
 			}
 		}
 
@@ -138,13 +142,9 @@ export class Command
 		}
 	}
 
-	private async handleChoose(candidates: Content[], content: Content, codeList: Code[])
+	private async handleChoose(candidates: ContentV2[], content: Content, codeList: Code[])
 	{
-		type Choice =
-			| {action: 'create', label: string}
-			| {action: 'replace', label: string, targetPageId: string};
-
-		const items: Choice[] = [
+		const items: UploadChoice[] = [
 			{action: 'create', label: '新規作成'},
 			...candidates.map(c => ({
 				action: 'replace' as const,

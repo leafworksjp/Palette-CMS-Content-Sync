@@ -148,6 +148,12 @@
                 "category": "Palette CMS Content Sync",
                 "title": "コンテンツ変数を再取得",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "paletteCmsContentSync.sync",
+                "category": "Palette CMS Content Sync",
+                "title": "同期",
+                "icon": "$(sync)"
             }
         ],
         "menus": {
@@ -206,6 +212,11 @@
                     "command": "paletteCmsContentSync.downloadDefinitions",
                     "when": "view == paletteCmsContentSync.settingView",
                     "group": "menus@6"
+                },
+                {
+                    "command": "paletteCmsContentSync.sync",
+                    "when": "view == paletteCmsContentSync.settingView",
+                    "group": "menus@7"
                 }
             ]
         }

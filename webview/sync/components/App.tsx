@@ -18,16 +18,24 @@ export const App = () =>
 		window.addEventListener('message', event =>
 		{
 			const message = event.data;
-			if (message.command !== 'refresh') return;
+			switch (message.command)
+			{
+				case 'refresh':
+					{
+						const diffsResult = z.array(zSyncDiff).safeParse(message.value.diffs);
+						const selectionsResult = z.record(z.string(), zSyncSelection).safeParse(message.value.selections);
 
-			const diffsResult = z.array(zSyncDiff).safeParse(message.diffs);
-			const selectionsResult = z.record(z.string(), zSyncSelection).safeParse(message.selections);
+						if (diffsResult.success) setDiffs(diffsResult.data);
+						if (selectionsResult.success) setSelections(selectionsResult.data);
+						setSubdir(message.value.subdir);
+						setUrl(message.value.url);
+						setExecuting(Boolean(message.value.executing));
+					}
+					break;
 
-			if (diffsResult.success) setDiffs(diffsResult.data);
-			if (selectionsResult.success) setSelections(selectionsResult.data);
-			setSubdir(message.subdir);
-			setUrl(message.url);
-			setExecuting(Boolean(message.executing));
+				default:
+					break;
+			}
 		});
 
 		Dispatcher.onLoad();

@@ -1,5 +1,4 @@
 import React from 'react';
-import {Dispatcher} from '../models/Dispatcher';
 
 export const Error = () =>
 {
@@ -7,9 +6,10 @@ export const Error = () =>
 
 	React.useEffect(() =>
 	{
-		Dispatcher.addListener('setErrors', data =>
+		window.addEventListener('message', event =>
 		{
-			setErrors(data.value);
+			if (event.data.command !== 'setErrors') return;
+			setErrors(event.data.value);
 		});
 	}, []);
 

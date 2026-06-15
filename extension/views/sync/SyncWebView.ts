@@ -67,11 +67,13 @@ export class SyncWebView implements vscode.WebviewViewProvider
 	{
 		this.webview?.postMessage({
 			command: 'refresh',
-			diffs: this.diffs,
-			selections: this.selections,
-			subdir: this.subdir,
-			url: this.url,
-			executing: this.executing,
+			value: {
+				diffs: this.diffs,
+				selections: this.selections,
+				subdir: this.subdir,
+				url: this.url,
+				executing: this.executing,
+			},
 		});
 
 		this.webview?.postMessage({

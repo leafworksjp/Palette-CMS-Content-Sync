@@ -32,7 +32,7 @@ export class SyncViewController
 		const result = await this.command.syncInit();
 		if (result.isFailure())
 		{
-			this.showMessages(result);
+			await this.showMessages(result);
 			return;
 		}
 		this.webview.initialize(result.value);
@@ -44,10 +44,10 @@ export class SyncViewController
 		const result = await this.command.syncExecute(selections, subdir, url);
 		this.webview.setExecuting(false);
 
-		this.showMessages(result);
+		await this.showMessages(result);
 	}
 
-	private showMessages(
+	private async showMessages(
 		result:
 			| Success<string>
 			| Failure<GeneralFailureArgs>

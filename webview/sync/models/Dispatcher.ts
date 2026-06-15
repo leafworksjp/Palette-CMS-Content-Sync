@@ -4,16 +4,6 @@ const vscode = acquireVsCodeApi();
 
 export class Dispatcher
 {
-	static addListener(command: string, callback: (data: any) => void)
-	{
-		window.addEventListener('message', event =>
-		{
-			if (event.data.command !== command) return;
-
-			callback(event.data);
-		});
-	}
-
 	static onLoad()
 	{
 		vscode.postMessage({command: 'onLoad'});

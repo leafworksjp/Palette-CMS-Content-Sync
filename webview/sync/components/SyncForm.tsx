@@ -1,7 +1,7 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
 import {SyncDiff, SyncSelection} from '../../../common/types/SyncPlan';
-import {Error} from './Error';
+import {Error} from '../../common/components/Error';
 import {UpdateSection} from './UpdateSection';
 import {ChooseSection} from './ChooseSection';
 import {ServerOnlySection} from './ServerOnlySection';

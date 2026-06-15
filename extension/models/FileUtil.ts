@@ -131,32 +131,4 @@ export class FileUtil
 	};
 
 	public static findFiles = async (globPattern: string) => await vscode.workspace.findFiles(globPattern);
-
-	public static getNewFileName = async () =>
-	{
-		const dir = FileUtil.getWorkspace();
-
-		if (!dir) return undefined;
-
-		const files = await vscode.workspace.fs.readDirectory(dir);
-
-		if (!files.length) return 'new-content-0';
-
-		const names = files
-		.filter(([_, fileType]) => fileType === vscode.FileType.Directory)
-		.map(([file, _]) => file)
-		.filter(name => /^new-content-[0-9]+$/.test(name));
-
-		if (!names.length) return 'new-content-0';
-
-		const lastIndex = names
-		.map(name => name.replace('new-content-', ''))
-		.map(name => parseInt(name, 10))
-		.sort((a, b) => a - b)
-		.slice(-1)
-		.at(0)
-		?? 0;
-
-		return `new-content-${lastIndex + 1}`;
-	};
 }

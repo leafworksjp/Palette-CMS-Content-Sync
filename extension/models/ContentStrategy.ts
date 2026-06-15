@@ -2,7 +2,6 @@ import {z} from 'zod';
 import {
 	Content,
 	ContentFor,
-	ContentInputFor,
 	ContentV1,
 	ContentV2,
 	zContentV1,
@@ -17,6 +16,7 @@ import {
 } from '../../common/types/Content';
 import {Version} from '../../common/types/Version';
 import {Definitions, DefinitionsFor} from '../../common/types/Definitions';
+import {Is} from '../../common/types/Is';
 import {ActiveConnectionV2} from './ActiveConnection';
 import {findReplaceCandidates} from '../../common/types/SyncPlan';
 import {getActiveConnection, getContentCache} from './Services';
@@ -86,12 +86,12 @@ const validateContent = <V extends Version>(
 	.flatMap(key =>
 	{
 		const value = content[key];
-		if (value === undefined || value === null) return [];
+		if (Is.undefined(value)) return [];
 
 		const options = getOptions(definitions, content, key);
 		if (!options) return [];
 
-		const values = Array.isArray(value) ? value : [value];
+		const values = Is.array(value) ? value : [value];
 
 		return values
 		.filter(v => !options.some(o => o.key === v))
@@ -120,7 +120,7 @@ const validateContent = <V extends Version>(
 			q.operator === '' || opOptions.some(o => o.key === q.operator)
 				? undefined
 				: {field: `search_query_${type}.operator`, value: q.operator, reason: 'invalid_value'} as const,
-		].filter((e): e is NonNullable<typeof e> => e !== undefined));
+		].filter(Is.notNullable));
 	};
 
 	const whereErrors = checkSearchQuery(
@@ -138,6 +138,10 @@ const validateContent = <V extends Version>(
 	return [...unknownFieldErrors, ...enumErrors, ...whereErrors, ...orderErrors];
 };
 
+type SafeParseContentResultFor<V extends Version> = V extends 1
+	? ReturnType<typeof zContentV1.safeParse>
+	: ReturnType<typeof zContentV2.safeParse>;
+
 export abstract class ContentStrategy<V extends Version = Version>
 {
 	//abstract メソッドの引数は Content (union) で受ける（V を引数位置に使わない）。
@@ -154,7 +158,7 @@ export abstract class ContentStrategy<V extends Version = Version>
 	abstract readonly version: V;
 
 	public abstract parse(data: unknown): ContentFor<V>;
-	public abstract safeParse(data: unknown): z.SafeParseReturnType<ContentInputFor<V>, ContentFor<V>>;
+	public abstract safeParse(data: unknown): SafeParseContentResultFor<V>;
 	public abstract create(newFileName: string): ContentFor<V>;
 	public abstract duplicate(content: Content, newFileName: string): ContentFor<V>;
 	public abstract serverIdField(): 'id' | 'page_id';
@@ -196,7 +200,7 @@ export class ContentStrategyV1 extends ContentStrategy<1>
 		return zContentV1.parse(data);
 	}
 
-	public safeParse(data: unknown): z.SafeParseReturnType<ContentInputFor<1>, ContentV1>
+	public safeParse(data: unknown): ReturnType<typeof zContentV1.safeParse>
 	{
 		return zContentV1.safeParse(data);
 	}
@@ -243,6 +247,8 @@ export class ContentStrategyV1 extends ContentStrategy<1>
 	}
 }
 
+const zContentV2ListSchema = z.array(zContentV2);
+
 export class ContentStrategyV2 extends ContentStrategy<2>
 {
 	readonly version = 2 as const;
@@ -263,14 +269,14 @@ export class ContentStrategyV2 extends ContentStrategy<2>
 		return zContentV2.parse(data);
 	}
 
-	public safeParse(data: unknown): z.SafeParseReturnType<ContentInputFor<2>, ContentV2>
+	public safeParse(data: unknown): ReturnType<typeof zContentV2.safeParse>
 	{
 		return zContentV2.safeParse(data);
 	}
 
-	public safeParseList(data: unknown): z.SafeParseReturnType<ContentInputFor<2>[], ContentV2[]>
+	public safeParseList(data: unknown): ReturnType<typeof zContentV2ListSchema.safeParse>
 	{
-		return z.array(zContentV2).safeParse(data);
+		return zContentV2ListSchema.safeParse(data);
 	}
 
 	public duplicate(content: Content, newFileName: string): ContentV2

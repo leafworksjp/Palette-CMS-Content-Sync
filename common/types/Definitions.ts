@@ -108,7 +108,6 @@ export const zDefinitionsBase = z.object({
 
 export const zDefinitionsV1 = zDefinitionsBase.extend({url: z.string()}).brand<'DefinitionsV1'>();
 export const zDefinitionsV2 = zDefinitionsBase.brand<'DefinitionsV2'>();
-export type DefinitionsInputFor<V extends Version> = V extends 1 ? z.input<typeof zDefinitionsV1>: z.input<typeof zDefinitionsV2>;
 
 export type DefinitionsV1 = z.infer<typeof zDefinitionsV1>;
 export type DefinitionsV2 = z.infer<typeof zDefinitionsV2>;

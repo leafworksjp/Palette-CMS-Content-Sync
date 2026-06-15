@@ -1,13 +1,15 @@
-import {z} from 'zod';
 import {
 	DefinitionsFor,
-	DefinitionsInputFor,
 	DefinitionsV1,
 	DefinitionsV2,
 	zDefinitionsV1,
 	zDefinitionsV2,
 } from '../../common/types/Definitions';
 import {Version} from '../../common/types/Version';
+
+type SafeParseDefinitionsResultFor<V extends Version> = V extends 1
+	? ReturnType<typeof zDefinitionsV1.safeParse>
+	: ReturnType<typeof zDefinitionsV2.safeParse>;
 
 export abstract class DefinitionsStrategy<V extends Version = Version>
 {
@@ -21,7 +23,7 @@ export abstract class DefinitionsStrategy<V extends Version = Version>
 	abstract readonly version: V;
 
 	public abstract parse(data: unknown): DefinitionsFor<V>;
-	public abstract safeParse(data: unknown): z.SafeParseReturnType<DefinitionsInputFor<V>, DefinitionsFor<V>>;
+	public abstract safeParse(data: unknown): SafeParseDefinitionsResultFor<V>;
 }
 
 export class DefinitionsStrategyV1 extends DefinitionsStrategy<1>
@@ -33,7 +35,7 @@ export class DefinitionsStrategyV1 extends DefinitionsStrategy<1>
 		return zDefinitionsV1.parse(data);
 	}
 
-	public safeParse(data: unknown): z.SafeParseReturnType<DefinitionsInputFor<1>, DefinitionsV1>
+	public safeParse(data: unknown): ReturnType<typeof zDefinitionsV1.safeParse>
 	{
 		return zDefinitionsV1.safeParse(data);
 	}
@@ -48,7 +50,7 @@ export class DefinitionsStrategyV2 extends DefinitionsStrategy<2>
 		return zDefinitionsV2.parse(data);
 	}
 
-	public safeParse(data: unknown): z.SafeParseReturnType<DefinitionsInputFor<2>, DefinitionsV2>
+	public safeParse(data: unknown): ReturnType<typeof zDefinitionsV2.safeParse>
 	{
 		return zDefinitionsV2.safeParse(data);
 	}

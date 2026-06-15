@@ -1,5 +1,5 @@
 import React from 'react';
-import {SyncAction, SyncDiff, SyncSelection, predictConflicts, orderActions} from '../../../common/types/SyncPlan';
+import {SyncDiff, SyncSelection, buildActions, predictConflicts, orderActions} from '../../../common/types/SyncPlan';
 
 type Props = {
 	diffs: SyncDiff[],
@@ -40,36 +40,4 @@ export const PreviewSection = ({diffs, selections}: Props) =>
 			</ul>
 		</div>
 	);
-};
-
-const buildActions = (diffs: SyncDiff[], selections: Record<string, SyncSelection>): SyncAction[] =>
-{
-	return diffs.flatMap((d): SyncAction[] =>
-	{
-		const pageId = d.kind === 'serverOnly' ? d.server.page_id : d.local.page_id;
-		const s = selections[pageId];
-		if (!s) return [];
-
-		if (d.kind === 'update' && s.kind === 'update')
-		{
-			return [{kind: 'update', local: d.local}];
-		}
-		if (d.kind === 'choose' && s.kind === 'create')
-		{
-			return [{kind: 'create', local: d.local}];
-		}
-		if (d.kind === 'choose' && s.kind === 'replace')
-		{
-			return [{kind: 'replace', local: d.local, targetPageId: s.targetPageId}];
-		}
-		if (d.kind === 'serverOnly' && s.kind === 'delete')
-		{
-			return [{kind: 'delete', pageId: d.server.page_id}];
-		}
-		if (d.kind === 'serverOnly' && s.kind === 'downloadLocal')
-		{
-			return [{kind: 'downloadLocal', server: d.server}];
-		}
-		return [];
-	});
 };

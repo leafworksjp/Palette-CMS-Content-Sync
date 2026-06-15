@@ -8,6 +8,38 @@ export class ContentFile
 {
 	public static fileName = 'contents.json';
 
+	public static async readAll(workspace: vscode.Uri): Promise<Content[]>
+	{
+		const files = await FileUtil.listFiles(workspace);
+		const uris = files.filter(file => FileUtil.getBase(file) === ContentFile.fileName);
+		const contents = await Promise.all(uris.map(uri => ContentFile.read(uri)));
+		return contents.flatMap(c => (c ? [c] : []));
+	}
+
+	public static contentDir(pageId: string): vscode.Uri | undefined
+	{
+		const workspace = FileUtil.getWorkspace();
+		if (!workspace) return undefined;
+		return FileUtil.join(workspace, pageId);
+	}
+
+	public static contentFileUri(pageId: string): vscode.Uri | undefined
+	{
+		const dir = ContentFile.contentDir(pageId);
+		if (!dir) return undefined;
+		return FileUtil.join(dir, ContentFile.fileName);
+	}
+
+	public static async deleteContentDir(pageId: string): Promise<void>
+	{
+		const dir = ContentFile.contentDir(pageId);
+		if (!dir) return;
+		if (await FileUtil.exists(dir))
+		{
+			await FileUtil.deleteFile(dir, {recursive: true, useTrash: true});
+		}
+	}
+
 	public static async read(uri: vscode.Uri)
 	{
 		try

@@ -33,13 +33,13 @@ export const App = () =>
 		Dispatcher.onLoad();
 	}, []);
 
-	if (!diffs) return <Welcome />;
-
-	return <SyncForm
-		diffs={diffs}
-		selections={selections}
-		subdir={subdir}
-		url={url}
-		executing={executing}
-	/>;
+	return diffs
+		? <SyncForm
+			diffs={diffs}
+			selections={selections}
+			subdir={subdir}
+			url={url}
+			executing={executing}
+		/>
+		: <Welcome />;
 };

@@ -36,9 +36,9 @@ const ServerOnlyItem = ({index, content, selection, disabled}: {
 	disabled: boolean,
 }) =>
 {
-	const [kind, setKind] = React.useState(selection?.kind ?? 'delete');
+	const [kind, setKind] = React.useState(selection?.kind);
 
-	React.useEffect(() => setKind(selection?.kind ?? 'delete'), [selection]);
+	React.useEffect(() => setKind(selection?.kind), [selection]);
 
 	const handleChange = (event: React.ChangeEvent<HTMLInputElement>) =>
 	{

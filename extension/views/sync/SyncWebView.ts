@@ -8,7 +8,7 @@ export class SyncWebView implements vscode.WebviewViewProvider
 {
 	public readonly id = 'paletteCmsContentSync.syncView';
 
-	public onExecute?: (selections: Selections) => Promise<void>;
+	public onExecute?: (selections: Selections, subdir: string, url: string) => Promise<void>;
 
 	private webview?: vscode.Webview;
 
@@ -58,6 +58,11 @@ export class SyncWebView implements vscode.WebviewViewProvider
 		this.refresh();
 	}
 
+	public postMessage(command: string, value: any)
+	{
+		this.webview?.postMessage({command, value});
+	}
+
 	private refresh(): void
 	{
 		this.webview?.postMessage({
@@ -67,6 +72,11 @@ export class SyncWebView implements vscode.WebviewViewProvider
 			subdir: this.subdir,
 			url: this.url,
 			executing: this.executing,
+		});
+
+		this.webview?.postMessage({
+			command: 'setErrors',
+			value: [],
 		});
 	}
 
@@ -90,7 +100,7 @@ export class SyncWebView implements vscode.WebviewViewProvider
 				}
 				break;
 			case 'execute':
-				await this.onExecute?.(this.selections);
+				await this.onExecute?.(this.selections, this.subdir, this.url);
 				break;
 			default:
 				break;

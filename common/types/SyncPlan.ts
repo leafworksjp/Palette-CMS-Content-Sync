@@ -87,6 +87,54 @@ export function predictConflicts(actions: SyncAction[]): Conflict[]
 	return [...duplicates].map(pageId => ({pageId}));
 }
 
+//各 diff にデフォルト selection を割り当てる (page_id をキーにした Record)。
+//要件 6.6「更新候補は確認のみ、それ以外は明示選択」 に従い、update のみデフォルトを持つ。
+//choose / serverOnly は entry なし (= 未選択) で初期化し、ユーザーの明示操作を待つ。
+export function buildDefaultSelections(diffs: SyncDiff[]): Record<string, SyncSelection>
+{
+	const entries: [string, SyncSelection][] = diffs.flatMap((d): [string, SyncSelection][] =>
+	{
+		if (d.kind === 'update') return [[d.local.page_id, {kind: 'update'}]];
+		return [];
+	});
+	return Object.fromEntries(entries);
+}
+
+//SyncDiff[] と selections (page_id キー) を組み合わせて SyncAction[] を構築する。
+//diff 種別と selection 種別の組み合わせが整合しないものはスキップ。
+export function buildActions(diffs: SyncDiff[], selections: Record<string, SyncSelection>): SyncAction[]
+{
+	return diffs.flatMap((d): SyncAction[] =>
+	{
+		const pageId = d.kind === 'serverOnly' ? d.server.page_id : d.local.page_id;
+		const s = selections[pageId];
+		if (!s) return [];
+
+		if (d.kind === 'update' && s.kind === 'update')
+		{
+			return [{kind: 'update', local: d.local}];
+		}
+		if (d.kind === 'choose' && s.kind === 'create')
+		{
+			return [{kind: 'create', local: d.local}];
+		}
+		if (d.kind === 'choose' && s.kind === 'replace')
+		{
+			if (!s.targetPageId) return [];
+			return [{kind: 'replace', local: d.local, targetPageId: s.targetPageId}];
+		}
+		if (d.kind === 'serverOnly' && s.kind === 'delete')
+		{
+			return [{kind: 'delete', pageId: d.server.page_id}];
+		}
+		if (d.kind === 'serverOnly' && s.kind === 'downloadLocal')
+		{
+			return [{kind: 'downloadLocal', server: d.server}];
+		}
+		return [];
+	});
+}
+
 export function orderActions(actions: SyncAction[]): SyncAction[]
 {
 	return [...actions].sort((a, b) =>

@@ -5,12 +5,26 @@ import {DefinitionsFile} from './DefinitionsFile';
 import {ContentFile} from './ContentFile';
 import {CodeFile} from './CodeFile';
 import {JsonFile} from './JsonFile';
-import {LwContent} from './LwContent';
 import {ActiveConnectionV2} from './ActiveConnection';
 import {ContentStrategyV2, UploadPlan} from './ContentStrategy';
-import {ApiResult} from '../../common/types/ApiResult';
+import {
+	ApiResult,
+	CompilationFailureArgs,
+	GeneralFailureArgs,
+	ValidationFailureArgs,
+} from '../../common/types/ApiResult';
 import {Content, ContentV2, UploadChoice} from '../../common/types/Content';
 import {Code} from '../../common/types/Code';
+import {
+	SyncAction,
+	SyncDiff,
+	SyncSelection,
+	buildActions,
+	buildDefaultSelections,
+	computeSyncDiff,
+	orderActions,
+} from '../../common/types/SyncPlan';
+import {SyncActionRecord, SyncLog} from './SyncLog';
 import {Is} from '../../common/types/Is';
 import {Locale} from '../locales/ja';
 import {
@@ -75,7 +89,7 @@ export class Command
 					if (dispatched.replacedPageId)
 					{
 						getContentCache().remove(ac.subdir, dispatched.replacedPageId);
-						await this.deleteReplacedLocalDir(ac.subdir, dispatched.replacedPageId);
+						await ContentFile.deleteContentDir(dispatched.replacedPageId);
 					}
 					getContentCache().add(ac.subdir, v2Result.data);
 				}
@@ -179,17 +193,6 @@ export class Command
 		};
 	}
 
-	private async deleteReplacedLocalDir(subdir: string, replacedPageId: string)
-	{
-		const lwDir = LwContent.dir();
-		if (!lwDir) return;
-
-		const oldDirUri = FileUtil.join(lwDir, subdir, replacedPageId);
-		if (await FileUtil.exists(oldDirUri))
-		{
-			await FileUtil.deleteFile(oldDirUri, {recursive: true, useTrash: true});
-		}
-	}
 
 	public async uploadAll()
 	{
@@ -507,5 +510,173 @@ export class Command
 		}
 
 		return ApiResult.success(`接続先を ${url} に切り替えました。`);
+	}
+
+	public async syncInit()
+	{
+		const strategy = getContentStrategy();
+		if (!(strategy instanceof ContentStrategyV2))
+		{
+			return ApiResult.generalFailure('同期は V2 専用です。');
+		}
+
+		const ac = getActiveConnection();
+		if (!(ac instanceof ActiveConnectionV2) || !ac.subdir || !ac.current)
+		{
+			return ApiResult.generalFailure('接続先が設定されていません。');
+		}
+
+		const listResult = await Api.list();
+		if (listResult.isFailure()) return listResult;
+
+		getContentCache().set(ac.subdir, listResult.value);
+
+		const localResult = await this.loadLocalV2Contents(strategy);
+		if (localResult.isFailure()) return localResult;
+
+		const diffs: SyncDiff[] = computeSyncDiff(localResult.value, listResult.value);
+		const selections: Record<string, SyncSelection> = buildDefaultSelections(diffs);
+
+		return ApiResult.success({
+			diffs,
+			selections,
+			subdir: ac.subdir,
+			url: ac.current,
+		});
+	}
+
+	private async loadLocalV2Contents(strategy: ContentStrategyV2)
+	{
+		const workspace = FileUtil.getWorkspace();
+		if (!workspace) return ApiResult.generalFailure('ワークスペースが見つかりません');
+
+		const all = await ContentFile.readAll(workspace);
+		const v2Contents: ContentV2[] = all.flatMap(c =>
+		{
+			const v2Result = strategy.safeParse(c);
+			if (!v2Result.success) return [];
+			return [v2Result.data];
+		});
+
+		return ApiResult.success(v2Contents);
+	}
+
+	public async syncExecute(selections: Record<string, SyncSelection>, subdir: string, url: string)
+	{
+		const strategy = getContentStrategy();
+		if (!(strategy instanceof ContentStrategyV2))
+		{
+			return ApiResult.generalFailure('同期は V2 専用です。');
+		}
+
+		const list = getContentCache().get(subdir);
+		if (!list) return ApiResult.generalFailure('list キャッシュが取得できていません。');
+
+		const localResult = await this.loadLocalV2Contents(strategy);
+		if (localResult.isFailure()) return localResult;
+
+		const diffs: SyncDiff[] = computeSyncDiff(localResult.value, list);
+		const actions = buildActions(diffs, selections);
+		const ordered = orderActions(actions);
+
+		const results = await ordered.reduce<Promise<SyncActionRecord[]>>(
+			async (accumulator, action) =>
+			{
+				const acc = await accumulator;
+				const result = await this.executeOneSyncAction(action, subdir, strategy, list);
+				return [...acc, result];
+			},
+			Promise.resolve([])
+		);
+
+		const logUri = await SyncLog.write(subdir, url, results);
+		if (logUri) await vscode.window.showTextDocument(logUri);
+
+		const successCount = results.filter(r => !r.error).length;
+		const failureCount = results.filter(r => r.error).length;
+		return ApiResult.success(`同期完了: 成功 ${successCount} 件、失敗 ${failureCount} 件`);
+	}
+
+	private formatError(error: GeneralFailureArgs | ValidationFailureArgs | CompilationFailureArgs): string
+	{
+		switch (error.type)
+		{
+			case 'ValidationErrorType':
+				return error.messages.join('\n');
+
+			case 'CompilationErrorType':
+				return 'コンパイルエラー';
+
+			default:
+				return error.message;
+		}
+	}
+
+	private async executeOneSyncAction(action: SyncAction, subdir: string, strategy: ContentStrategyV2, list: ContentV2[]): Promise<SyncActionRecord>
+	{
+		if (action.kind === 'update' || action.kind === 'create')
+		{
+			const uri = ContentFile.contentFileUri(action.local.page_id);
+			if (!uri) return {action, error: 'ローカルパス取得失敗'};
+
+			const codeList = await CodeFile.read(uri);
+			const result = action.kind === 'update'
+				? await Api.update(action.local, codeList)
+				: await Api.create(action.local, codeList);
+
+			if (result.isFailure()) return {action, error: this.formatError(result.error)};
+
+			const v2Result = strategy.safeParse(result.value.content);
+			if (v2Result.success) getContentCache().add(subdir, v2Result.data);
+			return {action};
+		}
+
+		if (action.kind === 'replace')
+		{
+			const uri = ContentFile.contentFileUri(action.local.page_id);
+			if (!uri) return {action, error: 'ローカルパス取得失敗'};
+
+			const codeList = await CodeFile.read(uri);
+			const result = await Api.replace(action.local, codeList, action.targetPageId);
+
+			if (result.isFailure()) return {action, error: this.formatError(result.error)};
+
+			getContentCache().remove(subdir, action.targetPageId);
+			const v2Result = strategy.safeParse(result.value.content);
+			if (v2Result.success) getContentCache().add(subdir, v2Result.data);
+			await ContentFile.deleteContentDir(action.targetPageId);
+			return {action};
+		}
+
+		if (action.kind === 'delete')
+		{
+			const target = list.find(c => c.page_id === action.pageId);
+			if (!target) return {action, error: 'list キャッシュに対象が存在しません'};
+
+			const result = await Api.delete(target);
+			if (result.isFailure()) return {action, error: this.formatError(result.error)};
+
+			getContentCache().remove(subdir, action.pageId);
+			return {action};
+		}
+
+		if (action.kind === 'downloadLocal')
+		{
+			const result = await Api.download(action.server);
+			if (result.isFailure()) return {action, error: this.formatError(result.error)};
+
+			const v2Result = strategy.safeParse(result.value.content);
+			if (!v2Result.success) return {action, error: 'サーバー応答が不正な形式です'};
+
+			const uri = ContentFile.contentFileUri(v2Result.data.page_id);
+			if (!uri) return {action, error: 'ローカルパス取得失敗'};
+
+			await ContentFile.write(uri, v2Result.data);
+			await CodeFile.create(uri, v2Result.data);
+			await CodeFile.write(uri, v2Result.data, result.value.codeList);
+			return {action};
+		}
+
+		return {action, error: 'unknown action'};
 	}
 }

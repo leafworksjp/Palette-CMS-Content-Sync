@@ -1,4 +1,4 @@
-import {computeSyncDiff, findReplaceCandidates, orderActions, predictConflicts, SyncAction} from '../types/SyncPlan';
+import {computeSyncDiff, findReplaceCandidates, orderActions, findConflicts, SyncAction} from '../types/SyncPlan';
 import {zContentV2} from '../types/Content';
 
 const make = (pageId: string, overrides: Record<string, unknown> = {}) => zContentV2.parse({
@@ -16,11 +16,11 @@ describe('computeSyncDiff', () =>
 		expect(computeSyncDiff([], [])).toEqual([]);
 	});
 
-	test('ローカルのみ → choose', () =>
+	test('ローカルのみ → localOnly', () =>
 	{
 		const local = [make('a')];
 		const result = computeSyncDiff(local, []);
-		expect(result).toEqual([{kind: 'choose', local: local[0]}]);
+		expect(result).toEqual([{kind: 'localOnly', local: local[0]}]);
 	});
 
 	test('サーバーのみ → serverOnly', () =>
@@ -30,23 +30,23 @@ describe('computeSyncDiff', () =>
 		expect(result).toEqual([{kind: 'serverOnly', server: server[0]}]);
 	});
 
-	test('同 page_id が両方 → update', () =>
+	test('同 page_id が両方 → matched', () =>
 	{
 		const local = [make('a')];
 		const server = [make('a')];
 		const result = computeSyncDiff(local, server);
-		expect(result).toEqual([{kind: 'update', local: local[0], server: server[0]}]);
+		expect(result).toEqual([{kind: 'matched', local: local[0], server: server[0]}]);
 	});
 
-	test('混在: update + choose + serverOnly', () =>
+	test('混在: matched + localOnly + serverOnly', () =>
 	{
 		const local = [make('a'), make('b')];
 		const server = [make('a'), make('c')];
 		const result = computeSyncDiff(local, server);
 
 		expect(result).toHaveLength(3);
-		expect(result).toContainEqual({kind: 'update', local: local[0], server: server[0]});
-		expect(result).toContainEqual({kind: 'choose', local: local[1]});
+		expect(result).toContainEqual({kind: 'matched', local: local[0], server: server[0]});
+		expect(result).toContainEqual({kind: 'localOnly', local: local[1]});
 		expect(result).toContainEqual({kind: 'serverOnly', server: server[1]});
 	});
 });
@@ -110,16 +110,16 @@ describe('findReplaceCandidates', () =>
 	});
 });
 
-describe('predictConflicts', () =>
+describe('findConflicts', () =>
 {
 	test('空 → 空', () =>
 	{
-		expect(predictConflicts([])).toEqual([]);
+		expect(findConflicts([])).toEqual([]);
 	});
 
 	test('1 操作だけ → 空', () =>
 	{
-		expect(predictConflicts([{kind: 'update', local: make('a')}])).toEqual([]);
+		expect(findConflicts([{kind: 'update', local: make('a')}])).toEqual([]);
 	});
 
 	test('replace.target が update.local.page_id と重複 → affectedBy に replace 元', () =>
@@ -128,7 +128,7 @@ describe('predictConflicts', () =>
 			{kind: 'update', local: make('a')},
 			{kind: 'replace', local: make('x'), targetPageId: 'a'},
 		];
-		expect(predictConflicts(actions)).toEqual([{pageId: 'a', affectedBy: ['x']}]);
+		expect(findConflicts(actions)).toEqual([{target: 'a', sources: ['x']}]);
 	});
 
 	test('replace.target が delete.pageId と重複 → affectedBy に replace 元', () =>
@@ -137,7 +137,7 @@ describe('predictConflicts', () =>
 			{kind: 'replace', local: make('x'), targetPageId: 'b'},
 			{kind: 'delete', pageId: 'b'},
 		];
-		expect(predictConflicts(actions)).toEqual([{pageId: 'b', affectedBy: ['x']}]);
+		expect(findConflicts(actions)).toEqual([{target: 'b', sources: ['x']}]);
 	});
 
 	test('複数の replace が同 target → affectedBy に両方の replace 元', () =>
@@ -146,7 +146,7 @@ describe('predictConflicts', () =>
 			{kind: 'replace', local: make('x'), targetPageId: 'a'},
 			{kind: 'replace', local: make('y'), targetPageId: 'a'},
 		];
-		expect(predictConflicts(actions)).toEqual([{pageId: 'a', affectedBy: ['x', 'y']}]);
+		expect(findConflicts(actions)).toEqual([{target: 'a', sources: ['x', 'y']}]);
 	});
 
 	test('複数衝突', () =>
@@ -158,10 +158,10 @@ describe('predictConflicts', () =>
 			{kind: 'delete', pageId: 'b'},
 			{kind: 'delete', pageId: 'c'},
 		];
-		const result = predictConflicts(actions);
+		const result = findConflicts(actions);
 		expect(result).toHaveLength(2);
-		expect(result).toContainEqual({pageId: 'a', affectedBy: ['x']});
-		expect(result).toContainEqual({pageId: 'b', affectedBy: ['y']});
+		expect(result).toContainEqual({target: 'a', sources: ['x']});
+		expect(result).toContainEqual({target: 'b', sources: ['y']});
 	});
 
 	test('create / downloadLocal は衝突判定対象外', () =>
@@ -171,7 +171,7 @@ describe('predictConflicts', () =>
 			{kind: 'downloadLocal', server: make('y')},
 			{kind: 'update', local: make('a')},
 		];
-		expect(predictConflicts(actions)).toEqual([]);
+		expect(findConflicts(actions)).toEqual([]);
 	});
 
 	test('衝突なし: 各操作が別 page_id を対象', () =>
@@ -181,7 +181,7 @@ describe('predictConflicts', () =>
 			{kind: 'replace', local: make('x'), targetPageId: 'b'},
 			{kind: 'delete', pageId: 'c'},
 		];
-		expect(predictConflicts(actions)).toEqual([]);
+		expect(findConflicts(actions)).toEqual([]);
 	});
 });
 

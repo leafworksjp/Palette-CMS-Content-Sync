@@ -67,13 +67,13 @@ type SelectionViewProps = {
 
 const SelectionView = ({diffs, selections, subdir, url, executing, onConfirm}: SelectionViewProps) =>
 {
-	const updateItems = diffs.filter(d => d.kind === 'update');
-	const chooseItems = diffs.filter(d => d.kind === 'choose');
+	const matchedItems = diffs.filter(d => d.kind === 'matched');
+	const localOnlyItems = diffs.filter(d => d.kind === 'localOnly');
 	const serverOnlyItems = diffs.filter(d => d.kind === 'serverOnly');
 
 	const tabs = [
-		{key: 'update' as const, label: Locale.tab.update, count: updateItems.length},
-		{key: 'choose' as const, label: Locale.tab.choose, count: chooseItems.length},
+		{key: 'matched' as const, label: Locale.tab.matched, count: matchedItems.length},
+		{key: 'localOnly' as const, label: Locale.tab.localOnly, count: localOnlyItems.length},
 		{key: 'serverOnly' as const, label: Locale.tab.serverOnly, count: serverOnlyItems.length},
 	].filter(t => t.count > 0);
 
@@ -88,8 +88,8 @@ const SelectionView = ({diffs, selections, subdir, url, executing, onConfirm}: S
 
 	const isComplete = (d: SyncDiff): boolean =>
 	{
-		if (d.kind === 'update') return true;
-		const pageId = d.kind === 'choose' ? d.local.page_id : d.server.page_id;
+		if (d.kind === 'matched') return true;
+		const pageId = d.kind === 'localOnly' ? d.local.page_id : d.server.page_id;
 		const selection = selections[pageId];
 		if (!selection) return false;
 		if (selection.kind === 'replace' && !selection.targetPageId) return false;
@@ -104,8 +104,8 @@ const SelectionView = ({diffs, selections, subdir, url, executing, onConfirm}: S
 				<Tabs items={tabs} active={activeTab} onChange={setActiveTab} />
 			</Header>
 			<div className="sync-form__main" ref={mainRef}>
-				{activeTab === 'update' && <UpdateInputs items={updateItems} />}
-				{activeTab === 'choose' && <ChooseInputs items={chooseItems} diffs={diffs} selections={selections} executing={executing} />}
+				{activeTab === 'matched' && <UpdateInputs items={matchedItems} />}
+				{activeTab === 'localOnly' && <ChooseInputs items={localOnlyItems} diffs={diffs} selections={selections} executing={executing} />}
 				{activeTab === 'serverOnly' && <ServerOnlyInputs items={serverOnlyItems} selections={selections} executing={executing} />}
 			</div>
 			<div className="sync-form__footer">

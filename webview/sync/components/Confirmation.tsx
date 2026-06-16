@@ -1,5 +1,5 @@
 import {Locale} from '../locales/ja';
-import {SyncAction, SyncDiff, SyncSelection, buildActions, predictConflicts, orderActions} from '../../../common/types/SyncPlan';
+import {SyncAction, SyncDiff, SyncSelection, buildActions, findConflicts, orderActions} from '../../../common/types/SyncPlan';
 
 type Props = {
 	diffs: SyncDiff[],
@@ -12,7 +12,7 @@ export const Confirmation = ({diffs, selections}: Props) =>
 {
 	const actions = buildActions(diffs, selections);
 	const ordered = orderActions(actions);
-	const conflicts = predictConflicts(actions);
+	const conflicts = findConflicts(actions);
 
 	return (
 		<div className="confirmation">
@@ -24,7 +24,7 @@ export const Confirmation = ({diffs, selections}: Props) =>
 						{conflicts.map((c, index) =>
 						{
 							const liKey = `li.conflict.${index}`;
-							return <li key={liKey}>{c.pageId} ← {c.affectedBy.join(', ')}</li>;
+							return <li key={liKey}>{c.target} ← {c.sources.join(', ')}</li>;
 						})}
 					</ul>
 				</div>

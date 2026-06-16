@@ -14,7 +14,7 @@ export const UpdateInputs = ({items}: Props) =>
 		<>
 			{items.map((d, index) =>
 			{
-				if (d.kind !== 'update') return null;
+				if (d.kind !== 'matched') return null;
 				const key = `update.${index}`;
 				const name = `update.${index}`;
 				const updateId = `radio.${name}.update`;

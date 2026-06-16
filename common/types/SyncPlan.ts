@@ -3,14 +3,14 @@ import {ContentV2, zContentV2} from './Content';
 
 //差分の分類 (ローカル × サーバー突き合わせの結果)。computeSyncDiff の出力。
 export const zSyncDiff = z.discriminatedUnion('kind', [
-	z.object({kind: z.literal('update'), local: zContentV2, server: zContentV2}),
-	z.object({kind: z.literal('choose'), local: zContentV2}),
+	z.object({kind: z.literal('matched'), local: zContentV2, server: zContentV2}),
+	z.object({kind: z.literal('localOnly'), local: zContentV2}),
 	z.object({kind: z.literal('serverOnly'), server: zContentV2}),
 ]);
 
 export type SyncDiff = z.infer<typeof zSyncDiff>;
 
-//実行する操作 (サーバーに送るための完全データ)。orderActions / predictConflicts の入力、実行エンジンが API 呼び出しに使う。
+//実行する操作 (サーバーに送るための完全データ)。orderActions / findConflicts の入力、実行エンジンが API 呼び出しに使う。
 export const zSyncAction = z.discriminatedUnion('kind', [
 	z.object({kind: z.literal('update'), local: zContentV2}),
 	z.object({kind: z.literal('create'), local: zContentV2}),
@@ -33,7 +33,7 @@ export const zSyncSelection = z.discriminatedUnion('kind', [
 
 export type SyncSelection = z.infer<typeof zSyncSelection>;
 
-export type Conflict = {pageId: string, affectedBy: string[]};
+export type Conflict = {target: string, sources: string[]};
 
 export function computeSyncDiff(local: ContentV2[], server: ContentV2[]): SyncDiff[]
 {
@@ -44,8 +44,8 @@ export function computeSyncDiff(local: ContentV2[], server: ContentV2[]): SyncDi
 	{
 		const s = serverByPageId.get(l.page_id);
 		return s
-			? {kind: 'update', local: l, server: s}
-			: {kind: 'choose', local: l};
+			? {kind: 'matched', local: l, server: s}
+			: {kind: 'localOnly', local: l};
 	});
 
 	const serverOnlyDiffs: SyncDiff[] = server
@@ -74,7 +74,7 @@ const conflictTarget = (a: SyncAction): string | undefined =>
 	return undefined;
 };
 
-export function predictConflicts(actions: SyncAction[]): Conflict[]
+export function findConflicts(actions: SyncAction[]): Conflict[]
 {
 	const ordered = orderActions(actions);
 
@@ -92,20 +92,20 @@ export function predictConflicts(actions: SyncAction[]): Conflict[]
 		else seen.add(t);
 	});
 
-	return [...duplicates].map(pageId => ({
-		pageId,
-		affectedBy: ordered.flatMap(a => ((a.kind === 'replace' && a.targetPageId === pageId) ? [a.local.page_id] : [])),
+	return [...duplicates].map(target => ({
+		target,
+		sources: ordered.flatMap(a => ((a.kind === 'replace' && a.targetPageId === target) ? [a.local.page_id] : [])),
 	}));
 }
 
 //各 diff にデフォルト selection を割り当てる (page_id をキーにした Record)。
 //要件 6.6「更新候補は確認のみ、それ以外は明示選択」 に従い、update のみデフォルトを持つ。
-//choose / serverOnly は entry なし (= 未選択) で初期化し、ユーザーの明示操作を待つ。
+//localOnly / serverOnly は entry なし (= 未選択) で初期化し、ユーザーの明示操作を待つ。
 export function buildDefaultSelections(diffs: SyncDiff[]): Record<string, SyncSelection>
 {
 	const entries: [string, SyncSelection][] = diffs.flatMap((d): [string, SyncSelection][] =>
 	{
-		if (d.kind === 'update') return [[d.local.page_id, {kind: 'update'}]];
+		if (d.kind === 'matched') return [[d.local.page_id, {kind: 'update'}]];
 		return [];
 	});
 	return Object.fromEntries(entries);
@@ -121,15 +121,15 @@ export function buildActions(diffs: SyncDiff[], selections: Record<string, SyncS
 		const s = selections[pageId];
 		if (!s) return [];
 
-		if (d.kind === 'update' && s.kind === 'update')
+		if (d.kind === 'matched' && s.kind === 'update')
 		{
 			return [{kind: 'update', local: d.local}];
 		}
-		if (d.kind === 'choose' && s.kind === 'create')
+		if (d.kind === 'localOnly' && s.kind === 'create')
 		{
 			return [{kind: 'create', local: d.local}];
 		}
-		if (d.kind === 'choose' && s.kind === 'replace')
+		if (d.kind === 'localOnly' && s.kind === 'replace')
 		{
 			if (!s.targetPageId) return [];
 			return [{kind: 'replace', local: d.local, targetPageId: s.targetPageId}];

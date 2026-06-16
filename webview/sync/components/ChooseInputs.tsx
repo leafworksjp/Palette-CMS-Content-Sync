@@ -18,7 +18,7 @@ export const ChooseInputs = ({items, diffs, selections, executing}: Props) =>
 
 	const list: ContentV2[] = diffs.flatMap(d =>
 	{
-		if (d.kind === 'update') return [d.server];
+		if (d.kind === 'matched') return [d.server];
 		if (d.kind === 'serverOnly') return [d.server];
 		return [];
 	});
@@ -27,7 +27,7 @@ export const ChooseInputs = ({items, diffs, selections, executing}: Props) =>
 		<>
 			{items.map((d, index) =>
 			{
-				if (d.kind !== 'choose') return null;
+				if (d.kind !== 'localOnly') return null;
 				const candidates = findReplaceCandidates(d.local, list);
 				const selection = selections[d.local.page_id];
 				const key = `choose.${index}`;

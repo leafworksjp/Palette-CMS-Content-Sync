@@ -1,20 +1,13 @@
 import React from 'react';
-import {Content, getCodeTypeName} from '../../../common/types/Content';
-import {Definitions} from '../../../common/types/Definitions';
+import {Content} from '../../../common/types/Content';
 
 type TitleProps =
 {
 	content: Content,
-	definitions: Definitions,
-	fileName: string,
+	knownTitle: string,
 };
 
-const dataNames = new Map([
-	['contents', '設定ファイル'],
-	['variables', '変数リスト'],
-]);
-
-export const Title = ({content, definitions, fileName}: TitleProps) =>
+export const Title = ({content, knownTitle}: TitleProps) =>
 {
 	const [name, setName] = React.useState(content.name);
 
@@ -31,11 +24,7 @@ export const Title = ({content, definitions, fileName}: TitleProps) =>
 	}, []);
 
 	const contentName = name ? '｜' + name : '';
-	const codeType = fileName.replace('.palette', '');
-	const codeTypeName = getCodeTypeName(definitions, codeType);
-	const dataName = dataNames.get(fileName);
+	const title = knownTitle + contentName;
 
-	const title = (codeTypeName ?? dataName ?? '不明なファイル') + contentName;
-
-	return (<h1 className="contents__title--head">{title}</h1>);
+	return (<h1 className="setting-form__title">{title}</h1>);
 };

@@ -1,10 +1,21 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
-import {Content, zContentV1, zContentV2} from '../../../common/types/Content';
+import {Content, getCodeTypeName, zContentV1, zContentV2} from '../../../common/types/Content';
 import {Definitions, zDefinitionsV1, zDefinitionsV2} from '../../../common/types/Definitions';
 import {zVersion} from '../../../common/types/Version';
-import {Form} from './Form';
+import {SettingForm} from './SettingForm';
 import {Welcome} from './Welcome';
+
+const dataNames = new Map([
+	['contents', '設定ファイル'],
+	['variables', '変数リスト'],
+]);
+
+const getKnownFileTitle = (fileName: string, definitions: Definitions): string | undefined =>
+{
+	const codeType = fileName.replace('.palette', '');
+	return getCodeTypeName(definitions, codeType) ?? dataNames.get(fileName);
+};
 
 export const App = () =>
 {
@@ -57,7 +68,9 @@ export const App = () =>
 		Dispatcher.onLoad();
 	}, []);
 
-	return content && definitions && url
-		? <Form isReadOnly={isReadOnly} supportsSheetRefValue={supportsSheetRefValue} content={content} definitions={definitions} fileName={fileName} url={url} />
+	const knownTitle = definitions ? getKnownFileTitle(fileName, definitions) : undefined;
+
+	return content && definitions && url && knownTitle
+		? <SettingForm isReadOnly={isReadOnly} supportsSheetRefValue={supportsSheetRefValue} content={content} definitions={definitions} knownTitle={knownTitle} url={url} />
 		: <Welcome />;
 };

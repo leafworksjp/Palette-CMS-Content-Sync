@@ -2,6 +2,7 @@ import React from 'react';
 import {z} from 'zod';
 import {Dispatcher} from '../models/Dispatcher';
 import {SyncDiff, SyncSelection, zSyncDiff, zSyncSelection} from '../../../common/types/SyncPlan';
+import {Is} from '../../../common/types/Is';
 import {SyncForm} from './SyncForm';
 import {Welcome} from './Welcome';
 
@@ -22,11 +23,19 @@ export const App = () =>
 			{
 				case 'refresh':
 					{
-						const diffsResult = z.array(zSyncDiff).safeParse(message.value.diffs);
-						const selectionsResult = z.record(z.string(), zSyncSelection).safeParse(message.value.selections);
+						if (Is.undefined(message.value.diffs))
+						{
+							setDiffs(undefined);
+						}
+						else
+						{
+							const diffsResult = z.array(zSyncDiff).safeParse(message.value.diffs);
+							if (diffsResult.success) setDiffs(diffsResult.data);
+						}
 
-						if (diffsResult.success) setDiffs(diffsResult.data);
+						const selectionsResult = z.record(z.string(), zSyncSelection).safeParse(message.value.selections);
 						if (selectionsResult.success) setSelections(selectionsResult.data);
+
 						setSubdir(message.value.subdir);
 						setUrl(message.value.url);
 						setExecuting(Boolean(message.value.executing));

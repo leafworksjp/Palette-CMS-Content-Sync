@@ -45,6 +45,11 @@ export class SyncViewController
 		this.webview.setExecuting(false);
 
 		await this.showMessages(result);
+
+		if (result.isSuccess())
+		{
+			this.webview.clear();
+		}
 	}
 
 	private async showMessages(

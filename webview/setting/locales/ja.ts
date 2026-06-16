@@ -12,4 +12,8 @@ export const Locale = {
 	required: '必須',
 	pleaseSelect: '選択してください',
 	pleaseOpenContent: 'コンテンツのコードを開いてください。',
+	searchValKind: {
+		value: '値',
+		sheet: 'userシート参照',
+	},
 };

@@ -3,6 +3,7 @@ import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
 import {Content, SelectProperties, getOptions, getColumns, getColumnName} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
+import {Field} from '../../common/components/Field';
 
 type SelectProps =
 {
@@ -33,13 +34,10 @@ export const Select = ({name, content, definitions, required, readOnly, always}:
 	if (!title || !options || (!always && !isColumnExists)) return <></>;
 
 	return (
-		<dl>
-			<dt>
-				{title}
-				{required ? <span>{Locale.required}</span> : ''}
-			</dt>
-			<dd>
+		<Field label={title} requiredLabel={required ? Locale.required : undefined}>
+			<div className="select">
 				<select
+					className="select__input"
 					key={`select_${name}`}
 					name={name}
 					value={value}
@@ -61,7 +59,7 @@ export const Select = ({name, content, definitions, required, readOnly, always}:
 						})
 					}
 				</select>
-			</dd>
-		</dl>
+			</div>
+		</Field>
 	);
 };

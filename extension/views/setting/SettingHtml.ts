@@ -8,6 +8,7 @@ export class SettingHtml
 
 		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'reset.css'));
 		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'vscode.css'));
+		const styleCommonUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'common.css'));
 		const styleSettingUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'setting.css'));
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'setting.bundle.js'));
 
@@ -21,6 +22,7 @@ export class SettingHtml
 
 				<link href="${styleResetUri}" rel="stylesheet">
 				<link href="${styleVSCodeUri}" rel="stylesheet">
+				<link href="${styleCommonUri}" rel="stylesheet">
 				<link href="${styleSettingUri}" rel="stylesheet">
 
 				<script defer nonce="${nonce}" src="${scriptUri}"></script>

@@ -215,8 +215,8 @@
                 },
                 {
                     "command": "paletteCmsContentSync.sync",
-                    "when": "view == paletteCmsContentSync.settingView",
-                    "group": "menus@7"
+                    "when": "view == paletteCmsContentSync.syncView",
+                    "group": "navigation"
                 }
             ]
         }

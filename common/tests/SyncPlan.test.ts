@@ -122,31 +122,31 @@ describe('predictConflicts', () =>
 		expect(predictConflicts([{kind: 'update', local: make('a')}])).toEqual([]);
 	});
 
-	test('replace.target が update.local.page_id と重複 → 1 件', () =>
+	test('replace.target が update.local.page_id と重複 → affectedBy に replace 元', () =>
 	{
 		const actions: SyncAction[] = [
 			{kind: 'update', local: make('a')},
 			{kind: 'replace', local: make('x'), targetPageId: 'a'},
 		];
-		expect(predictConflicts(actions)).toEqual([{pageId: 'a'}]);
+		expect(predictConflicts(actions)).toEqual([{pageId: 'a', affectedBy: ['x']}]);
 	});
 
-	test('replace.target が delete.pageId と重複 → 1 件', () =>
+	test('replace.target が delete.pageId と重複 → affectedBy に replace 元', () =>
 	{
 		const actions: SyncAction[] = [
 			{kind: 'replace', local: make('x'), targetPageId: 'b'},
 			{kind: 'delete', pageId: 'b'},
 		];
-		expect(predictConflicts(actions)).toEqual([{pageId: 'b'}]);
+		expect(predictConflicts(actions)).toEqual([{pageId: 'b', affectedBy: ['x']}]);
 	});
 
-	test('複数の replace が同 target → 重複 1 件', () =>
+	test('複数の replace が同 target → affectedBy に両方の replace 元', () =>
 	{
 		const actions: SyncAction[] = [
 			{kind: 'replace', local: make('x'), targetPageId: 'a'},
 			{kind: 'replace', local: make('y'), targetPageId: 'a'},
 		];
-		expect(predictConflicts(actions)).toEqual([{pageId: 'a'}]);
+		expect(predictConflicts(actions)).toEqual([{pageId: 'a', affectedBy: ['x', 'y']}]);
 	});
 
 	test('複数衝突', () =>
@@ -160,8 +160,8 @@ describe('predictConflicts', () =>
 		];
 		const result = predictConflicts(actions);
 		expect(result).toHaveLength(2);
-		expect(result).toContainEqual({pageId: 'a'});
-		expect(result).toContainEqual({pageId: 'b'});
+		expect(result).toContainEqual({pageId: 'a', affectedBy: ['x']});
+		expect(result).toContainEqual({pageId: 'b', affectedBy: ['y']});
 	});
 
 	test('create / downloadLocal は衝突判定対象外', () =>

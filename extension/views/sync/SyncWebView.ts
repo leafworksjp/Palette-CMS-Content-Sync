@@ -58,6 +58,16 @@ export class SyncWebView implements vscode.WebviewViewProvider
 		this.refresh();
 	}
 
+	public clear(): void
+	{
+		this.diffs = undefined;
+		this.selections = {};
+		this.subdir = '';
+		this.url = '';
+		this.executing = false;
+		this.refresh();
+	}
+
 	public postMessage(command: string, value: any)
 	{
 		this.webview?.postMessage({command, value});
@@ -103,6 +113,9 @@ export class SyncWebView implements vscode.WebviewViewProvider
 				break;
 			case 'execute':
 				await this.onExecute?.(this.selections, this.subdir, this.url);
+				break;
+			case 'cancel':
+				this.clear();
 				break;
 			default:
 				break;

@@ -5,7 +5,7 @@ import {Error} from '../../common/components/Error';
 import {URLInput} from './URLInput';
 import {Text} from './Text';
 import {Select} from './Select';
-import {Check} from './Check';
+import {Checkbox} from './Checkbox';
 import {Radio} from './Radio';
 import {BasicAuthInput} from './BasicAuthInput';
 import {SearchInputs} from './SearchInputs';
@@ -13,18 +13,18 @@ import {OrderInputs} from './OrderInputs';
 import {Content, getColumns} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
 
-type FormProps =
+type SettingFormProps =
 {
 	isReadOnly: boolean,
 	supportsSheetRefValue: boolean,
 	definitions: Definitions,
 	content: Content,
-	fileName: string,
+	knownTitle: string,
 	url: string,
 };
 
 /*eslint-disable complexity*/
-export const Form = ({isReadOnly, supportsSheetRefValue, content, definitions, fileName, url}: FormProps) =>
+export const SettingForm = ({isReadOnly, supportsSheetRefValue, content, definitions, knownTitle, url}: SettingFormProps) =>
 {
 	if (!content) return <></>;
 
@@ -65,15 +65,15 @@ export const Form = ({isReadOnly, supportsSheetRefValue, content, definitions, f
 	const isSheetContent = definitions.columns[content.contents_type]?.at(0)?.options.includes('sheet_id');
 
 	return (
-		<div className="contents">
-			<div className="contents__inner">
-				<Title content={content} definitions={definitions} fileName={fileName} />
+		<div className="setting-form">
+			<div className="setting-form__section">
+				<Title content={content} knownTitle={knownTitle} />
 			</div>
 			<Error />
 			{
 				isReadOnly
-				&& <div className="contents__inner">
-					<h2 className="contents__title">{Locale.title.contentInfo}</h2>
+				&& <div className="setting-form__section">
+					<h2 className="setting-form__section-title">{Locale.title.contentInfo}</h2>
 					<Text name="page_id" readonly={true} content={content} definitions={definitions} />
 					{
 						content.contents_type !== 'parts'
@@ -81,8 +81,8 @@ export const Form = ({isReadOnly, supportsSheetRefValue, content, definitions, f
 					}
 				</div>
 			}
-			<div className="contents__inner">
-				<h2 className="contents__title">{Locale.title.contentSettings}</h2>
+			<div className="setting-form__section">
+				<h2 className="setting-form__section-title">{Locale.title.contentSettings}</h2>
 				<Text name="static_url" placeholder="/path/to/content/" content={content} definitions={definitions} />
 				<Text name="category" content={content} definitions={definitions} />
 				<Text name="name" required={true} content={content} definitions={definitions} />
@@ -93,8 +93,8 @@ export const Form = ({isReadOnly, supportsSheetRefValue, content, definitions, f
 			</div>
 			{
 				someColumnExists(['role_key'])
-				&& <div className="contents__inner">
-					<h2 className="contents__title">{Locale.title.roleSettings}</h2>
+				&& <div className="setting-form__section">
+					<h2 className="setting-form__section-title">{Locale.title.roleSettings}</h2>
 					<Radio name="role_key" required={true} content={content} definitions={definitions} />
 					{
 						someColumnExists(['role_key_owner'])
@@ -105,24 +105,24 @@ export const Form = ({isReadOnly, supportsSheetRefValue, content, definitions, f
 			}
 			{
 				someColumnExists(['login_url', 'logout_url', 'search_row', 'permission', 'permission_url', 'device_type', 'device_type_url', 'auth_key', 'auth_pass', 'state'])
-				&& <div className="contents__inner">
-					<h2 className="contents__title">{Locale.title.viewSettings}</h2>
+				&& <div className="setting-form__section">
+					<h2 className="setting-form__section-title">{Locale.title.viewSettings}</h2>
 					<Text name="login_url" required={true} placeholder="/path/to/content/" content={content} definitions={definitions} />
 					<Text name="logout_url" required={true} placeholder="/path/to/content/" content={content} definitions={definitions} />
 					<Text name="search_row" required={true} content={content} definitions={definitions} />
-					<Check name="permission" required={true} content={content} definitions={definitions} />
+					<Checkbox name="permission" required={true} content={content} definitions={definitions} />
 					{
 						someColumnExists(['permission_sheet'])
 						&& permission?.includes('user')
-						&& <Check name="permission_sheet" required={true} content={content} definitions={definitions} />
+						&& <Checkbox name="permission_sheet" required={true} content={content} definitions={definitions} />
 					}
 					{
 						someColumnExists(['manager_permission_sheet'])
 						&& permission?.includes('manager')
-						&& <Check name="manager_permission_sheet" required={true} content={content} definitions={definitions} />
+						&& <Checkbox name="manager_permission_sheet" required={true} content={content} definitions={definitions} />
 					}
 					<Text name="permission_url" placeholder="/path/to/content/" content={content} definitions={definitions} />
-					<Check name="device_type" required={true} content={content} definitions={definitions} />
+					<Checkbox name="device_type" required={true} content={content} definitions={definitions} />
 					<Text name="device_type_url" placeholder="/path/to/content/" content={content} definitions={definitions} />
 					<BasicAuthInput content={content} definitions={definitions} />
 					<Radio name="state" required={true} content={content} definitions={definitions} />
@@ -130,8 +130,8 @@ export const Form = ({isReadOnly, supportsSheetRefValue, content, definitions, f
 			}
 			{
 				someColumnExists(['search_query_where', 'search_query_order_state', 'search_query_order'])
-				&& <div className="contents__inner">
-					<h2 className="contents__title">{Locale.title.searchQuery}</h2>
+				&& <div className="setting-form__section">
+					<h2 className="setting-form__section-title">{Locale.title.searchQuery}</h2>
 					<SearchInputs supportsSheetRefValue={supportsSheetRefValue} content={content} definitions={definitions} />
 					<Radio name="search_query_order_state" content={content} definitions={definitions} />
 					{

@@ -2,6 +2,7 @@ import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
 import {Content, SearchQueryForOrder, getColumns, getColumnName, getSearchQueryOptions} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
+import {Field} from '../../common/components/Field';
 
 type OrderInputsProps =
 {
@@ -33,18 +34,16 @@ export const OrderInputs = ({content, definitions}: OrderInputsProps) =>
 	if (!title || !isColumnExists) return <></>;
 
 	return (
-		<dl>
-			<dt>{title}</dt>
-			<dd>
+		<Field label={title}>
+			{
+				queries?.map((query, i) =>
 				{
-					queries?.map((query, i) =>
-					{
-						const key = `order_input.${i}`;
-						return <OrderInput key={key} index={i} query={query} content={content} definitions={definitions} />;
-					})
-				}
-			</dd>
-		</dl>);
+					const key = `order_input.${i}`;
+					return <OrderInput key={key} index={i} query={query} content={content} definitions={definitions} />;
+				})
+			}
+		</Field>
+	);
 };
 
 const OrderInput = ({index, query, content, definitions}: {
@@ -53,7 +52,7 @@ const OrderInput = ({index, query, content, definitions}: {
 	content: Content,
 	definitions: Definitions,
 }) => (
-	<div className="setting" key={`search_query_order.${index}`}>
+	<div className="query-order" key={`search_query_order.${index}`}>
 		<SelectCol index={index} query={query} content={content} definitions={definitions}/>
 		<SelectOperator index={index} query={query} definitions={definitions}/>
 		<div className="btn">
@@ -85,21 +84,24 @@ const SelectCol = ({index, query, content, definitions}: {
 	if (!options) return <></>;
 
 	return (
-		<select
-			key={`search_query_order.col.${index}`}
-			name="search_query_order.col"
-			value={col}
-			onChange={handleChangeCol}
-		>
-			<option key={`search_query_order.operator.${index}.option.empty}`}/>
-			{
-				options.map(({key: optionValue, name: optionName}, j) =>
+		<div className="select query-order__col">
+			<select
+				className="select__input"
+				key={`search_query_order.col.${index}`}
+				name="search_query_order.col"
+				value={col}
+				onChange={handleChangeCol}
+			>
+				<option key={`search_query_order.operator.${index}.option.empty}`}/>
 				{
-					const key = `search_query_order.operator.${index}.option.${j}`;
-					return <option key={key} value={optionValue}>{optionName}</option>;
-				})
-			}
-		</select>
+					options.map(({key: optionValue, name: optionName}, j) =>
+					{
+						const key = `search_query_order.operator.${index}.option.${j}`;
+						return <option key={key} value={optionValue}>{optionName}</option>;
+					})
+				}
+			</select>
+		</div>
 	);
 };
 
@@ -123,20 +125,23 @@ const SelectOperator = ({index, query, definitions}: {
 	const operators = column_options.search_query_order;
 
 	return (
-		<select
-			key={`search_query_order.operator.${index}`}
-			name="search_query_order.operator"
-			value={operator}
-			onChange={handleChangeOperator}
-		>
-			{
-				operators.map(({key: optionValue, name: optionName}, j) =>
+		<div className="select query-order__operator">
+			<select
+				className="select__input"
+				key={`search_query_order.operator.${index}`}
+				name="search_query_order.operator"
+				value={operator}
+				onChange={handleChangeOperator}
+			>
 				{
-					const key = `search_query_order.operator.${index}.option.${j}`;
-					return <option key={key} value={optionValue}>{optionName}</option>;
-				})
-			}
-		</select>
+					operators.map(({key: optionValue, name: optionName}, j) =>
+					{
+						const key = `search_query_order.operator.${index}.option.${j}`;
+						return <option key={key} value={optionValue}>{optionName}</option>;
+					})
+				}
+			</select>
+		</div>
 	);
 };
 

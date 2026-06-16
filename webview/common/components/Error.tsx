@@ -13,21 +13,15 @@ export const Error = () =>
 		});
 	}, []);
 
+	if (errors.length === 0) return null;
+
 	return (
-		<div>
+		<ul className="error">
+			{errors.map((error, index) =>
 			{
-				errors.length
-					? <ul className="error">
-						{
-							errors.map((error, index) =>
-							{
-								const key = `error.item.${index}`;
-								return (<li key={key} className ="error__item">{error}</li>);
-							})
-						}
-					</ul>
-					: <div></div>
-			}
-		</div>
+				const key = `error.item.${index}`;
+				return <li key={key} className="error__item">{error}</li>;
+			})}
+		</ul>
 	);
 };

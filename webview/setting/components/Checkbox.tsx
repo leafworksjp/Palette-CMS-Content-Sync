@@ -3,8 +3,9 @@ import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
 import {Content, CheckBoxProperties, getOptions, getColumns, getColumnName} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
+import {Field} from '../../common/components/Field';
 
-type CheckProps =
+type CheckboxProps =
 {
 	name: CheckBoxProperties,
 	content: Content,
@@ -13,7 +14,7 @@ type CheckProps =
 };
 
 
-export const Check = ({name, content, definitions, required}: CheckProps) =>
+export const Checkbox = ({name, content, definitions, required}: CheckboxProps) =>
 {
 	const [values, setValue] = React.useState(content[name] ?? []);
 
@@ -39,12 +40,8 @@ export const Check = ({name, content, definitions, required}: CheckProps) =>
 	if (!title || !options || !isColumnExists) return <></>;
 
 	return (
-		<dl>
-			<dt>
-				{title}
-				{required ? <span>{Locale.required}</span> : ''}
-			</dt>
-			<dd className="flex">
+		<Field label={title} requiredLabel={required ? Locale.required : undefined}>
+			<div className="flex">
 				{
 					options.map(({name: optionName, key: optionValue}, index) =>
 					{
@@ -55,9 +52,10 @@ export const Check = ({name, content, definitions, required}: CheckProps) =>
 						const labelKey = `check.${name}.label.${index}`;
 
 						return (
-							<div className="check" key={divKey}>
+							<div className="checkbox checkbox--inline" key={divKey}>
 								<input
 									type="checkbox"
+									className="checkbox__input"
 									id={checkKey}
 									key={checkKey}
 									name={name}
@@ -65,12 +63,12 @@ export const Check = ({name, content, definitions, required}: CheckProps) =>
 									checked={checked}
 									onChange={handleChange}
 								/>
-								<label key={labelKey} htmlFor={checkKey}>{optionName}</label>
+								<label className="checkbox__label" key={labelKey} htmlFor={checkKey}>{optionName}</label>
 							</div>
 						);
 					})
 				}
-			</dd>
-		</dl>
+			</div>
+		</Field>
 	);
 };

@@ -3,6 +3,7 @@ import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
 import {Content, getColumns} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
+import {Field} from '../../common/components/Field';
 
 type BasicAuthInputProps =
 {
@@ -12,7 +13,6 @@ type BasicAuthInputProps =
 
 export const BasicAuthInput = ({content, definitions}: BasicAuthInputProps) =>
 {
-	const {columns} = definitions;
 	const [authKey, setAuthKey] = React.useState(content.auth_key);
 	const [authPass, setAuthPass] = React.useState(content.auth_pass);
 
@@ -35,26 +35,31 @@ export const BasicAuthInput = ({content, definitions}: BasicAuthInputProps) =>
 	if (!columnExists('auth_key') || !columnExists('auth_pass')) return <></>;
 
 	return (
-		<dl>
-			<dt>{Locale.basicAuthentication}</dt>
-			<dd className="basic">
-				<input
-					type="text"
-					key="text.auth_key"
-					name="auth_key"
-					value={authKey}
-					onChange={handleChangeAuthKey}
-					placeholder="USER"
-				/>
-				<input
-					type="password"
-					key="text.auth_pass"
-					name="auth_pass"
-					value={authPass}
-					onChange={handleChangeAuthPass}
-					placeholder="PASS"
-				/>
-			</dd>
-		</dl>
+		<Field label={Locale.basicAuthentication}>
+			<div className="basic">
+				<div className="text basic__text">
+					<input
+						type="text"
+						className="text__input"
+						key="text.auth_key"
+						name="auth_key"
+						value={authKey}
+						onChange={handleChangeAuthKey}
+						placeholder="USER"
+					/>
+				</div>
+				<div className="text basic__text">
+					<input
+						type="password"
+						className="text__input"
+						key="text.auth_pass"
+						name="auth_pass"
+						value={authPass}
+						onChange={handleChangeAuthPass}
+						placeholder="PASS"
+					/>
+				</div>
+			</div>
+		</Field>
 	);
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import {Locale} from '../locales/ja';
 import {Content} from '../../../common/types/Content';
+import {Field} from '../../common/components/Field';
 
 type URLInputProps =
 {
@@ -28,20 +29,16 @@ export const URLInput = ({content, url}: URLInputProps) =>
 
 	return (
 		<>
-			<dl>
-				<dt>URL</dt>
-				<dd>
-					<input type="text" key="text.url" value={pageUrl} readOnly={true} />
-				</dd>
-			</dl>
-			<dl>
-				<dt></dt>
-				<dd>
-					<div className="link">
-						<a href={pageUrl}>{Locale.openInBrowser}</a>
-					</div>
-				</dd>
-			</dl>
+			<Field label="URL">
+				<div className="text">
+					<input type="text" className="text__input" key="text.url" value={pageUrl} readOnly={true} />
+				</div>
+			</Field>
+			<Field label="">
+				<div className="link">
+					<a href={pageUrl}>{Locale.openInBrowser}</a>
+				</div>
+			</Field>
 		</>
 	);
 };

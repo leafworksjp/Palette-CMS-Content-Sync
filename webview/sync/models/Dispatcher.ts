@@ -18,4 +18,9 @@ export class Dispatcher
 	{
 		vscode.postMessage({command: 'execute'});
 	}
+
+	static cancel()
+	{
+		vscode.postMessage({command: 'cancel'});
+	}
 }

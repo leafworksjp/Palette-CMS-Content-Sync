@@ -33,7 +33,7 @@ export const zSyncSelection = z.discriminatedUnion('kind', [
 
 export type SyncSelection = z.infer<typeof zSyncSelection>;
 
-export type Conflict = {pageId: string};
+export type Conflict = {pageId: string, affectedBy: string[]};
 
 export function computeSyncDiff(local: ContentV2[], server: ContentV2[]): SyncDiff[]
 {
@@ -66,25 +66,36 @@ export function findReplaceCandidates(content: ContentV2, list: ContentV2[]): Co
 	});
 }
 
+const conflictTarget = (a: SyncAction): string | undefined =>
+{
+	if (a.kind === 'update') return a.local.page_id;
+	if (a.kind === 'replace') return a.targetPageId;
+	if (a.kind === 'delete') return a.pageId;
+	return undefined;
+};
+
 export function predictConflicts(actions: SyncAction[]): Conflict[]
 {
-	const targets = actions.flatMap(a =>
+	const ordered = orderActions(actions);
+
+	const targets = ordered.flatMap(a =>
 	{
-		if (a.kind === 'update') return [a.local.page_id];
-		if (a.kind === 'replace') return [a.targetPageId];
-		if (a.kind === 'delete') return [a.pageId];
-		return [];
+		const t = conflictTarget(a);
+		return t ? [t] : [];
 	});
 
 	const seen = new Set<string>();
 	const duplicates = new Set<string>();
-	targets.forEach(p =>
+	targets.forEach(t =>
 	{
-		if (seen.has(p)) duplicates.add(p);
-		else seen.add(p);
+		if (seen.has(t)) duplicates.add(t);
+		else seen.add(t);
 	});
 
-	return [...duplicates].map(pageId => ({pageId}));
+	return [...duplicates].map(pageId => ({
+		pageId,
+		affectedBy: ordered.flatMap(a => ((a.kind === 'replace' && a.targetPageId === pageId) ? [a.local.page_id] : [])),
+	}));
 }
 
 //各 diff にデフォルト selection を割り当てる (page_id をキーにした Record)。

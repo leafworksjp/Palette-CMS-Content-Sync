@@ -4,6 +4,7 @@ import {Dispatcher} from '../models/Dispatcher';
 import {ContentFor, TextPropertiesFor, getColumnName, getColumns} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
 import {Version} from '../../../common/types/Version';
+import {Field} from '../../common/components/Field';
 
 type TextProps<V extends Version> =
 {
@@ -35,14 +36,11 @@ export const Text = ({name, content, definitions, required, placeholder, readonl
 	if (!title || !isColumnExists) return <></>;
 
 	return (
-		<dl>
-			<dt>
-				{title}
-				{required ? <span>{Locale.required}</span> : ''}
-			</dt>
-			<dd>
+		<Field label={title} requiredLabel={required ? Locale.required : undefined}>
+			<div className="text">
 				<input
 					type="text"
+					className="text__input"
 					key={`text.${name}`}
 					name={name}
 					value={value}
@@ -51,7 +49,7 @@ export const Text = ({name, content, definitions, required, placeholder, readonl
 					onBlur={handleBlur}
 					readOnly={readonly ?? false}
 				/>
-			</dd>
-		</dl>
+			</div>
+		</Field>
 	);
 };

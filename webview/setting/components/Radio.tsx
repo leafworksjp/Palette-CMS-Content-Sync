@@ -3,6 +3,7 @@ import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
 import {Content, RadioProperties, getOptions, getColumns, getColumnName} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
+import {Field} from '../../common/components/Field';
 
 type RadioProps =
 {
@@ -32,12 +33,8 @@ export const Radio = ({name, content, definitions, required, readOnly}: RadioPro
 	if (!title || !options || !isColumnExists) return <></>;
 
 	return (
-		<dl>
-			<dt>
-				{title}
-				{required ? <span>{Locale.required}</span> : ''}
-			</dt>
-			<dd className="flex">
+		<Field label={title} requiredLabel={required ? Locale.required : undefined}>
+			<div className="flex">
 				{
 					options.map(({name: optionName, key: optionValue}, index) =>
 					{
@@ -51,6 +48,7 @@ export const Radio = ({name, content, definitions, required, readOnly}: RadioPro
 							<div className="radio" key={divKey}>
 								<input
 									type="radio"
+									className="radio__input"
 									id={radioKey}
 									key={radioKey}
 									name={name}
@@ -59,12 +57,12 @@ export const Radio = ({name, content, definitions, required, readOnly}: RadioPro
 									onChange={handleChange}
 									readOnly={readOnly ?? false}
 								/>
-								<label key={labelKey} htmlFor={radioKey}>{optionName}</label>
+								<label className="radio__label" key={labelKey} htmlFor={radioKey}>{optionName}</label>
 							</div>
 						);
 					})
 				}
-			</dd>
-		</dl>
+			</div>
+		</Field>
 	);
 };

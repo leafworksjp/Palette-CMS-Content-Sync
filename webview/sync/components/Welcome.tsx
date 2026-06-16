@@ -1,10 +1,10 @@
-import React from 'react';
+import {Locale} from '../locales/ja';
 
 export const Welcome = () =>
 {
 	return (
-		<div>
-			<p>同期コマンドを実行してください。</p>
+		<div className="welcome">
+			<p>{Locale.welcome}</p>
 		</div>
 	);
 };

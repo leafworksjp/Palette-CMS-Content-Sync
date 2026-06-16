@@ -1,7 +1,9 @@
 import React from 'react';
+import {Locale} from '../locales/ja';
 import {Dispatcher} from '../models/Dispatcher';
 import {Content, SearchQueryForWhere, getColumns, getColumnName, getSearchQueryOptions} from '../../../common/types/Content';
 import {Definitions} from '../../../common/types/Definitions';
+import {Field} from '../../common/components/Field';
 
 type SearchInputsProps =
 {
@@ -34,18 +36,16 @@ export const SearchInputs = ({supportsSheetRefValue, content, definitions}: Sear
 	if (!title || !isColumnExists) return <></>;
 
 	return (
-		<dl>
-			<dt>{title}</dt>
-			<dd>
+		<Field label={title}>
+			{
+				queries?.map((query, index) =>
 				{
-					queries?.map((query, index) =>
-					{
-						const key = `search_input.${index}`;
-						return <SearchInput key={key} index={index} query={query} supportsSheetRefValue={supportsSheetRefValue} content={content} definitions={definitions} />;
-					})
-				}
-			</dd>
-		</dl>);
+					const key = `search_input.${index}`;
+					return <SearchInput key={key} index={index} query={query} supportsSheetRefValue={supportsSheetRefValue} content={content} definitions={definitions} />;
+				})
+			}
+		</Field>
+	);
 };
 
 const SearchInput = ({index, query, supportsSheetRefValue, definitions, content}: {
@@ -55,7 +55,7 @@ const SearchInput = ({index, query, supportsSheetRefValue, definitions, content}
 	content: Content,
 	definitions: Definitions,
 }) => (
-	<div className="setting setting--search" key={`search_query_where.${index}`}>
+	<div className="query-where" key={`search_query_where.${index}`}>
 		<SelectCol index={index} query={query} content={content} definitions={definitions}/>
 		<SelectOperator index={index} query={query} definitions={definitions}/>
 		<ValInput index={index} query={query} supportsSheetRefValue={supportsSheetRefValue}/>
@@ -88,21 +88,24 @@ const SelectCol = ({index, query, content, definitions}: {
 	if (!options) return <></>;
 
 	return (
-		<select
-			key={`search_query_where.col.${index}`}
-			name="search_query_where.col"
-			value={col}
-			onChange={handleChangeCol}
-		>
-			<option key={`search_query_where.operator.${index}.option.empty}`}/>
-			{
-				options.map(({key: optionValue, name: optionName}, j) =>
+		<div className="select query-where__col">
+			<select
+				className="select__input"
+				key={`search_query_where.col.${index}`}
+				name="search_query_where.col"
+				value={col}
+				onChange={handleChangeCol}
+			>
+				<option key={`search_query_where.operator.${index}.option.empty}`}/>
 				{
-					const key = `search_query_where.operator.${index}.option.${j}`;
-					return <option key={key} value={optionValue}>{optionName}</option>;
-				})
-			}
-		</select>
+					options.map(({key: optionValue, name: optionName}, j) =>
+					{
+						const key = `search_query_where.operator.${index}.option.${j}`;
+						return <option key={key} value={optionValue}>{optionName}</option>;
+					})
+				}
+			</select>
+		</div>
 	);
 };
 
@@ -126,20 +129,23 @@ const SelectOperator = ({index, query, definitions}: {
 	const operators = column_options.search_query_where;
 
 	return (
-		<select className="setting__operator"
-			key={`search_query_where.operator.${index}`}
-			name="search_query_where.operator"
-			value={operator}
-			onChange={handleChangeOperator}
-		>
-			{
-				operators.map(({key: optionValue, name: optionName}, j) =>
+		<div className="select query-where__operator">
+			<select
+				className="select__input"
+				key={`search_query_where.operator.${index}`}
+				name="search_query_where.operator"
+				value={operator}
+				onChange={handleChangeOperator}
+			>
 				{
-					const key = `search_query_where.operator.${index}.option.${j}`;
-					return <option key={key} value={optionValue}>{optionName}</option>;
-				})
-			}
-		</select>
+					operators.map(({key: optionValue, name: optionName}, j) =>
+					{
+						const key = `search_query_where.operator.${index}.option.${j}`;
+						return <option key={key} value={optionValue}>{optionName}</option>;
+					})
+				}
+			</select>
+		</div>
 	);
 };
 
@@ -198,55 +204,66 @@ const ValInput = ({index, query, supportsSheetRefValue}: {
 	if (!supportsSheetRefValue)
 	{
 		return (
-			<input
-				type="text"
-				key={`search_query_where.val_string.${index}`}
-				name="search_query_where.val_string"
-				value={valString}
-				onChange={handleString}
-			/>
-		);
-	}
-
-	return (
-		<div className="setting__val val">
-			<select
-				className="val__kind"
-				key={`search_query_where.val_kind.${index}`}
-				name="search_query_where.val_kind"
-				value={kind}
-				onChange={handleKind}
-			>
-				<option value="value">値</option>
-				<option value="sheet">userシート参照</option>
-			</select>
-			<div className="val__fields">
+			<div className="text query-where__value">
 				<input
 					type="text"
+					className="text__input"
 					key={`search_query_where.val_string.${index}`}
 					name="search_query_where.val_string"
 					value={valString}
 					onChange={handleString}
-					style={{display: kind === 'value' ? undefined : 'none'}}
 				/>
-				<input
-					type="text"
-					key={`search_query_where.val_sheet.${index}`}
-					name="search_query_where.val_sheet"
-					placeholder="sheet"
-					value={valSheet}
-					onChange={handleSheet}
-					style={{display: kind === 'sheet' ? undefined : 'none'}}
-				/>
-				<input
-					type="text"
-					key={`search_query_where.val_col_ref.${index}`}
-					name="search_query_where.val_col_ref"
-					placeholder="col"
-					value={valColRef}
-					onChange={handleColRef}
-					style={{display: kind === 'sheet' ? undefined : 'none'}}
-				/>
+			</div>
+		);
+	}
+
+	return (
+		<div className="query-where__value">
+			<div className="select query-where__kind">
+				<select
+					className="select__input"
+					key={`search_query_where.val_kind.${index}`}
+					name="search_query_where.val_kind"
+					value={kind}
+					onChange={handleKind}
+				>
+					<option value="value">{Locale.searchValKind.value}</option>
+					<option value="sheet">{Locale.searchValKind.sheet}</option>
+				</select>
+			</div>
+			<div className="query-where__fields">
+				<div className="text query-where__field" style={{display: kind === 'value' ? undefined : 'none'}}>
+					<input
+						type="text"
+						className="text__input"
+						key={`search_query_where.val_string.${index}`}
+						name="search_query_where.val_string"
+						value={valString}
+						onChange={handleString}
+					/>
+				</div>
+				<div className="text query-where__field" style={{display: kind === 'sheet' ? undefined : 'none'}}>
+					<input
+						type="text"
+						className="text__input"
+						key={`search_query_where.val_sheet.${index}`}
+						name="search_query_where.val_sheet"
+						placeholder="sheet"
+						value={valSheet}
+						onChange={handleSheet}
+					/>
+				</div>
+				<div className="text query-where__field" style={{display: kind === 'sheet' ? undefined : 'none'}}>
+					<input
+						type="text"
+						className="text__input"
+						key={`search_query_where.val_col_ref.${index}`}
+						name="search_query_where.val_col_ref"
+						placeholder="col"
+						value={valColRef}
+						onChange={handleColRef}
+					/>
+				</div>
 			</div>
 		</div>
 	);

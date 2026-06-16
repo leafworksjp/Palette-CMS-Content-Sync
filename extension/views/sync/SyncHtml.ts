@@ -8,6 +8,8 @@ export class SyncHtml
 
 		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'reset.css'));
 		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'vscode.css'));
+		const styleCommonUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'common.css'));
+		const styleSyncUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'css', 'sync.css'));
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'sync.bundle.js'));
 
 		return `
@@ -20,6 +22,8 @@ export class SyncHtml
 
 				<link href="${styleResetUri}" rel="stylesheet">
 				<link href="${styleVSCodeUri}" rel="stylesheet">
+				<link href="${styleCommonUri}" rel="stylesheet">
+				<link href="${styleSyncUri}" rel="stylesheet">
 
 				<script defer nonce="${nonce}" src="${scriptUri}"></script>
 			</head>

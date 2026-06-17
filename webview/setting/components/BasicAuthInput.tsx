@@ -36,8 +36,8 @@ export const BasicAuthInput = ({content, definitions}: BasicAuthInputProps) =>
 
 	return (
 		<Field label={Locale.basicAuthentication}>
-			<div className="basic">
-				<div className="text basic__text">
+			<div className="basic-auth">
+				<div className="text basic-auth__text">
 					<input
 						type="text"
 						className="text__input"
@@ -48,7 +48,7 @@ export const BasicAuthInput = ({content, definitions}: BasicAuthInputProps) =>
 						placeholder="USER"
 					/>
 				</div>
-				<div className="text basic__text">
+				<div className="text basic-auth__text">
 					<input
 						type="password"
 						className="text__input"

@@ -60,7 +60,6 @@ const validateContent = <V extends Version>(
 	const allowedFields = getColumns(definitions, content);
 
 	//contents_type 自体が definitions に存在しない場合の早期 return
-	//テスト: common/tests/validateContent.test.ts > "R1: フィールド許可チェック (unknown_field)" > "contents_type 自体が定義にない → エラー"
 	if (!allowedFields)
 	{
 		return [{
@@ -70,17 +69,12 @@ const validateContent = <V extends Version>(
 		}];
 	}
 
-	//R1: 動的キー走査で allowedFields にないキーを検出
-	//テスト: common/tests/validateContent.test.ts > "R1: フィールド許可チェック (unknown_field)"
+	//動的キー走査で allowedFields にないキーを検出
 	const unknownFieldErrors: ValidationError[] = Object.entries(content)
 	.filter(([key]) => !allowedFields.includes(key))
 	.map(([key, value]) => ({field: key, value, reason: 'unknown_field'}));
 
-	//R2/R3: 各 enum field を ContentFor<V> 経由で型安全にアクセス
-	//テスト: common/tests/validateContent.test.ts > "R2/R3: enum 値チェック (invalid_value)"
-	//- 単一値 (state) が許可リストにない
-	//- 配列値 (permission) の一部要素が許可リストにない
-	//- 配列値 (device_type) の一部要素が許可リストにない
+	//各 enum field を ContentFor<V> 経由で型安全にアクセス
 	const enumErrors: ValidationError[] = enumFieldsForValidation
 	.filter(key => allowedFields.includes(key))
 	.flatMap(key =>
@@ -98,14 +92,8 @@ const validateContent = <V extends Version>(
 		.map(v => ({field: key, value: v, reason: 'invalid_value'}));
 	});
 
-	//R4: search_query (where / order)
-	//テスト: common/tests/validateContent.test.ts > "R4: search_query_where" / "R4: search_query_order"
-	//- col が search_query_keys にない → unknown_col
-	//- operator が column_options にない → invalid_value
-	//- col 空文字列 (未入力) は unknown_col にならない
-	//- operator 空文字列 (未入力) は invalid_value にならない
-	//- val のシート参照 ({sheet, col}) は validate されない
-	const checkSearchQuery = (
+	//search_query (where / order) の col / operator が定義にあるか検証
+	const getSearchQueryErrors = (
 		type: 'where' | 'order',
 		items: ReadonlyArray<{col: string, operator: string}>,
 		opOptions: ReadonlyArray<{key: string}>
@@ -123,13 +111,13 @@ const validateContent = <V extends Version>(
 		].filter(Is.notNullable));
 	};
 
-	const whereErrors = checkSearchQuery(
+	const whereErrors = getSearchQueryErrors(
 		'where',
 		content.search_query_where ?? [],
 		definitions.column_options.search_query_where
 	);
 
-	const orderErrors = checkSearchQuery(
+	const orderErrors = getSearchQueryErrors(
 		'order',
 		content.search_query_order ?? [],
 		definitions.column_options.search_query_order
@@ -168,6 +156,7 @@ export abstract class ContentStrategy<V extends Version = Version>
 	public abstract uploadEndpoint(content: Content): string;
 	public abstract uploadMethod(content: Content): 'POST' | 'PUT';
 	public abstract supportsSheetRefValue(): boolean;
+	public abstract isPageIdEditable(): boolean;
 
 	public serverIdParam(content: Content): string
 	{
@@ -244,6 +233,11 @@ export class ContentStrategyV1 extends ContentStrategy<1>
 	public supportsSheetRefValue(): boolean
 	{
 		return false;
+	}
+
+	public isPageIdEditable(): boolean
+	{
+		return true;
 	}
 }
 
@@ -333,5 +327,10 @@ export class ContentStrategyV2 extends ContentStrategy<2>
 	public supportsSheetRefValue(): boolean
 	{
 		return true;
+	}
+
+	public isPageIdEditable(): boolean
+	{
+		return false;
 	}
 }

@@ -166,6 +166,7 @@ export class SettingWebView implements vscode.WebviewViewProvider
 							url,
 							isReadOnly: uploaded,
 							supportsSheetRefValue: contentStrategy.supportsSheetRefValue(),
+							isPageIdEditable: contentStrategy.isPageIdEditable(),
 						}
 					});
 				}
@@ -246,6 +247,7 @@ export class SettingWebView implements vscode.WebviewViewProvider
 				url,
 				isReadOnly: uploaded,
 				supportsSheetRefValue: contentStrategy.supportsSheetRefValue(),
+				isPageIdEditable: contentStrategy.isPageIdEditable(),
 			}
 		});
 

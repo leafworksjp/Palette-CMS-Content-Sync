@@ -60,8 +60,8 @@ const SearchInput = ({index, query, supportsSheetRefValue, definitions, content}
 		<SelectOperator index={index} query={query} definitions={definitions}/>
 		<ValInput index={index} query={query} supportsSheetRefValue={supportsSheetRefValue}/>
 		<div className="btn">
-			<div className="btn__add" onClick={() => Dispatcher.addSearchQuery(index)}>＋</div>
-			<div className="btn__subtract" onClick={() => Dispatcher.deleteSearchQuery(index)}>ー</div>
+			<div className="btn__icon btn__icon--add" onClick={() => Dispatcher.addSearchQuery(index)}>＋</div>
+			<div className="btn__icon btn__icon--subtract" onClick={() => Dispatcher.deleteSearchQuery(index)}>ー</div>
 		</div>
 	</div>
 );

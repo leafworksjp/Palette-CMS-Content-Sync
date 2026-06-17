@@ -14,20 +14,20 @@
   margin: auto auto 0px;
   border-bottom: none;
 }
-.setting-form__section-title {
+.setting-form__heading {
   margin: auto auto 5px;
   font-size: 90%;
   font-weight: bold;
 }
 
-.basic {
+.basic-auth {
   display: flex;
 }
-.basic .basic__text {
+.basic-auth .basic-auth__text {
   width: 50%;
   margin: auto 5px auto auto;
 }
-.basic .basic__text + .basic__text {
+.basic-auth .basic-auth__text + .basic-auth__text {
   margin: auto auto auto 10px;
 }
 
@@ -110,9 +110,7 @@
     margin: auto 0 auto auto;
   }
 }
-.btn__base,
-.btn__subtract,
-.btn__add {
+.btn__icon {
   width: 20px;
   height: 20px;
   line-height: 20px;
@@ -121,10 +119,10 @@
   text-align: center;
   border-radius: 2px;
 }
-.btn__add {
+.btn__icon--add {
   background: var(--vscode-button-background);
   margin: auto 5px auto auto;
 }
-.btn__subtract {
+.btn__icon--subtract {
   background: var(--vscode-button-background);
 }

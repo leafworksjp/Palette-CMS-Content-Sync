@@ -56,8 +56,8 @@ const OrderInput = ({index, query, content, definitions}: {
 		<SelectCol index={index} query={query} content={content} definitions={definitions}/>
 		<SelectOperator index={index} query={query} definitions={definitions}/>
 		<div className="btn">
-			<div className="btn__add" onClick={() => Dispatcher.addOrderQuery(index)}>＋</div>
-			<div className="btn__subtract" onClick={() => Dispatcher.deleteOrderQuery(index)}>ー</div>
+			<div className="btn__icon btn__icon--add" onClick={() => Dispatcher.addOrderQuery(index)}>＋</div>
+			<div className="btn__icon btn__icon--subtract" onClick={() => Dispatcher.deleteOrderQuery(index)}>ー</div>
 		</div>
 	</div>
 );

@@ -17,6 +17,7 @@ type SettingFormProps =
 {
 	isReadOnly: boolean,
 	supportsSheetRefValue: boolean,
+	isPageIdEditable: boolean,
 	definitions: Definitions,
 	content: Content,
 	knownTitle: string,
@@ -24,7 +25,7 @@ type SettingFormProps =
 };
 
 /*eslint-disable complexity*/
-export const SettingForm = ({isReadOnly, supportsSheetRefValue, content, definitions, knownTitle, url}: SettingFormProps) =>
+export const SettingForm = ({isReadOnly, supportsSheetRefValue, isPageIdEditable, content, definitions, knownTitle, url}: SettingFormProps) =>
 {
 	if (!content) return <></>;
 
@@ -73,8 +74,8 @@ export const SettingForm = ({isReadOnly, supportsSheetRefValue, content, definit
 			{
 				isReadOnly
 				&& <div className="setting-form__section">
-					<h2 className="setting-form__section-title">{Locale.title.contentInfo}</h2>
-					<Text name="page_id" readonly={true} content={content} definitions={definitions} />
+					<h2 className="setting-form__heading">{Locale.title.contentInfo}</h2>
+					<Text name="page_id" readonly={!isPageIdEditable} content={content} definitions={definitions} />
 					{
 						content.contents_type !== 'parts'
 						&& <URLInput content={content} url={url} />
@@ -82,7 +83,7 @@ export const SettingForm = ({isReadOnly, supportsSheetRefValue, content, definit
 				</div>
 			}
 			<div className="setting-form__section">
-				<h2 className="setting-form__section-title">{Locale.title.contentSettings}</h2>
+				<h2 className="setting-form__heading">{Locale.title.contentSettings}</h2>
 				<Text name="static_url" placeholder="/path/to/content/" content={content} definitions={definitions} />
 				<Text name="category" content={content} definitions={definitions} />
 				<Text name="name" required={true} content={content} definitions={definitions} />
@@ -94,7 +95,7 @@ export const SettingForm = ({isReadOnly, supportsSheetRefValue, content, definit
 			{
 				someColumnExists(['role_key'])
 				&& <div className="setting-form__section">
-					<h2 className="setting-form__section-title">{Locale.title.roleSettings}</h2>
+					<h2 className="setting-form__heading">{Locale.title.roleSettings}</h2>
 					<Radio name="role_key" required={true} content={content} definitions={definitions} />
 					{
 						someColumnExists(['role_key_owner'])
@@ -106,7 +107,7 @@ export const SettingForm = ({isReadOnly, supportsSheetRefValue, content, definit
 			{
 				someColumnExists(['login_url', 'logout_url', 'search_row', 'permission', 'permission_url', 'device_type', 'device_type_url', 'auth_key', 'auth_pass', 'state'])
 				&& <div className="setting-form__section">
-					<h2 className="setting-form__section-title">{Locale.title.viewSettings}</h2>
+					<h2 className="setting-form__heading">{Locale.title.viewSettings}</h2>
 					<Text name="login_url" required={true} placeholder="/path/to/content/" content={content} definitions={definitions} />
 					<Text name="logout_url" required={true} placeholder="/path/to/content/" content={content} definitions={definitions} />
 					<Text name="search_row" required={true} content={content} definitions={definitions} />
@@ -131,7 +132,7 @@ export const SettingForm = ({isReadOnly, supportsSheetRefValue, content, definit
 			{
 				someColumnExists(['search_query_where', 'search_query_order_state', 'search_query_order'])
 				&& <div className="setting-form__section">
-					<h2 className="setting-form__section-title">{Locale.title.searchQuery}</h2>
+					<h2 className="setting-form__heading">{Locale.title.searchQuery}</h2>
 					<SearchInputs supportsSheetRefValue={supportsSheetRefValue} content={content} definitions={definitions} />
 					<Radio name="search_query_order_state" content={content} definitions={definitions} />
 					{

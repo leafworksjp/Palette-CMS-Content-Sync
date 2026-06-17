@@ -78,23 +78,7 @@ export class Command
 		await ContentFile.write(uri, uploadResult.value.content);
 		await CodeFile.create(uri, uploadResult.value.content);
 
-		if (strategy instanceof ContentStrategyV2)
-		{
-			const ac = getActiveConnection();
-			if (ac instanceof ActiveConnectionV2 && ac.subdir)
-			{
-				const v2Result = strategy.safeParse(uploadResult.value.content);
-				if (v2Result.success)
-				{
-					if (dispatched.replacedPageId)
-					{
-						getContentCache().remove(ac.subdir, dispatched.replacedPageId);
-						await ContentFile.deleteContentDir(dispatched.replacedPageId);
-					}
-					getContentCache().add(ac.subdir, v2Result.data);
-				}
-			}
-		}
+		await this.updateContentCache(uploadResult.value.content, dispatched.replacedPageId);
 
 		const downloadResult = await Api.download(uploadResult.value.content);
 
@@ -130,6 +114,25 @@ export class Command
 
 		getUploadStatus().showCompleted();
 		return ApiResult.success(undefined);
+	}
+
+	private async updateContentCache(content: Content, replacedPageId?: string): Promise<void>
+	{
+		const strategy = getContentStrategy();
+		if (!(strategy instanceof ContentStrategyV2)) return;
+
+		const ac = getActiveConnection();
+		if (!(ac instanceof ActiveConnectionV2) || !ac.subdir) return;
+
+		const v2Result = strategy.safeParse(content);
+		if (!v2Result.success) return;
+
+		if (replacedPageId)
+		{
+			getContentCache().remove(ac.subdir, replacedPageId);
+			await ContentFile.deleteContentDir(replacedPageId);
+		}
+		getContentCache().add(ac.subdir, v2Result.data);
 	}
 
 	private async dispatchUpload(plan: UploadPlan, content: Content, codeList: Code[])
@@ -196,6 +199,11 @@ export class Command
 
 	public async uploadAll()
 	{
+		if (getContentStrategy() instanceof ContentStrategyV2)
+		{
+			return ApiResult.generalFailure('V2 ではこのコマンドは使用できません。同期コマンドを使ってください。');
+		}
+
 		getUploadStatus().showUploading();
 		const workspace = FileUtil.getWorkspace();
 		const definitions = await DefinitionsFile.read();
@@ -209,12 +217,11 @@ export class Command
 		const files = await FileUtil.listFiles(workspace);
 		const uris = files.filter(file => FileUtil.getBase(file) === ContentFile.fileName);
 
-		const errors = [];
+		const errors: (string | GeneralFailureArgs | ValidationFailureArgs | CompilationFailureArgs)[] = [];
 
 		await Promise.all(uris.map(async uri =>
 		{
 			const content = await ContentFile.read(uri);
-
 			if (!content)
 			{
 				errors.push(`${ContentFile.fileName}の読み込みに失敗しました。`);
@@ -222,13 +229,14 @@ export class Command
 			}
 
 			const codeList = await CodeFile.read(uri);
-
 			const uploadResult = await Api.upload(content, codeList);
-
 			if (uploadResult.isFailure())
 			{
 				errors.push(uploadResult.error);
+				return;
 			}
+
+			await ContentFile.write(uri, uploadResult.value.content);
 		}));
 
 		if (errors.length)
@@ -236,11 +244,9 @@ export class Command
 			getUploadStatus().showError();
 			return ApiResult.generalFailure('アップロードに失敗したファイルがあります。');
 		}
-		else
-		{
-			getUploadStatus().showCompleted();
-			return ApiResult.success('全てのコンテンツをアップロードしました。');
-		}
+
+		getUploadStatus().showCompleted();
+		return ApiResult.success('全てのコンテンツをアップロードしました。');
 	}
 
 	public async download()

@@ -15,14 +15,6 @@ export abstract class LwContent
 		return FileUtil.join(workspace, LwContent.directoryName);
 	}
 
-	public static async exists(): Promise<boolean>
-	{
-		const lwDir = LwContent.dir();
-		if (!lwDir) return false;
-
-		return await FileUtil.isDirectory(lwDir);
-	}
-
 	public static init(version: Version): LwContent
 	{
 		return version === 1

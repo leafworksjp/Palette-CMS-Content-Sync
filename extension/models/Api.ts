@@ -43,7 +43,7 @@ export class Api
 				}
 				else
 				{
-					getLogger().error('API invalid response:', zCompileErrorsResult.error);
+					getLogger().error(`API invalid response [${content.page_id}]:`, zCompileErrorsResult.error);
 					return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 				}
 			}
@@ -56,7 +56,7 @@ export class Api
 				}
 				else
 				{
-					getLogger().error('API invalid response:', zResult.error);
+					getLogger().error(`API invalid response [${content.page_id}]:`, zResult.error);
 					return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 				}
 			}
@@ -84,7 +84,7 @@ export class Api
 			}
 			else
 			{
-				getLogger().error('API invalid response:', result.value);
+				getLogger().error(`API invalid response [${content.page_id}]:`, result.value);
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 		}
@@ -120,7 +120,7 @@ export class Api
 			}
 			else
 			{
-				getLogger().error('API invalid response:', result.value);
+				getLogger().error(`API invalid response [${content.page_id}]:`, result.value);
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 		}
@@ -142,7 +142,7 @@ export class Api
 			}
 			else
 			{
-				getLogger().error('API invalid response:', result.value);
+				getLogger().error(`API invalid response [${content.page_id}]:`, result.value);
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 		}
@@ -215,14 +215,14 @@ export class Api
 			{
 				return ApiResult.compilationFailure(zCompileErrorsResult.data);
 			}
-			getLogger().error('API invalid response:', zCompileErrorsResult.error);
+			getLogger().error(`API invalid response [${content.page_id}]:`, zCompileErrorsResult.error);
 			return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 		}
 
 		const zResult = contentStrategy.safeParse(result.value.contents);
 		if (!zResult.success)
 		{
-			getLogger().error('API invalid response:', zResult.error);
+			getLogger().error(`API invalid response [${content.page_id}]:`, zResult.error);
 			return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 		}
 		return ApiResult.success({content: zResult.data});

@@ -25,6 +25,7 @@ export const App = () =>
 	const [url, setUrl] = React.useState<string|undefined>();
 	const [isReadOnly, setIsReadOnly] = React.useState<boolean>(false);
 	const [supportsSheetRefValue, setSupportsSheetRefValue] = React.useState<boolean>(false);
+	const [isPageIdEditable, setIsPageIdEditable] = React.useState<boolean>(false);
 
 	React.useEffect(() =>
 	{
@@ -57,6 +58,7 @@ export const App = () =>
 						setUrl(message.value.url);
 						setIsReadOnly(Boolean(message.value.isReadOnly));
 						setSupportsSheetRefValue(Boolean(message.value.supportsSheetRefValue));
+						setIsPageIdEditable(Boolean(message.value.isPageIdEditable));
 					}
 					break;
 
@@ -71,6 +73,6 @@ export const App = () =>
 	const knownTitle = definitions ? getKnownFileTitle(fileName, definitions) : undefined;
 
 	return content && definitions && url && knownTitle
-		? <SettingForm isReadOnly={isReadOnly} supportsSheetRefValue={supportsSheetRefValue} content={content} definitions={definitions} knownTitle={knownTitle} url={url} />
+		? <SettingForm isReadOnly={isReadOnly} supportsSheetRefValue={supportsSheetRefValue} isPageIdEditable={isPageIdEditable} content={content} definitions={definitions} knownTitle={knownTitle} url={url} />
 		: <Welcome />;
 };

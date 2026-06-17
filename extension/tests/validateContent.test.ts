@@ -71,9 +71,9 @@ const definitions = zDefinitionsV2.parse(baseDefinitionsData);
 
 describe('ContentStrategy.validate', () =>
 {
-	describe('正常系', () =>
+	describe('valid content', () =>
 	{
-		test('整合する content / definitions で valid: true', () =>
+		test('returns empty errors when content and definitions are consistent', () =>
 		{
 			const content = zContentV2.parse(baseContentData);
 			const result = strategy.validate(content, definitions);
@@ -81,9 +81,9 @@ describe('ContentStrategy.validate', () =>
 		});
 	});
 
-	describe('R1: フィールド許可チェック (unknown_field)', () =>
+	describe('unknown_field', () =>
 	{
-		test('contents_type 自体が定義にない → エラー', () =>
+		test('contents_type not defined in definitions returns invalid_value', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, contents_type: 'nonexistent_type'});
 			const result = strategy.validate(content, definitions);
@@ -92,23 +92,23 @@ describe('ContentStrategy.validate', () =>
 		});
 	});
 
-	describe('R2/R3: enum 値チェック (invalid_value)', () =>
+	describe('enum invalid_value', () =>
 	{
-		test('単一値 (state) が許可リストにない', () =>
+		test('scalar value (state) not in allowed list', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, state: 999});
 			const result = strategy.validate(content, definitions);
 			expect(result.some(e => e.field === 'state' && e.value === 999 && e.reason === 'invalid_value')).toBe(true);
 		});
 
-		test('配列値 (permission) の一部要素が許可リストにない', () =>
+		test('array value (permission) contains invalid element', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, permission: ['nobody', 'admin']});
 			const result = strategy.validate(content, definitions);
 			expect(result.some(e => e.field === 'permission' && e.value === 'admin' && e.reason === 'invalid_value')).toBe(true);
 		});
 
-		test('配列値 (device_type) の一部要素が許可リストにない', () =>
+		test('array value (device_type) contains invalid element', () =>
 		{
 			const content = zContentV2.parse({...baseContentData, device_type: ['pc', 'tablet']});
 			const result = strategy.validate(content, definitions);
@@ -116,9 +116,9 @@ describe('ContentStrategy.validate', () =>
 		});
 	});
 
-	describe('R4: search_query_where', () =>
+	describe('search_query_where', () =>
 	{
-		test('col が search_query_keys にない → unknown_col', () =>
+		test('col not in search_query_keys returns unknown_col', () =>
 		{
 			const content = zContentV2.parse({
 				...baseContentData,
@@ -128,7 +128,7 @@ describe('ContentStrategy.validate', () =>
 			expect(result.some(e => e.field === 'search_query_where.col' && e.value === 'unknown_col' && e.reason === 'unknown_col')).toBe(true);
 		});
 
-		test('operator が column_options にない → invalid_value', () =>
+		test('operator not in column_options returns invalid_value', () =>
 		{
 			const content = zContentV2.parse({
 				...baseContentData,
@@ -138,7 +138,7 @@ describe('ContentStrategy.validate', () =>
 			expect(result.some(e => e.field === 'search_query_where.operator' && e.value === '~~' && e.reason === 'invalid_value')).toBe(true);
 		});
 
-		test('val のシート参照は validate されない', () =>
+		test('val with sheet reference is not validated', () =>
 		{
 			const content = zContentV2.parse({
 				...baseContentData,
@@ -148,7 +148,7 @@ describe('ContentStrategy.validate', () =>
 			expect(result).toEqual([]);
 		});
 
-		test('col が空文字列 (未入力) なら unknown_col にならない', () =>
+		test('empty col (unentered) does not produce unknown_col', () =>
 		{
 			const content = zContentV2.parse({
 				...baseContentData,
@@ -158,7 +158,7 @@ describe('ContentStrategy.validate', () =>
 			expect(result).toEqual([]);
 		});
 
-		test('operator が空文字列 (未入力) なら invalid_value にならない', () =>
+		test('empty operator (unentered) does not produce invalid_value', () =>
 		{
 			const content = zContentV2.parse({
 				...baseContentData,
@@ -169,9 +169,9 @@ describe('ContentStrategy.validate', () =>
 		});
 	});
 
-	describe('R4: search_query_order', () =>
+	describe('search_query_order', () =>
 	{
-		test('col が search_query_keys にない → unknown_col', () =>
+		test('col not in search_query_keys returns unknown_col', () =>
 		{
 			const content = zContentV2.parse({
 				...baseContentData,
@@ -181,7 +181,7 @@ describe('ContentStrategy.validate', () =>
 			expect(result.some(e => e.field === 'search_query_order.col' && e.value === 'unknown_col' && e.reason === 'unknown_col')).toBe(true);
 		});
 
-		test('operator が column_options にない → invalid_value', () =>
+		test('operator not in column_options returns invalid_value', () =>
 		{
 			const content = zContentV2.parse({
 				...baseContentData,
@@ -191,7 +191,7 @@ describe('ContentStrategy.validate', () =>
 			expect(result.some(e => e.field === 'search_query_order.operator' && e.value === 'RANDOM')).toBe(true);
 		});
 
-		test('col が空文字列 (未入力) なら unknown_col にならない', () =>
+		test('empty col (unentered) does not produce unknown_col', () =>
 		{
 			const content = zContentV2.parse({
 				...baseContentData,
@@ -202,11 +202,11 @@ describe('ContentStrategy.validate', () =>
 		});
 	});
 
-	describe('R5: TextProperties は対象外', () =>
+	describe('TextProperties not validated', () =>
 	{
-		test('name に任意文字列が入っていても valid', () =>
+		test('arbitrary string in name is valid', () =>
 		{
-			const content = zContentV2.parse({...baseContentData, name: '何でもいいテキスト'});
+			const content = zContentV2.parse({...baseContentData, name: 'any text content'});
 			const result = strategy.validate(content, definitions);
 			expect(result).toEqual([]);
 		});

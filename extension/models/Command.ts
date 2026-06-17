@@ -64,12 +64,23 @@ export class Command
 		const strategy = getContentStrategy();
 		const plan = strategy.uploadPlan(content);
 
+		const ac = getActiveConnection();
+		const subdir = ac instanceof ActiveConnectionV2 ? ac.subdir : undefined;
+
 		const dispatched = await this.dispatchUpload(plan, content, codeList);
 		const uploadResult = dispatched.result;
 
 		if (uploadResult.isFailure())
 		{
 			getUploadStatus().showError();
+			if (subdir)
+			{
+				const refreshResult = await this.refreshCache(subdir);
+				if (refreshResult.isFailure())
+				{
+					vscode.window.showWarningMessage('サーバーへの接続に問題があります。接続を確認してください。');
+				}
+			}
 			return uploadResult;
 		}
 
@@ -78,7 +89,7 @@ export class Command
 		await ContentFile.write(uri, uploadResult.value.content);
 		await CodeFile.create(uri, uploadResult.value.content);
 
-		await this.updateContentCache(uploadResult.value.content, dispatched.replacedPageId);
+		await this.updateContentCache(uploadResult.value.content, subdir, dispatched.replacedPageId);
 
 		const downloadResult = await Api.download(uploadResult.value.content);
 
@@ -116,23 +127,30 @@ export class Command
 		return ApiResult.success(undefined);
 	}
 
-	private async updateContentCache(content: Content, replacedPageId?: string): Promise<void>
+	private async refreshCache(subdir: string): Promise<Awaited<ReturnType<typeof Api.list>>>
 	{
+		const result = await Api.list();
+		if (result.isSuccess()) getContentCache().set(subdir, result.value);
+		else getContentCache().clear(subdir);
+		return result;
+	}
+
+	private async updateContentCache(content: Content, subdir: string | undefined, replacedPageId?: string): Promise<void>
+	{
+		if (!subdir) return;
+
 		const strategy = getContentStrategy();
 		if (!(strategy instanceof ContentStrategyV2)) return;
-
-		const ac = getActiveConnection();
-		if (!(ac instanceof ActiveConnectionV2) || !ac.subdir) return;
 
 		const v2Result = strategy.safeParse(content);
 		if (!v2Result.success) return;
 
 		if (replacedPageId)
 		{
-			getContentCache().remove(ac.subdir, replacedPageId);
+			getContentCache().remove(subdir, replacedPageId);
 			await ContentFile.deleteContentDir(replacedPageId);
 		}
-		getContentCache().add(ac.subdir, v2Result.data);
+		getContentCache().add(subdir, v2Result.data);
 	}
 
 	private async dispatchUpload(plan: UploadPlan, content: Content, codeList: Code[])
@@ -503,15 +521,10 @@ export class Command
 
 		await activeConnection.set({url, subdir});
 
-		const listResult = await Api.list();
-		if (listResult.isSuccess())
-		{
-			getContentCache().set(subdir, listResult.value);
-		}
-		else
+		const listResult = await this.refreshCache(subdir);
+		if (listResult.isFailure())
 		{
 			getLogger().error('list 取得失敗:', listResult.error);
-			getContentCache().clear(subdir);
 			vscode.window.showWarningMessage(`接続先 (${subdir}) の list 取得に失敗しました。アップロード判定など一部機能が無効化されます。`);
 		}
 
@@ -532,10 +545,8 @@ export class Command
 			return ApiResult.generalFailure('接続先が設定されていません。');
 		}
 
-		const listResult = await Api.list();
+		const listResult = await this.refreshCache(ac.subdir);
 		if (listResult.isFailure()) return listResult;
-
-		getContentCache().set(ac.subdir, listResult.value);
 
 		const localResult = await this.loadLocalV2Contents(strategy);
 		if (localResult.isFailure()) return localResult;

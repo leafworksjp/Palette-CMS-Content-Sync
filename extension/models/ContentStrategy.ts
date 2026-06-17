@@ -104,10 +104,10 @@ const validateContent = <V extends Version>(
 		return items.flatMap(q => [
 			q.col === '' || !colOptions || colOptions.some(o => o.key === q.col)
 				? undefined
-				: {field: `search_query_${type}.col`, value: q.col, reason: 'unknown_col'} as const,
+				: {field: `search_query_${type}.col`, value: q.col, reason: 'unknown_col'} satisfies ValidationError,
 			q.operator === '' || opOptions.some(o => o.key === q.operator)
 				? undefined
-				: {field: `search_query_${type}.operator`, value: q.operator, reason: 'invalid_value'} as const,
+				: {field: `search_query_${type}.operator`, value: q.operator, reason: 'invalid_value'} satisfies ValidationError,
 		].filter(Is.notNullable));
 	};
 

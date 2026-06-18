@@ -143,7 +143,11 @@ export class Command
 		if (!(strategy instanceof ContentStrategyV2)) return;
 
 		const v2Result = strategy.safeParse(content);
-		if (!v2Result.success) return;
+		if (!v2Result.success)
+		{
+			getLogger().error('updateContentCache: failed to parse uploaded content', v2Result.error);
+			return;
+		}
 
 		if (replacedPageId)
 		{
@@ -171,7 +175,7 @@ export class Command
 				return this.handleChoose(plan.candidates, content, codeList);
 			default:
 				return {
-					result: ApiResult.generalFailure('接続先の list が取得できていません。再試行してください。'),
+					result: ApiResult.generalFailure('接続先のコンテンツ一覧が取得できていません。再試行してください。'),
 					replacedPageId: undefined,
 				};
 		}
@@ -219,7 +223,7 @@ export class Command
 	{
 		if (getContentStrategy() instanceof ContentStrategyV2)
 		{
-			return ApiResult.generalFailure('V2 ではこのコマンドは使用できません。同期コマンドを使ってください。');
+			return ApiResult.generalFailure('このコマンドは現在の接続先では使用できません。同期コマンドをご利用ください。');
 		}
 
 		getUploadStatus().showUploading();
@@ -334,7 +338,7 @@ export class Command
 	public async duplicate()
 	{
 		const uri = await ContentFile.resolveActive();
-		if (!uri) return;
+		if (!uri) throw new Error(Locale.pleaseOpenContent);
 
 		const newPageId = await ContentFile.promptDifferentPageId(uri);
 		if (!newPageId) return;
@@ -372,7 +376,7 @@ export class Command
 	public async changeExtensions(source: string, target: string)
 	{
 		const uri = await ContentFile.resolveActive();
-		if (!uri) return;
+		if (!uri) throw new Error(Locale.pleaseOpenContent);
 
 		await CodeFile.changeExtensions(uri, source, target);
 	}
@@ -388,7 +392,7 @@ export class Command
 		const uploaded = getContentStrategy().isUploaded(content);
 		if (Is.undefined(uploaded))
 		{
-			return ApiResult.generalFailure('接続先の list が取得できていません。再試行してください。');
+			return ApiResult.generalFailure('接続先のコンテンツ一覧が取得できていません。再試行してください。');
 		}
 		if (!uploaded)
 		{
@@ -420,7 +424,7 @@ export class Command
 		const uploaded = getContentStrategy().isUploaded(content);
 		if (Is.undefined(uploaded))
 		{
-			return ApiResult.generalFailure('接続先の list が取得できていません。再試行してください。');
+			return ApiResult.generalFailure('接続先のコンテンツ一覧が取得できていません。再試行してください。');
 		}
 		if (!uploaded)
 		{
@@ -460,11 +464,10 @@ export class Command
 	public async renameDirectory()
 	{
 		const uri = await ContentFile.resolveActive();
-		if (!uri) return;
+		if (!uri) throw new Error(Locale.pleaseOpenContent);
 
 		const content = await ContentFile.read(uri);
-
-		if (!content) return;
+		if (!content) throw new Error(Locale.pleaseOpenContent);
 
 		await ContentFile.changeDirectoryName(uri, content.page_id);
 	}
@@ -503,20 +506,20 @@ export class Command
 		if (validationErrors.length > 0)
 		{
 			const logger = getLogger();
-			logger.error(`接続先切替不可: ${validationErrors.length} 件のコンテンツ定義不整合`);
+			logger.error(`Connection switch blocked: ${validationErrors.length} validation errors against new definitions`);
 			validationErrors.forEach(e =>
 			{
 				logger.error(`  ${e.contentPath}: ${e.field} = ${JSON.stringify(e.value)} (${e.reason})`);
 			});
 			return ApiResult.generalFailure(
-				`接続先を切り替えられません: ${validationErrors.length} 件のコンテンツ定義不整合があります（詳細はログを確認してください）`
+				`接続先を切り替えられません: 既存コンテンツに新しい定義と合わない箇所が ${validationErrors.length} 件あります。`
 			);
 		}
 
 		const activeConnection = getActiveConnection();
 		if (!(activeConnection instanceof ActiveConnectionV2))
 		{
-			return ApiResult.generalFailure('V2 接続先のみ切替可能です');
+			return ApiResult.generalFailure('この接続先は切替に対応していません');
 		}
 
 		await activeConnection.set({url, subdir});
@@ -524,8 +527,8 @@ export class Command
 		const listResult = await this.refreshCache(subdir);
 		if (listResult.isFailure())
 		{
-			getLogger().error('list 取得失敗:', listResult.error);
-			vscode.window.showWarningMessage(`接続先 (${subdir}) の list 取得に失敗しました。アップロード判定など一部機能が無効化されます。`);
+			getLogger().error('list fetch failed:', listResult.error);
+			vscode.window.showWarningMessage(`接続先 (${subdir}) のコンテンツ一覧をサーバーから取得できませんでした。アップロード時の新規/更新判定など一部機能が無効化されます。`);
 		}
 
 		return ApiResult.success(`接続先を ${url} に切り替えました。`);
@@ -536,7 +539,7 @@ export class Command
 		const strategy = getContentStrategy();
 		if (!(strategy instanceof ContentStrategyV2))
 		{
-			return ApiResult.generalFailure('同期は V2 専用です。');
+			return ApiResult.generalFailure('同期は現在の接続先では利用できません。');
 		}
 
 		const ac = getActiveConnection();
@@ -583,11 +586,11 @@ export class Command
 		const strategy = getContentStrategy();
 		if (!(strategy instanceof ContentStrategyV2))
 		{
-			return ApiResult.generalFailure('同期は V2 専用です。');
+			return ApiResult.generalFailure('同期は現在の接続先では利用できません。');
 		}
 
 		const list = getContentCache().get(subdir);
-		if (!list) return ApiResult.generalFailure('list キャッシュが取得できていません。');
+		if (!list) return ApiResult.generalFailure('接続先のコンテンツ一覧が取得できていません。再試行してください。');
 
 		const localResult = await this.loadLocalV2Contents(strategy);
 		if (localResult.isFailure()) return localResult;
@@ -634,7 +637,7 @@ export class Command
 		if (action.kind === 'update' || action.kind === 'create')
 		{
 			const uri = ContentFile.contentFileUri(action.local.page_id);
-			if (!uri) return {action, error: 'ローカルパス取得失敗'};
+			if (!uri) return {action, error: 'ローカルのコンテンツファイルパスが取得できませんでした'};
 
 			const codeList = await CodeFile.read(uri);
 			const result = action.kind === 'update'
@@ -651,7 +654,7 @@ export class Command
 		if (action.kind === 'replace')
 		{
 			const uri = ContentFile.contentFileUri(action.local.page_id);
-			if (!uri) return {action, error: 'ローカルパス取得失敗'};
+			if (!uri) return {action, error: 'ローカルのコンテンツファイルパスが取得できませんでした'};
 
 			const codeList = await CodeFile.read(uri);
 			const result = await Api.replace(action.local, codeList, action.targetPageId);
@@ -668,7 +671,7 @@ export class Command
 		if (action.kind === 'delete')
 		{
 			const target = list.find(c => c.page_id === action.pageId);
-			if (!target) return {action, error: 'list キャッシュに対象が存在しません'};
+			if (!target) return {action, error: '削除対象のコンテンツがサーバー側に見つかりません'};
 
 			const result = await Api.delete(target);
 			if (result.isFailure()) return {action, error: this.formatError(result.error)};
@@ -686,7 +689,7 @@ export class Command
 			if (!v2Result.success) return {action, error: 'サーバー応答が不正な形式です'};
 
 			const uri = ContentFile.contentFileUri(v2Result.data.page_id);
-			if (!uri) return {action, error: 'ローカルパス取得失敗'};
+			if (!uri) return {action, error: 'ローカルのコンテンツファイルパスが取得できませんでした'};
 
 			await ContentFile.write(uri, v2Result.data);
 			await CodeFile.create(uri, v2Result.data);

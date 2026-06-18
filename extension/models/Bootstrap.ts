@@ -40,11 +40,11 @@ async function resolveVersion()
 
 	if (hasV1 && hasV2)
 	{
-		return ApiResult.generalFailure('.lwcontent 配下に api.json と接続先サブディレクトリが混在しています。どちらか一方に整理して VS Code を再読み込みしてください。');
+		return ApiResult.generalFailure('.lwcontent 配下の接続情報が不整合です。サーバーから再度ダウンロードしてください。');
 	}
 	if (!hasV1 && !hasV2)
 	{
-		return ApiResult.generalFailure('.lwcontent 配下に api.json または接続先サブディレクトリが必要です。配置してから VS Code を再読み込みしてください。');
+		return ApiResult.generalFailure('.lwcontent 配下に接続情報がありません。サーバーから再度ダウンロードしてください。');
 	}
 
 	const version: Version = hasV1 ? 1 : 2;
@@ -61,7 +61,7 @@ async function fetchContentCache(subdir: string): Promise<void>
 	}
 
 	//Logger は開発者向け詳細 (result.error 含む)、 showWarningMessage はユーザー向け案内で役割分担。
-	getLogger().error('初期 list 取得失敗:', result.error);
+	getLogger().error('Initial list fetch failed:', result.error);
 	getContentCache().clear(subdir);
-	vscode.window.showWarningMessage(`接続先 (${subdir}) の list 取得に失敗しました。アップロード判定など一部機能が無効化されます。`);
+	vscode.window.showWarningMessage(`接続先 (${subdir}) のコンテンツ一覧をサーバーから取得できませんでした。アップロード時の新規/更新判定など一部機能が無効化されます。`);
 }

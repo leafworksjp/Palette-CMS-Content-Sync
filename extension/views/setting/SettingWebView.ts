@@ -7,6 +7,7 @@ import {ContentFormatter} from '../../models/ContentFormatter';
 import {ContentFile} from '../../models/ContentFile';
 import {getActiveConnection, getContentStrategy, getVersion} from '../../models/Services';
 import {Is} from '../../../common/types/Is';
+import {Locale} from '../../locales/ja';
 
 export class SettingWebView implements vscode.WebviewViewProvider
 {
@@ -58,7 +59,11 @@ export class SettingWebView implements vscode.WebviewViewProvider
 			case 'addSearchQuery':
 				{
 					const uri = await ContentFile.resolveActive();
-					if (!uri) break;
+					if (!uri)
+					{
+						vscode.window.showErrorMessage(Locale.pleaseOpenContent);
+						break;
+					}
 
 					this.content = ContentFormatter.for(this.content).addSearchQuery(message.index).content;
 
@@ -74,7 +79,11 @@ export class SettingWebView implements vscode.WebviewViewProvider
 			case 'deleteSearchQuery':
 				{
 					const uri = await ContentFile.resolveActive();
-					if (!uri) break;
+					if (!uri)
+					{
+						vscode.window.showErrorMessage(Locale.pleaseOpenContent);
+						break;
+					}
 
 					this.content = ContentFormatter.for(this.content).deleteSearchQuery(message.index).content;
 
@@ -90,7 +99,11 @@ export class SettingWebView implements vscode.WebviewViewProvider
 			case 'addOrderQuery':
 				{
 					const uri = await ContentFile.resolveActive();
-					if (!uri) break;
+					if (!uri)
+					{
+						vscode.window.showErrorMessage(Locale.pleaseOpenContent);
+						break;
+					}
 
 					this.content = ContentFormatter.for(this.content).addOrderQuery(message.index).content;
 
@@ -106,7 +119,11 @@ export class SettingWebView implements vscode.WebviewViewProvider
 			case 'deleteOrderQuery':
 				{
 					const uri = await ContentFile.resolveActive();
-					if (!uri) break;
+					if (!uri)
+					{
+						vscode.window.showErrorMessage(Locale.pleaseOpenContent);
+						break;
+					}
 
 					this.content = ContentFormatter.for(this.content).deleteOrderQuery(message.index).content;
 
@@ -130,7 +147,11 @@ export class SettingWebView implements vscode.WebviewViewProvider
 
 		const documentUri = vscode.window.activeTextEditor?.document?.uri;
 		const uri = await ContentFile.resolveActive(documentUri);
-		if (!uri) return;
+		if (!uri)
+		{
+			vscode.window.showErrorMessage(Locale.pleaseOpenContent);
+			return;
+		}
 
 		this.content = ContentFormatter.for(this.content).formatValue(key, value).content;
 
@@ -143,10 +164,18 @@ export class SettingWebView implements vscode.WebviewViewProvider
 					const version = getVersion();
 
 					const definitions = await DefinitionsFile.read();
-					if (!definitions) break;
+					if (!definitions)
+					{
+						vscode.window.showErrorMessage('定義ファイルが読み込めません。');
+						break;
+					}
 
 					const url = getActiveConnection().current;
-					if (!url) break;
+					if (!url)
+					{
+						vscode.window.showErrorMessage('接続先が設定されていません。');
+						break;
+					}
 
 					this.content = updateDefaultValues(definitions, this.content);
 
@@ -154,7 +183,11 @@ export class SettingWebView implements vscode.WebviewViewProvider
 
 					const contentStrategy = getContentStrategy();
 					const uploaded = contentStrategy.isUploaded(this.content);
-					if (Is.undefined(uploaded)) break;
+					if (Is.undefined(uploaded))
+					{
+						vscode.window.showErrorMessage('接続先のコンテンツ一覧が取得できていません。再試行してください。');
+						break;
+					}
 
 					this.webview.postMessage({
 						command: 'refresh',

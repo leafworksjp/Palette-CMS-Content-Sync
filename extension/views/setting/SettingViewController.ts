@@ -122,12 +122,12 @@ export class SettingViewController
 
 	public async create()
 	{
-		await this.command.create();
+		await this.command.create().catch(e => vscode.window.showErrorMessage(e.message));
 	}
 
 	public async duplicate()
 	{
-		await this.command.duplicate();
+		await this.command.duplicate().catch(e => vscode.window.showErrorMessage(e.message));
 	}
 
 	public async changeLanguage()
@@ -151,7 +151,7 @@ export class SettingViewController
 
 	public async renameDirectory()
 	{
-		await this.command.renameDirectory();
+		await this.command.renameDirectory().catch(e => vscode.window.showErrorMessage(e.message));
 	}
 
 	public async selectConnection()

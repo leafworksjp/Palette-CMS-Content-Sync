@@ -233,7 +233,7 @@ export class Api
 		const strategy = getContentStrategy();
 		if (!(strategy instanceof ContentStrategyV2))
 		{
-			return ApiResult.generalFailure('list API は V2 のみで利用可能です');
+			return ApiResult.generalFailure('この機能は現在の接続先では利用できません。');
 		}
 
 		const result = await Api.fetch('list', 'GET');

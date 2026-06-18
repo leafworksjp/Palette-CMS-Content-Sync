@@ -33,7 +33,7 @@ export class DefinitionsFile
 		}
 		catch (error)
 		{
-			getLogger().error('definitions.json パース失敗:', error);
+			getLogger().error('definitions.json parse failed:', error);
 			return undefined;
 		}
 	}

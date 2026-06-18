@@ -36,7 +36,7 @@ export class ApiFile
 		}
 		catch (error)
 		{
-			getLogger().error('api.json パース失敗:', error);
+			getLogger().error('api.json parse failed:', error);
 			return undefined;
 		}
 	}

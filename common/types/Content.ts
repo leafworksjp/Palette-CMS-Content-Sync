@@ -56,8 +56,8 @@ const zContentBase = z.object({
 	search_query_order_rand: z.string().optional(),
 });
 
-//V1 では contents.json への書き出し時に id を先頭に置きたいため、zContentBase.extend ではなく z.object + ...shape を使う。
-//id は V1 のサーバー側内部識別子で、既存 contents.json のフィールド順序を保つことが互換性に影響する。
+//V1 places id at the top of contents.json on write, so use z.object + ...shape instead of zContentBase.extend.
+//id is V1's server-side internal identifier; preserving the existing field order keeps git diffs clean.
 export const zContentV1 = z.object({
 	id: z.string(),
 	...zContentBase.shape,
@@ -87,7 +87,6 @@ type TextPropertyKeys = 'id'
 	| 'logout_url'
 	| 'search_row';
 
-//TextPropertyKeys のうち ContentFor<V> に実在するキーだけを残した文字列リテラルのユニオン
 export type TextPropertiesFor<V extends Version> = Extract<TextPropertyKeys, keyof ContentFor<V>>;
 
 export type RadioProperties = 'use_template_engine'|'state'|'role_key'|'role_key_owner'|'search_query_order_state';
@@ -268,4 +267,3 @@ export const updateDefaultValues = (definitions: Definitions, content: Content) 
 
 	return content;
 };
-

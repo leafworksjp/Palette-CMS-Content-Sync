@@ -59,7 +59,6 @@ const validateContent = <V extends Version>(
 {
 	const allowedFields = getColumns(definitions, content);
 
-	//contents_type 自体が definitions に存在しない場合の早期 return
 	if (!allowedFields)
 	{
 		return [{
@@ -70,12 +69,10 @@ const validateContent = <V extends Version>(
 		}];
 	}
 
-	//動的キー走査で allowedFields にないキーを検出
 	const unknownFieldErrors: ValidationError[] = Object.entries(content)
 	.filter(([key]) => !allowedFields.includes(key))
 	.map(([key, value]) => ({page_id: content.page_id, field: key, value, reason: 'unknown_field'}));
 
-	//各 enum field を ContentFor<V> 経由で型安全にアクセス
 	const enumErrors: ValidationError[] = enumFieldsForValidation
 	.filter(key => allowedFields.includes(key))
 	.flatMap(key =>
@@ -93,7 +90,6 @@ const validateContent = <V extends Version>(
 		.map(v => ({page_id: content.page_id, field: key, value: v, reason: 'invalid_value'}));
 	});
 
-	//search_query (where / order) の col / operator が定義にあるか検証
 	const getSearchQueryErrors = (
 		type: 'where' | 'order',
 		items: ReadonlyArray<{col: string, operator: string}>,
@@ -133,10 +129,6 @@ type SafeParseContentResultFor<V extends Version> = V extends 1
 
 export abstract class ContentStrategy<V extends Version = Version>
 {
-	//abstract メソッドの引数は Content (union) で受ける（V を引数位置に使わない）。
-	//これにより V が covariant のみで使われる形になり、
-	//ContentStrategy<1> を ContentStrategy<Version> に代入できる（invariance 回避）。
-	//サブクラスは内部で型 narrowing して V 専用の処理を実装する。
 	public static init(version: Version): ContentStrategy
 	{
 		return version === 1

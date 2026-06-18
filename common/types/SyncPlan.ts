@@ -1,7 +1,6 @@
 import {z} from 'zod';
 import {ContentV2, zContentV2} from './Content';
 
-//差分の分類 (ローカル × サーバー突き合わせの結果)。computeSyncDiff の出力。
 export const zSyncDiff = z.discriminatedUnion('kind', [
 	z.object({kind: z.literal('matched'), local: zContentV2, server: zContentV2}),
 	z.object({kind: z.literal('localOnly'), local: zContentV2}),
@@ -10,7 +9,6 @@ export const zSyncDiff = z.discriminatedUnion('kind', [
 
 export type SyncDiff = z.infer<typeof zSyncDiff>;
 
-//実行する操作 (サーバーに送るための完全データ)。orderActions / findConflicts の入力、実行エンジンが API 呼び出しに使う。
 export const zSyncAction = z.discriminatedUnion('kind', [
 	z.object({kind: z.literal('update'), local: zContentV2}),
 	z.object({kind: z.literal('create'), local: zContentV2}),
@@ -21,8 +19,6 @@ export const zSyncAction = z.discriminatedUnion('kind', [
 
 export type SyncAction = z.infer<typeof zSyncAction>;
 
-//ユーザーが選んだ操作種別 (= SyncAction の payload なし版、replace のみ target を持つ)。
-//SyncDiff と組み合わせて SyncAction を構築する。webview ↔ extension で受け渡す。
 export const zSyncSelection = z.discriminatedUnion('kind', [
 	z.object({kind: z.literal('update')}),
 	z.object({kind: z.literal('create')}),
@@ -98,9 +94,6 @@ export function findConflicts(actions: SyncAction[]): Conflict[]
 	}));
 }
 
-//各 diff にデフォルト selection を割り当てる (page_id をキーにした Record)。
-//要件 6.6「更新候補は確認のみ、それ以外は明示選択」 に従い、update のみデフォルトを持つ。
-//localOnly / serverOnly は entry なし (= 未選択) で初期化し、ユーザーの明示操作を待つ。
 export function buildDefaultSelections(diffs: SyncDiff[]): Record<string, SyncSelection>
 {
 	const entries: [string, SyncSelection][] = diffs.flatMap((d): [string, SyncSelection][] =>
@@ -111,8 +104,6 @@ export function buildDefaultSelections(diffs: SyncDiff[]): Record<string, SyncSe
 	return Object.fromEntries(entries);
 }
 
-//SyncDiff[] と selections (page_id キー) を組み合わせて SyncAction[] を構築する。
-//diff 種別と selection 種別の組み合わせが整合しないものはスキップ。
 export function buildActions(diffs: SyncDiff[], selections: Record<string, SyncSelection>): SyncAction[]
 {
 	return diffs.flatMap((d): SyncAction[] =>

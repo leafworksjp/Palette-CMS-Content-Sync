@@ -60,7 +60,6 @@ async function fetchContentCache(subdir: string): Promise<void>
 		return;
 	}
 
-	//Logger は開発者向け詳細 (result.error 含む)、 showWarningMessage はユーザー向け案内で役割分担。
 	getLogger().error('Initial list fetch failed:', result.error);
 	getContentCache().clear(subdir);
 	vscode.window.showWarningMessage(`接続先 (${subdir}) のコンテンツ一覧をサーバーから取得できませんでした。アップロード時の新規/更新判定など一部機能が無効化されます。`);

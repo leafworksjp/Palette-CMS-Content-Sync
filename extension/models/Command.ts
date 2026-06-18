@@ -499,8 +499,7 @@ export class Command
 		{
 			const content = await ContentFile.read(uri);
 			if (!content) return [];
-			const errors = contentStrategy.validate(content, newDefinitions);
-			return errors.map(e => ({...e, contentPath: uri.fsPath}));
+			return contentStrategy.validate(content, newDefinitions);
 		}))).flat();
 
 		if (validationErrors.length > 0)
@@ -509,7 +508,7 @@ export class Command
 			logger.error(`Connection switch blocked: ${validationErrors.length} validation errors against new definitions`);
 			validationErrors.forEach(e =>
 			{
-				logger.error(`  ${e.contentPath}: ${e.field} = ${JSON.stringify(e.value)} (${e.reason})`);
+				logger.error(`  [${e.page_id}] ${e.field} = ${JSON.stringify(e.value)} (${e.reason})`);
 			});
 			return ApiResult.generalFailure(
 				`接続先を切り替えられません: 既存コンテンツに新しい定義と合わない箇所が ${validationErrors.length} 件あります。`

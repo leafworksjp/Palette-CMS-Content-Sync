@@ -7,6 +7,7 @@ import {LwContent} from '../../models/LwContent';
 import {ContentFile} from '../../models/ContentFile';
 import {CodeFile} from '../../models/CodeFile';
 import {Failure, Success} from '../../../common/types/Result';
+import {Is} from '../../../common/types/Is';
 import {
 	CompilationFailureArgs,
 	GeneralFailureArgs,
@@ -175,7 +176,7 @@ export class SettingViewController
 			return url ? {label: url, description: subdir, url, subdir} : undefined;
 		}));
 
-		const items = candidates.filter((item): item is NonNullable<typeof item> => item !== undefined);
+		const items = candidates.filter(Is.notNullable);
 
 		if (!items.length)
 		{

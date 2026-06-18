@@ -1,22 +1,22 @@
-import {parseVal} from '../components/SearchInputs';
+import {parseValue} from '../components/SearchInputs';
 
-describe('parseVal', () =>
+describe('parseValue', () =>
 {
 	describe('文字列の val (A/B 形式)', () =>
 	{
 		test('空文字列', () =>
 		{
-			expect(parseVal('')).toEqual({kind: 'value', valString: '', valSheet: '', valColRef: ''});
+			expect(parseValue('')).toEqual({kind: 'value', valueString: '', valueSheet: '', valueColRef: ''});
 		});
 
 		test('通常文字列', () =>
 		{
-			expect(parseVal('hoge')).toEqual({kind: 'value', valString: 'hoge', valSheet: '', valColRef: ''});
+			expect(parseValue('hoge')).toEqual({kind: 'value', valueString: 'hoge', valueSheet: '', valueColRef: ''});
 		});
 
 		test('角括弧の固定クエリ変数文字列', () =>
 		{
-			expect(parseVal('[login_id]')).toEqual({kind: 'value', valString: '[login_id]', valSheet: '', valColRef: ''});
+			expect(parseValue('[login_id]')).toEqual({kind: 'value', valueString: '[login_id]', valueSheet: '', valueColRef: ''});
 		});
 	});
 
@@ -24,21 +24,21 @@ describe('parseVal', () =>
 	{
 		test('sheet と col を持つオブジェクト', () =>
 		{
-			expect(parseVal({sheet: 'user_sheet', col: 'user_id'})).toEqual({
+			expect(parseValue({sheet: 'user_sheet', col: 'user_id'})).toEqual({
 				kind: 'sheet',
-				valString: '',
-				valSheet: 'user_sheet',
-				valColRef: 'user_id',
+				valueString: '',
+				valueSheet: 'user_sheet',
+				valueColRef: 'user_id',
 			});
 		});
 
 		test('sheet と col が空文字列のオブジェクト', () =>
 		{
-			expect(parseVal({sheet: '', col: ''})).toEqual({
+			expect(parseValue({sheet: '', col: ''})).toEqual({
 				kind: 'sheet',
-				valString: '',
-				valSheet: '',
-				valColRef: '',
+				valueString: '',
+				valueSheet: '',
+				valueColRef: '',
 			});
 		});
 	});

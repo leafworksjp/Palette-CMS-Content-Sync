@@ -58,7 +58,7 @@ const SearchInput = ({index, query, supportsSheetRefValue, definitions, content}
 	<div className="query-where" key={`search_query_where.${index}`}>
 		<SelectCol index={index} query={query} content={content} definitions={definitions}/>
 		<SelectOperator index={index} query={query} definitions={definitions}/>
-		<ValInput index={index} query={query} supportsSheetRefValue={supportsSheetRefValue}/>
+		<ValueInput index={index} query={query} supportsSheetRefValue={supportsSheetRefValue}/>
 		<div className="btn">
 			<div className="btn__icon btn__icon--add" onClick={() => Dispatcher.addSearchQuery(index)}>＋</div>
 			<div className="btn__icon btn__icon--subtract" onClick={() => Dispatcher.deleteSearchQuery(index)}>ー</div>
@@ -149,36 +149,36 @@ const SelectOperator = ({index, query, definitions}: {
 	);
 };
 
-const valKindOptions = ['value', 'sheet'] as const;
-type ValKind = typeof valKindOptions[number];
+const valueKindOptions = ['value', 'sheet'] as const;
+type ValueKind = typeof valueKindOptions[number];
 
-const isValKind = (value: string): value is ValKind => valKindOptions.some((k:string) => k === value);
+const isValueKind = (value: string): value is ValueKind => valueKindOptions.some((k:string) => k === value);
 
-const ValInput = ({index, query, supportsSheetRefValue}: {
+const ValueInput = ({index, query, supportsSheetRefValue}: {
 	index:number,
 	query: SearchQueryForWhere,
 	supportsSheetRefValue: boolean,
 }) =>
 {
-	const initial = parseVal(query.val);
+	const initial = parseValue(query.val);
 
-	const [kind, setKind] = React.useState<ValKind>(initial.kind);
-	const [valString, setValString] = React.useState(initial.valString);
-	const [valSheet, setValSheet] = React.useState(initial.valSheet);
-	const [valColRef, setValColRef] = React.useState(initial.valColRef);
+	const [kind, setKind] = React.useState<ValueKind>(initial.kind);
+	const [valueString, setValString] = React.useState(initial.valueString);
+	const [valueSheet, setValSheet] = React.useState(initial.valueSheet);
+	const [valueColRef, setValColRef] = React.useState(initial.valueColRef);
 
 	React.useEffect(() =>
 	{
-		const next = parseVal(query.val);
+		const next = parseValue(query.val);
 		setKind(next.kind);
-		setValString(next.valString);
-		setValSheet(next.valSheet);
-		setValColRef(next.valColRef);
+		setValString(next.valueString);
+		setValSheet(next.valueSheet);
+		setValColRef(next.valueColRef);
 	}, [query]);
 
 	const handleKind = (event: React.ChangeEvent<HTMLSelectElement>) =>
 	{
-		if (!isValKind(event.target.value)) return;
+		if (!isValueKind(event.target.value)) return;
 		setKind(event.target.value);
 		updateValue();
 	};
@@ -210,7 +210,7 @@ const ValInput = ({index, query, supportsSheetRefValue}: {
 					className="text__input"
 					key={`search_query_where.val_string.${index}`}
 					name="search_query_where.val_string"
-					value={valString}
+					value={valueString}
 					onChange={handleString}
 				/>
 			</div>
@@ -227,8 +227,8 @@ const ValInput = ({index, query, supportsSheetRefValue}: {
 					value={kind}
 					onChange={handleKind}
 				>
-					<option value="value">{Locale.searchValKind.value}</option>
-					<option value="sheet">{Locale.searchValKind.sheet}</option>
+					<option value="value">{Locale.searchValueKind.value}</option>
+					<option value="sheet">{Locale.searchValueKind.sheet}</option>
 				</select>
 			</div>
 			<div className="query-where__fields">
@@ -238,7 +238,7 @@ const ValInput = ({index, query, supportsSheetRefValue}: {
 						className="text__input"
 						key={`search_query_where.val_string.${index}`}
 						name="search_query_where.val_string"
-						value={valString}
+						value={valueString}
 						onChange={handleString}
 					/>
 				</div>
@@ -249,7 +249,7 @@ const ValInput = ({index, query, supportsSheetRefValue}: {
 						key={`search_query_where.val_sheet.${index}`}
 						name="search_query_where.val_sheet"
 						placeholder="sheet"
-						value={valSheet}
+						value={valueSheet}
 						onChange={handleSheet}
 					/>
 				</div>
@@ -260,7 +260,7 @@ const ValInput = ({index, query, supportsSheetRefValue}: {
 						key={`search_query_where.val_col_ref.${index}`}
 						name="search_query_where.val_col_ref"
 						placeholder="col"
-						value={valColRef}
+						value={valueColRef}
 						onChange={handleColRef}
 					/>
 				</div>
@@ -269,13 +269,13 @@ const ValInput = ({index, query, supportsSheetRefValue}: {
 	);
 };
 
-export const parseVal = (val: SearchQueryForWhere['val']): {kind: ValKind, valString: string, valSheet: string, valColRef: string} =>
+export const parseValue = (val: SearchQueryForWhere['val']): {kind: ValueKind, valueString: string, valueSheet: string, valueColRef: string} =>
 {
 	if (typeof val === 'object')
 	{
-		return {kind: 'sheet', valString: '', valSheet: val.sheet, valColRef: val.col};
+		return {kind: 'sheet', valueString: '', valueSheet: val.sheet, valueColRef: val.col};
 	}
-	return {kind: 'value', valString: val, valSheet: '', valColRef: ''};
+	return {kind: 'value', valueString: val, valueSheet: '', valueColRef: ''};
 };
 
 const isHTMLInputElement = (e: HTMLElement): e is HTMLInputElement => e instanceof HTMLInputElement;
@@ -291,28 +291,28 @@ const updateValue = () =>
 	.filter(isHTMLSelectElement)
 	.map(e => e.value);
 
-	const valKinds = [...document.getElementsByName('search_query_where.val_kind')]
+	const valueKinds = [...document.getElementsByName('search_query_where.val_kind')]
 	.filter(isHTMLSelectElement)
-	.map(e => (isValKind(e.value) ? e.value : 'value'));
+	.map(e => (isValueKind(e.value) ? e.value : 'value'));
 
-	const valStrings = [...document.getElementsByName('search_query_where.val_string')]
+	const valueStrings = [...document.getElementsByName('search_query_where.val_string')]
 	.filter(isHTMLInputElement)
 	.map(e => e.value);
 
-	const valSheets = [...document.getElementsByName('search_query_where.val_sheet')]
+	const valueSheets = [...document.getElementsByName('search_query_where.val_sheet')]
 	.filter(isHTMLInputElement)
 	.map(e => e.value);
 
-	const valColRefs = [...document.getElementsByName('search_query_where.val_col_ref')]
+	const valueColRefs = [...document.getElementsByName('search_query_where.val_col_ref')]
 	.filter(isHTMLInputElement)
 	.map(e => e.value);
 
 	const values: SearchQueryForWhere[] = cols.map((col, i) => ({
 		col,
 		operator: operators[i],
-		val: valKinds[i] === 'sheet'
-			? {sheet: valSheets[i], col: valColRefs[i]}
-			: valStrings[i],
+		val: valueKinds[i] === 'sheet'
+			? {sheet: valueSheets[i], col: valueColRefs[i]}
+			: valueStrings[i],
 	}));
 
 	Dispatcher.updateValue('search_query_where', values);

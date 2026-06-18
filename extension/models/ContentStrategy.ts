@@ -24,7 +24,7 @@ import {getActiveConnection, getContentCache} from './Services';
 export type ValidationErrorReason = 'unknown_field' | 'invalid_value' | 'unknown_col';
 
 export type ValidationError = {
-	contentPath?: string,
+	page_id: string,
 	field: string,
 	value: unknown,
 	reason: ValidationErrorReason,
@@ -63,6 +63,7 @@ const validateContent = <V extends Version>(
 	if (!allowedFields)
 	{
 		return [{
+			page_id: content.page_id,
 			field: 'contents_type',
 			value: content.contents_type,
 			reason: 'invalid_value',
@@ -72,7 +73,7 @@ const validateContent = <V extends Version>(
 	//動的キー走査で allowedFields にないキーを検出
 	const unknownFieldErrors: ValidationError[] = Object.entries(content)
 	.filter(([key]) => !allowedFields.includes(key))
-	.map(([key, value]) => ({field: key, value, reason: 'unknown_field'}));
+	.map(([key, value]) => ({page_id: content.page_id, field: key, value, reason: 'unknown_field'}));
 
 	//各 enum field を ContentFor<V> 経由で型安全にアクセス
 	const enumErrors: ValidationError[] = enumFieldsForValidation
@@ -89,7 +90,7 @@ const validateContent = <V extends Version>(
 
 		return values
 		.filter(v => !options.some(o => o.key === v))
-		.map(v => ({field: key, value: v, reason: 'invalid_value'}));
+		.map(v => ({page_id: content.page_id, field: key, value: v, reason: 'invalid_value'}));
 	});
 
 	//search_query (where / order) の col / operator が定義にあるか検証
@@ -104,10 +105,10 @@ const validateContent = <V extends Version>(
 		return items.flatMap(q => [
 			q.col === '' || !colOptions || colOptions.some(o => o.key === q.col)
 				? undefined
-				: {field: `search_query_${type}.col`, value: q.col, reason: 'unknown_col'} satisfies ValidationError,
+				: {page_id: content.page_id, field: `search_query_${type}.col`, value: q.col, reason: 'unknown_col'} satisfies ValidationError,
 			q.operator === '' || opOptions.some(o => o.key === q.operator)
 				? undefined
-				: {field: `search_query_${type}.operator`, value: q.operator, reason: 'invalid_value'} satisfies ValidationError,
+				: {page_id: content.page_id, field: `search_query_${type}.operator`, value: q.operator, reason: 'invalid_value'} satisfies ValidationError,
 		].filter(Is.notNullable));
 	};
 

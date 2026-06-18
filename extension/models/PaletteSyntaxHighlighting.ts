@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import {ExpressionLexer} from './DSL/ExpressionLexer';
 import {tokenToIndex} from './DSL/SemanticTokenType';
 import {TemplateLexer} from './DSL/TemplateLexer';
+import {Is} from '../../common/types/Is';
 
 const legend = new vscode.SemanticTokensLegend(
 	[
@@ -44,7 +45,7 @@ class PaletteSemanticTokenProvider implements vscode.DocumentSemanticTokensProvi
 				for (const et of exprTokens)
 				{
 					const idx = tokenToIndex(et.type);
-					if (idx !== undefined)
+					if (!Is.undefined(idx))
 					{
 						tokensBuilder.push(et.line, et.char, et.length, idx);
 					}
@@ -53,7 +54,7 @@ class PaletteSemanticTokenProvider implements vscode.DocumentSemanticTokensProvi
 			else
 			{
 				const idx = tokenToIndex(type);
-				if (idx !== undefined)
+				if (!Is.undefined(idx))
 				{
 					tokensBuilder.push(line, char, length, idx);
 				}

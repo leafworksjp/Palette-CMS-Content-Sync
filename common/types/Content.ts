@@ -247,6 +247,30 @@ export const updateDefaultValues = (definitions: Definitions, content: Content) 
 		content.state = undefined;
 	}
 
+	if (columns.includes('search_query_where'))
+	{
+		if (!content.search_query_where?.length)
+		{
+			content.search_query_where = [{col: '', operator: '=', val: ''}];
+		}
+	}
+	else
+	{
+		content.search_query_where = undefined;
+	}
+
+	if (columns.includes('search_query_order'))
+	{
+		if (!content.search_query_order?.length)
+		{
+			content.search_query_order = [{col: '', operator: 'ASC'}];
+		}
+	}
+	else
+	{
+		content.search_query_order = undefined;
+	}
+
 	if (columns.includes('search_query_order_state'))
 	{
 		content.search_query_order_state = 'col';

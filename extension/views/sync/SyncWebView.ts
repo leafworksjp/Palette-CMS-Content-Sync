@@ -1,6 +1,7 @@
 import vscode from 'vscode';
 import {SyncHtml} from './SyncHtml';
 import {SyncDiff, SyncSelection, zSyncSelection} from '../../../common/types/SyncPlan';
+import {getActiveConnection} from '../../models/Services';
 
 type Selections = Record<string, SyncSelection>;
 
@@ -73,9 +74,17 @@ export class SyncWebView implements vscode.WebviewViewProvider
 		this.webview?.postMessage({command, value});
 	}
 
-	private refresh(): void
+	public refresh(): void
 	{
-		this.webview?.postMessage({
+		if (!this.webview) return;
+
+		if (!getActiveConnection().current)
+		{
+			this.webview.postMessage({command: 'setUnselectedConnection'});
+			return;
+		}
+
+		this.webview.postMessage({
 			command: 'refresh',
 			value: {
 				diffs: this.diffs,
@@ -86,7 +95,7 @@ export class SyncWebView implements vscode.WebviewViewProvider
 			},
 		});
 
-		this.webview?.postMessage({
+		this.webview.postMessage({
 			command: 'setErrors',
 			value: [],
 		});

@@ -3,6 +3,7 @@ import {z} from 'zod';
 import {Dispatcher} from '../models/Dispatcher';
 import {SyncDiff, SyncSelection, zSyncDiff, zSyncSelection} from '../../../common/types/SyncPlan';
 import {Is} from '../../../common/types/Is';
+import {Locale} from '../locales/ja';
 import {SyncForm} from './SyncForm';
 import {Welcome} from './Welcome';
 
@@ -13,6 +14,7 @@ export const App = () =>
 	const [subdir, setSubdir] = React.useState<string>('');
 	const [url, setUrl] = React.useState<string>('');
 	const [executing, setExecuting] = React.useState<boolean>(false);
+	const [hasConnection, setHasConnection] = React.useState<boolean>(true);
 
 	React.useEffect(() =>
 	{
@@ -39,7 +41,13 @@ export const App = () =>
 						setSubdir(message.value.subdir);
 						setUrl(message.value.url);
 						setExecuting(Boolean(message.value.executing));
+						setHasConnection(true);
 					}
+					break;
+
+				case 'setUnselectedConnection':
+					setDiffs(undefined);
+					setHasConnection(false);
 					break;
 
 				default:
@@ -49,6 +57,8 @@ export const App = () =>
 
 		Dispatcher.onLoad();
 	}, []);
+
+	if (!hasConnection) return <Welcome message={Locale.pleaseSelectConnection} />;
 
 	return diffs
 		? <SyncForm

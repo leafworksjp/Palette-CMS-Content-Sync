@@ -3,6 +3,7 @@ import {Dispatcher} from '../models/Dispatcher';
 import {Content, getCodeTypeName, zContentV1, zContentV2} from '../../../common/types/Content';
 import {Definitions, zDefinitionsV1, zDefinitionsV2} from '../../../common/types/Definitions';
 import {zVersion} from '../../../common/types/Version';
+import {Locale} from '../locales/ja';
 import {SettingForm} from './SettingForm';
 import {Welcome} from './Welcome';
 
@@ -26,6 +27,7 @@ export const App = () =>
 	const [isReadOnly, setIsReadOnly] = React.useState<boolean>(false);
 	const [supportsSheetRefValue, setSupportsSheetRefValue] = React.useState<boolean>(false);
 	const [isPageIdEditable, setIsPageIdEditable] = React.useState<boolean>(false);
+	const [hasConnection, setHasConnection] = React.useState<boolean>(true);
 
 	React.useEffect(() =>
 	{
@@ -59,7 +61,14 @@ export const App = () =>
 						setIsReadOnly(Boolean(message.value.isReadOnly));
 						setSupportsSheetRefValue(Boolean(message.value.supportsSheetRefValue));
 						setIsPageIdEditable(Boolean(message.value.isPageIdEditable));
+						setHasConnection(true);
 					}
+					break;
+
+				case 'setUnselectedConnection':
+					setContent(undefined);
+					setDefinitions(undefined);
+					setHasConnection(false);
 					break;
 
 				default:
@@ -71,6 +80,8 @@ export const App = () =>
 	}, []);
 
 	const knownTitle = definitions ? getKnownFileTitle(fileName, definitions) : undefined;
+
+	if (!hasConnection) return <Welcome message={Locale.pleaseSelectConnection} />;
 
 	return content && definitions && url && knownTitle
 		? <SettingForm isReadOnly={isReadOnly} supportsSheetRefValue={supportsSheetRefValue} isPageIdEditable={isPageIdEditable} content={content} definitions={definitions} knownTitle={knownTitle} url={url} />

@@ -23,7 +23,14 @@ export class SyncViewController
 		this.webview.onExecute = this.executeSync.bind(this);
 
 		context.subscriptions.push(
-			vscode.window.registerWebviewViewProvider(this.webview.id, this.webview)
+			vscode.window.registerWebviewViewProvider(this.webview.id, this.webview),
+			vscode.workspace.onDidChangeConfiguration(e =>
+			{
+				if (e.affectsConfiguration('paletteCMSContentSync.connection'))
+				{
+					this.webview.refresh();
+				}
+			})
 		);
 	}
 

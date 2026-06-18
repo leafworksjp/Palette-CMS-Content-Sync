@@ -6,6 +6,8 @@ import {FileUtil} from '../../models/FileUtil';
 import {LwContent} from '../../models/LwContent';
 import {ContentFile} from '../../models/ContentFile';
 import {CodeFile} from '../../models/CodeFile';
+import {ActiveConnectionV2} from '../../models/ActiveConnection';
+import {getActiveConnection} from '../../models/Services';
 import {Failure, Success} from '../../../common/types/Result';
 import {Is} from '../../../common/types/Is';
 import {
@@ -157,6 +159,13 @@ export class SettingViewController
 
 	public async selectConnection()
 	{
+		const ac = getActiveConnection();
+		if (!(ac instanceof ActiveConnectionV2))
+		{
+			vscode.window.showInformationMessage('現在の接続先は切替に対応していません。');
+			return;
+		}
+
 		const lwDirUri = LwContent.dir();
 		if (!lwDirUri) return;
 
@@ -168,12 +177,16 @@ export class SettingViewController
 			return;
 		}
 
+		const currentSubdir = ac.subdir;
+
 		const candidates = await Promise.all(connectionDirs.map(async dirUri =>
 		{
 			const subdir = FileUtil.getBase(dirUri);
 			const url = (await ApiFile.readAt(dirUri))?.url;
+			if (!url) return undefined;
 
-			return url ? {label: url, description: subdir, url, subdir} : undefined;
+			const label = subdir === currentSubdir ? `$(check) ${url}` : `$(blank) ${url}`;
+			return {label, description: subdir, url, subdir};
 		}));
 
 		const items = candidates.filter(Is.notNullable);

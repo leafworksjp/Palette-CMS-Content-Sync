@@ -40,6 +40,8 @@ export class Command
 {
 	public async upload()
 	{
+		if (!getActiveConnection().current) return ApiResult.generalFailure(Locale.pleaseSelectConnection);
+
 		getUploadStatus().showUploading();
 
 		const uri = await ContentFile.resolveActive();
@@ -221,6 +223,8 @@ export class Command
 
 	public async uploadAll()
 	{
+		if (!getActiveConnection().current) return ApiResult.generalFailure(Locale.pleaseSelectConnection);
+
 		if (getContentStrategy() instanceof ContentStrategyV2)
 		{
 			return ApiResult.generalFailure('このコマンドは現在の接続先では使用できません。同期コマンドをご利用ください。');
@@ -273,6 +277,8 @@ export class Command
 
 	public async download()
 	{
+		if (!getActiveConnection().current) return ApiResult.generalFailure(Locale.pleaseSelectConnection);
+
 		const uri = await ContentFile.resolveActive();
 		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
@@ -329,6 +335,8 @@ export class Command
 
 	public async create()
 	{
+		if (!getActiveConnection().current) throw new Error(Locale.pleaseSelectConnection);
+
 		const newPageId = await ContentFile.promptNewPageId();
 		if (!newPageId) return;
 
@@ -337,6 +345,8 @@ export class Command
 
 	public async duplicate()
 	{
+		if (!getActiveConnection().current) throw new Error(Locale.pleaseSelectConnection);
+
 		const uri = await ContentFile.resolveActive();
 		if (!uri) throw new Error(Locale.pleaseOpenContent);
 
@@ -348,6 +358,8 @@ export class Command
 
 	public async delete()
 	{
+		if (!getActiveConnection().current) return ApiResult.generalFailure(Locale.pleaseSelectConnection);
+
 		const uri = await ContentFile.resolveActive();
 		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
@@ -375,6 +387,8 @@ export class Command
 
 	public async changeExtensions(source: string, target: string)
 	{
+		if (!getActiveConnection().current) throw new Error(Locale.pleaseSelectConnection);
+
 		const uri = await ContentFile.resolveActive();
 		if (!uri) throw new Error(Locale.pleaseOpenContent);
 
@@ -383,6 +397,8 @@ export class Command
 
 	public async downloadSnippets()
 	{
+		if (!getActiveConnection().current) return ApiResult.generalFailure(Locale.pleaseSelectConnection);
+
 		const uri = await ContentFile.resolveActive();
 		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
@@ -415,6 +431,8 @@ export class Command
 
 	public async downloadVariables()
 	{
+		if (!getActiveConnection().current) return ApiResult.generalFailure(Locale.pleaseSelectConnection);
+
 		const uri = await ContentFile.resolveActive();
 		if (!uri) return ApiResult.generalFailure(Locale.pleaseOpenContent);
 
@@ -447,6 +465,8 @@ export class Command
 
 	public async downloadDefinitions()
 	{
+		if (!getActiveConnection().current) return ApiResult.generalFailure(Locale.pleaseSelectConnection);
+
 		const result = await Api.getDefinitions();
 
 		if (result.isSuccess())
@@ -463,6 +483,8 @@ export class Command
 
 	public async renameDirectory()
 	{
+		if (!getActiveConnection().current) throw new Error(Locale.pleaseSelectConnection);
+
 		const uri = await ContentFile.resolveActive();
 		if (!uri) throw new Error(Locale.pleaseOpenContent);
 
@@ -544,7 +566,7 @@ export class Command
 		const ac = getActiveConnection();
 		if (!(ac instanceof ActiveConnectionV2) || !ac.subdir || !ac.current)
 		{
-			return ApiResult.generalFailure('接続先が設定されていません。');
+			return ApiResult.generalFailure(Locale.pleaseSelectConnection);
 		}
 
 		const listResult = await this.refreshCache(ac.subdir);

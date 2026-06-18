@@ -1,10 +1,12 @@
 import {Locale} from '../locales/ja';
 
-export const Welcome = () =>
+type WelcomeProps = {message?: string};
+
+export const Welcome = ({message = Locale.welcome}: WelcomeProps) =>
 {
 	return (
 		<div className="welcome">
-			<p>{Locale.welcome}</p>
+			<p>{message}</p>
 		</div>
 	);
 };

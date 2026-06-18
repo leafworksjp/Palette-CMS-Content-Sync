@@ -1,5 +1,6 @@
 export const Locale = {
 	welcome: '同期コマンドを実行してください。',
+	pleaseSelectConnection: '接続先を選択してください。',
 	connection: '接続先',
 	tab: {
 		matched: '更新対象',

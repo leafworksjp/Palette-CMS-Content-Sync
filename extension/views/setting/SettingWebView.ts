@@ -254,11 +254,17 @@ export class SettingWebView implements vscode.WebviewViewProvider
 	{
 		const version = getVersion();
 
-		const definitions = await DefinitionsFile.read();
-		if (!this.webview || !definitions) return;
+		if (!this.webview) return;
 
 		const url = getActiveConnection().current;
-		if (!url) return;
+		if (!url)
+		{
+			this.webview.postMessage({command: 'setUnselectedConnection'});
+			return;
+		}
+
+		const definitions = await DefinitionsFile.read();
+		if (!definitions) return;
 
 		const documentUri = vscode.window.activeTextEditor?.document?.uri;
 		const uri = await ContentFile.resolveActive(documentUri);

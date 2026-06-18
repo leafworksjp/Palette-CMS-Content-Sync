@@ -12,6 +12,7 @@ export const Locale = {
 	required: '必須',
 	pleaseSelect: '選択してください',
 	pleaseOpenContent: 'コンテンツのコードを開いてください。',
+	pleaseSelectConnection: '接続先を選択してください。',
 	searchValueKind: {
 		value: '値',
 		sheet: 'userシート参照',

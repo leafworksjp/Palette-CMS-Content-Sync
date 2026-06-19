@@ -1,9 +1,10 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
 import {Locale} from '../locales/ja';
-import {SyncDiff, SyncSelection} from '../../../common/types/SyncPlan';
+import {SyncDiff, SyncSelection, getConsumedTargets} from '../../../common/types/SyncPlan';
 import {ContentV2} from '../../../common/types/Content';
 import {Field} from '../../common/components/Field';
+import {ConsumedItem} from './ConsumedItem';
 
 type Props = {
 	items: SyncDiff[],
@@ -15,13 +16,22 @@ export const ServerOnlyInputs = ({items, selections, executing}: Props) =>
 {
 	if (items.length === 0) return null;
 
+	const consumed = getConsumedTargets(selections);
+
 	return (
 		<>
 			{items.map((d, index) =>
 			{
 				if (d.kind !== 'serverOnly') return null;
 				const selection = selections[d.server.page_id];
+				const consumedSources = consumed.get(d.server.page_id);
 				const key = `server-only.${index}`;
+
+				if (consumedSources && consumedSources.length > 0)
+				{
+					return <ConsumedItem key={key} targetPageId={d.server.page_id} sources={consumedSources} />;
+				}
+
 				return <ServerOnlyItem key={key} index={index} content={d.server} selection={selection} disabled={executing} />;
 			})}
 		</>

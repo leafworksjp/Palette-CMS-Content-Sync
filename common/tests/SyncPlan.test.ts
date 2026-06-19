@@ -122,25 +122,7 @@ describe('findConflicts', () =>
 		expect(findConflicts([{kind: 'update', local: make('a')}])).toEqual([]);
 	});
 
-	test('replace.target が update.local.page_id と重複 → affectedBy に replace 元', () =>
-	{
-		const actions: SyncAction[] = [
-			{kind: 'update', local: make('a')},
-			{kind: 'replace', local: make('x'), targetPageId: 'a'},
-		];
-		expect(findConflicts(actions)).toEqual([{target: 'a', sources: ['x']}]);
-	});
-
-	test('replace.target が delete.pageId と重複 → affectedBy に replace 元', () =>
-	{
-		const actions: SyncAction[] = [
-			{kind: 'replace', local: make('x'), targetPageId: 'b'},
-			{kind: 'delete', pageId: 'b'},
-		];
-		expect(findConflicts(actions)).toEqual([{target: 'b', sources: ['x']}]);
-	});
-
-	test('複数の replace が同 target → affectedBy に両方の replace 元', () =>
+	test('複数の replace が同 target → sources に両方の replace 元', () =>
 	{
 		const actions: SyncAction[] = [
 			{kind: 'replace', local: make('x'), targetPageId: 'a'},
@@ -149,19 +131,28 @@ describe('findConflicts', () =>
 		expect(findConflicts(actions)).toEqual([{target: 'a', sources: ['x', 'y']}]);
 	});
 
-	test('複数衝突', () =>
+	test('複数の独立した replace 衝突', () =>
 	{
 		const actions: SyncAction[] = [
-			{kind: 'update', local: make('a')},
 			{kind: 'replace', local: make('x'), targetPageId: 'a'},
-			{kind: 'replace', local: make('y'), targetPageId: 'b'},
-			{kind: 'delete', pageId: 'b'},
-			{kind: 'delete', pageId: 'c'},
+			{kind: 'replace', local: make('y'), targetPageId: 'a'},
+			{kind: 'replace', local: make('w'), targetPageId: 'b'},
+			{kind: 'replace', local: make('z'), targetPageId: 'b'},
 		];
 		const result = findConflicts(actions);
 		expect(result).toHaveLength(2);
-		expect(result).toContainEqual({target: 'a', sources: ['x']});
-		expect(result).toContainEqual({target: 'b', sources: ['y']});
+		expect(result).toContainEqual({target: 'a', sources: ['x', 'y']});
+		expect(result).toContainEqual({target: 'b', sources: ['w', 'z']});
+	});
+
+	test('replace + 別操作 (update/delete) は buildActions で auto-consumed されるため、actions レベルでは衝突しない', () =>
+	{
+		//findConflicts は actions に対する重複検出のみ。
+		//update + 別の replace(target=update.page_id) のような組み合わせは buildActions で auto-consumed されるため、actions には replace のみ残る。
+		const actions: SyncAction[] = [
+			{kind: 'replace', local: make('x'), targetPageId: 'a'},
+		];
+		expect(findConflicts(actions)).toEqual([]);
 	});
 
 	test('create / downloadLocal は衝突判定対象外', () =>

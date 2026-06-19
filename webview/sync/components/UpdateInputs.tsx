@@ -1,14 +1,18 @@
 import {Locale} from '../locales/ja';
-import {SyncDiff} from '../../../common/types/SyncPlan';
+import {SyncDiff, SyncSelection, getConsumedTargets} from '../../../common/types/SyncPlan';
 import {Field} from '../../common/components/Field';
+import {ConsumedItem} from './ConsumedItem';
 
 type Props = {
 	items: SyncDiff[],
+	selections: Record<string, SyncSelection>,
 };
 
-export const UpdateInputs = ({items}: Props) =>
+export const UpdateInputs = ({items, selections}: Props) =>
 {
 	if (items.length === 0) return null;
+
+	const consumed = getConsumedTargets(selections);
 
 	return (
 		<>
@@ -18,6 +22,13 @@ export const UpdateInputs = ({items}: Props) =>
 				const key = `update.${index}`;
 				const name = `update.${index}`;
 				const updateId = `radio.${name}.update`;
+				const consumedSources = consumed.get(d.local.page_id);
+
+				if (consumedSources && consumedSources.length > 0)
+				{
+					return <ConsumedItem key={key} targetPageId={d.local.page_id} sources={consumedSources} />;
+				}
+
 				return (
 					<Field key={key} label={d.local.page_id}>
 						<div className="flex">

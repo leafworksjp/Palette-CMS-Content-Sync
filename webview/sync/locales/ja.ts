@@ -27,9 +27,11 @@ export const Locale = {
 	placeholder: {
 		replaceTarget: '対象を選択',
 	},
+	consumedByReplace: 'の置き換え対象',
+	conflictByReplace: 'で衝突',
 	warning: {
 		incomplete: '未選択の項目があります。すべての項目に対する操作を選択してください。',
-		conflict: '以下のサーバー上のコンテンツに、別のローカルコンテンツが影響しようとしています。意図したものか確認してください。',
+		conflict: '以下の対象に複数の置き換え操作が指定されています。1 つに絞ってから実行してください。',
 	},
 	button: {
 		confirm: '確認',

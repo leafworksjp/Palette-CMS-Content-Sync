@@ -1,7 +1,7 @@
 import React from 'react';
 import {Dispatcher} from '../models/Dispatcher';
 import {Locale} from '../locales/ja';
-import {SyncDiff, SyncSelection} from '../../../common/types/SyncPlan';
+import {SyncDiff, SyncSelection, buildActions, findConflicts, getConsumedTargets} from '../../../common/types/SyncPlan';
 import {Error} from '../../common/components/Error';
 import {Tabs} from '../../common/components/Tabs';
 import {UpdateInputs} from './UpdateInputs';
@@ -86,10 +86,13 @@ const SelectionView = ({diffs, selections, subdir, url, executing, onConfirm}: S
 		if (mainRef.current) mainRef.current.scrollTop = 0;
 	}, [activeTab]);
 
+	const consumed = getConsumedTargets(selections);
+
 	const isComplete = (d: SyncDiff): boolean =>
 	{
 		if (d.kind === 'matched') return true;
 		const pageId = d.kind === 'localOnly' ? d.local.page_id : d.server.page_id;
+		if (consumed.has(pageId)) return true;
 		const selection = selections[pageId];
 		if (!selection) return false;
 		if (selection.kind === 'replace' && !selection.targetPageId) return false;
@@ -104,7 +107,7 @@ const SelectionView = ({diffs, selections, subdir, url, executing, onConfirm}: S
 				<Tabs items={tabs} active={activeTab} onChange={setActiveTab} />
 			</Header>
 			<div className="sync-form__main" ref={mainRef}>
-				{activeTab === 'matched' && <UpdateInputs items={matchedItems} />}
+				{activeTab === 'matched' && <UpdateInputs items={matchedItems} selections={selections} />}
 				{activeTab === 'localOnly' && <ChooseInputs items={localOnlyItems} diffs={diffs} selections={selections} executing={executing} />}
 				{activeTab === 'serverOnly' && <ServerOnlyInputs items={serverOnlyItems} selections={selections} executing={executing} />}
 			</div>
@@ -132,24 +135,30 @@ type ConfirmationViewProps = {
 	onBack: () => void,
 };
 
-const ConfirmationView = ({diffs, selections, subdir, url, executing, onBack}: ConfirmationViewProps) => (
-	<>
-		<Header subdir={subdir} url={url} />
-		<div className="sync-form__main">
-			<Confirmation diffs={diffs} selections={selections} />
-		</div>
-		<div className="sync-form__footer">
-			<div className="actions">
-				<button className="actions__button secondary" onClick={() => Dispatcher.cancel()} disabled={executing}>
-					{Locale.button.cancel}
-				</button>
-				<button className="actions__button secondary" onClick={onBack} disabled={executing}>
-					{Locale.button.back}
-				</button>
-				<button className="actions__button" onClick={() => Dispatcher.execute()} disabled={executing}>
-					{executing ? Locale.button.executing : Locale.button.execute}
-				</button>
+const ConfirmationView = ({diffs, selections, subdir, url, executing, onBack}: ConfirmationViewProps) =>
+{
+	const actions = buildActions(diffs, selections);
+	const hasConflict = findConflicts(actions).length > 0;
+
+	return (
+		<>
+			<Header subdir={subdir} url={url} />
+			<div className="sync-form__main">
+				<Confirmation diffs={diffs} selections={selections} />
 			</div>
-		</div>
-	</>
-);
+			<div className="sync-form__footer">
+				<div className="actions">
+					<button className="actions__button secondary" onClick={() => Dispatcher.cancel()} disabled={executing}>
+						{Locale.button.cancel}
+					</button>
+					<button className="actions__button secondary" onClick={onBack} disabled={executing}>
+						{Locale.button.back}
+					</button>
+					<button className="actions__button" onClick={() => Dispatcher.execute()} disabled={executing || hasConflict}>
+						{executing ? Locale.button.executing : Locale.button.execute}
+					</button>
+				</div>
+			</div>
+		</>
+	);
+};

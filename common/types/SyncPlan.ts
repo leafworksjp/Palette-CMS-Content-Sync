@@ -62,23 +62,24 @@ export function findReplaceCandidates(content: ContentV2, list: ContentV2[]): Co
 	});
 }
 
-const conflictTarget = (a: SyncAction): string | undefined =>
+export function getConsumedTargets(selections: Record<string, SyncSelection>): Map<string, string[]>
 {
-	if (a.kind === 'update') return a.local.page_id;
-	if (a.kind === 'replace') return a.targetPageId;
-	if (a.kind === 'delete') return a.pageId;
-	return undefined;
-};
+	const map = new Map<string, string[]>();
+	Object.entries(selections).forEach(([sourcePageId, selection]) =>
+	{
+		if (selection.kind === 'replace' && selection.targetPageId)
+		{
+			const sources = map.get(selection.targetPageId) ?? [];
+			sources.push(sourcePageId);
+			map.set(selection.targetPageId, sources);
+		}
+	});
+	return map;
+}
 
 export function findConflicts(actions: SyncAction[]): Conflict[]
 {
-	const ordered = orderActions(actions);
-
-	const targets = ordered.flatMap(a =>
-	{
-		const t = conflictTarget(a);
-		return t ? [t] : [];
-	});
+	const targets = actions.flatMap(a => (a.kind === 'replace' ? [a.targetPageId] : []));
 
 	const seen = new Set<string>();
 	const duplicates = new Set<string>();
@@ -90,7 +91,7 @@ export function findConflicts(actions: SyncAction[]): Conflict[]
 
 	return [...duplicates].map(target => ({
 		target,
-		sources: ordered.flatMap(a => ((a.kind === 'replace' && a.targetPageId === target) ? [a.local.page_id] : [])),
+		sources: actions.flatMap(a => ((a.kind === 'replace' && a.targetPageId === target) ? [a.local.page_id] : [])),
 	}));
 }
 
@@ -106,32 +107,37 @@ export function buildDefaultSelections(diffs: SyncDiff[]): Record<string, SyncSe
 
 export function buildActions(diffs: SyncDiff[], selections: Record<string, SyncSelection>): SyncAction[]
 {
-	return diffs.flatMap((d): SyncAction[] =>
-	{
-		const pageId = d.kind === 'serverOnly' ? d.server.page_id : d.local.page_id;
-		const s = selections[pageId];
-		if (!s) return [];
+	const consumed = getConsumedTargets(selections);
 
-		if (d.kind === 'matched' && s.kind === 'update')
+	return diffs.flatMap((diff): SyncAction[] =>
+	{
+		const pageId = diff.kind === 'serverOnly' ? diff.server.page_id : diff.local.page_id;
+
+		if ((diff.kind === 'matched' || diff.kind === 'serverOnly') && consumed.has(pageId)) return [];
+
+		const selection = selections[pageId];
+		if (!selection) return [];
+
+		if (diff.kind === 'matched' && selection.kind === 'update')
 		{
-			return [{kind: 'update', local: d.local}];
+			return [{kind: 'update', local: diff.local}];
 		}
-		if (d.kind === 'localOnly' && s.kind === 'create')
+		if (diff.kind === 'localOnly' && selection.kind === 'create')
 		{
-			return [{kind: 'create', local: d.local}];
+			return [{kind: 'create', local: diff.local}];
 		}
-		if (d.kind === 'localOnly' && s.kind === 'replace')
+		if (diff.kind === 'localOnly' && selection.kind === 'replace')
 		{
-			if (!s.targetPageId) return [];
-			return [{kind: 'replace', local: d.local, targetPageId: s.targetPageId}];
+			if (!selection.targetPageId) return [];
+			return [{kind: 'replace', local: diff.local, targetPageId: selection.targetPageId}];
 		}
-		if (d.kind === 'serverOnly' && s.kind === 'delete')
+		if (diff.kind === 'serverOnly' && selection.kind === 'delete')
 		{
-			return [{kind: 'delete', pageId: d.server.page_id}];
+			return [{kind: 'delete', pageId: diff.server.page_id}];
 		}
-		if (d.kind === 'serverOnly' && s.kind === 'downloadLocal')
+		if (diff.kind === 'serverOnly' && selection.kind === 'downloadLocal')
 		{
-			return [{kind: 'downloadLocal', server: d.server}];
+			return [{kind: 'downloadLocal', server: diff.server}];
 		}
 		return [];
 	});

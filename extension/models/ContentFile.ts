@@ -176,10 +176,12 @@ export class ContentFile
 	{
 		return await vscode.window.showInputBox({
 			prompt: '新しいコンテンツIDを入力してください',
-			validateInput: value =>
+			validateInput: async value =>
 			{
 				if (!value) return '入力してください';
 				if (!/^[a-zA-Z0-9_-]+$/.test(value)) return '半角英数字、ハイフン、アンダースコアのみ使用できます';
+				const dir = ContentFile.contentDir(value);
+				if (dir && await FileUtil.exists(dir)) return 'すでに同じ ID のコンテンツが存在します';
 				return null;
 			}
 		});
@@ -193,11 +195,13 @@ export class ContentFile
 		return await vscode.window.showInputBox({
 			prompt: '新しいコンテンツIDを入力してください',
 			value: content.page_id,
-			validateInput: value =>
+			validateInput: async value =>
 			{
 				if (!value) return '入力してください';
 				if (value === content.page_id) return '現在のIDと同じです';
 				if (!/^[a-zA-Z0-9_-]+$/.test(value)) return '半角英数字、ハイフン、アンダースコアのみ使用できます';
+				const dir = ContentFile.contentDir(value);
+				if (dir && await FileUtil.exists(dir)) return 'すでに同じ ID のコンテンツが存在します';
 				return null;
 			}
 		});

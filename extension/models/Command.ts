@@ -62,6 +62,7 @@ export class Command
 			return ApiResult.generalFailure(Locale.pleaseOpenContent);
 		}
 
+		await CodeFile.create(uri, content);
 		const codeList = await CodeFile.read(uri);
 		const strategy = getContentStrategy();
 		const plan = strategy.uploadPlan(content);
@@ -89,7 +90,6 @@ export class Command
 		getHotReloadServer().postMessage({type: 'reload', pageId: uploadResult.value.content.page_id});
 
 		await ContentFile.write(uri, uploadResult.value.content);
-		await CodeFile.create(uri, uploadResult.value.content);
 
 		await this.updateContentCache(uploadResult.value.content, subdir, dispatched.replacedPageId);
 
@@ -254,6 +254,7 @@ export class Command
 				return;
 			}
 
+			await CodeFile.create(uri, content);
 			const codeList = await CodeFile.read(uri);
 			const uploadResult = await Api.upload(content, codeList);
 			if (uploadResult.isFailure())
@@ -660,6 +661,7 @@ export class Command
 			const uri = ContentFile.contentFileUri(action.local.page_id);
 			if (!uri) return {action, error: 'ローカルのコンテンツファイルパスが取得できませんでした'};
 
+			await CodeFile.create(uri, action.local);
 			const codeList = await CodeFile.read(uri);
 			const result = action.kind === 'update'
 				? await Api.update(action.local, codeList)
@@ -677,6 +679,7 @@ export class Command
 			const uri = ContentFile.contentFileUri(action.local.page_id);
 			if (!uri) return {action, error: 'ローカルのコンテンツファイルパスが取得できませんでした'};
 
+			await CodeFile.create(uri, action.local);
 			const codeList = await CodeFile.read(uri);
 			const result = await Api.replace(action.local, codeList, action.targetPageId);
 

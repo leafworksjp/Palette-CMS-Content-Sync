@@ -533,7 +533,7 @@ export class Command
 				logger.error(`  [${e.page_id}] ${e.field} = ${JSON.stringify(e.value)} (${e.reason})`);
 			});
 			return ApiResult.generalFailure(
-				`接続先を切り替えられません: 既存コンテンツに新しい定義と合わない箇所が ${validationErrors.length} 件あります。`
+				`接続先を切り替えられません: 既存コンテンツに新しい定義と合わない箇所が ${validationErrors.length} 件あります。切替先サーバーで設定を見直し、definitions.json を再配置してください。詳細は「出力」 → 「Palette CMS Content Sync」 で確認できます。`
 			);
 		}
 

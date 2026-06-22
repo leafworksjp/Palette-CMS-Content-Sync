@@ -147,13 +147,6 @@ export class ContentFile
 		await FileUtil.rename(oldDir, newDir);
 	}
 
-	/**
-	 * 操作開始時に contents.json の URI を確定する。
-	 * 確定後の URI は以降の非同期処理（read/write/CodeFile 操作等）で明示的に引き回す。
-	 * これにより、通信中にユーザーがエディタを切り替えても別ファイルへ誤って書き込まないようにする。
-	 *
-	 * documentUri を省略した場合はアクティブエディタから取得する。
-	 */
 	public static async resolveActive(documentUri?: vscode.Uri): Promise<vscode.Uri | undefined>
 	{
 		const baseUri = documentUri ?? vscode.window.activeTextEditor?.document?.uri;

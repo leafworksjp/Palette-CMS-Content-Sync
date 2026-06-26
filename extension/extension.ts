@@ -38,7 +38,7 @@ export async function activate(context: vscode.ExtensionContext)
 	const result = await initializeVersionedServices();
 	if (result.isFailure())
 	{
-		await notifyAndOfferRestart(result.error.message);
+		await notifyAndOfferReload(result.error.message);
 		return;
 	}
 
@@ -180,9 +180,9 @@ function registerCommand(
 	);
 }
 
-async function notifyAndOfferRestart(message: string): Promise<void>
+async function notifyAndOfferReload(message: string): Promise<void>
 {
-	const action = await vscode.window.showWarningMessage(message, '再起動');
-	if (action !== '再起動') return;
-	await vscode.commands.executeCommand('workbench.action.restartExtensionHost');
+	const action = await vscode.window.showWarningMessage(message, '再読み込み');
+	if (action !== '再読み込み') return;
+	await vscode.commands.executeCommand('workbench.action.reloadWindow');
 }

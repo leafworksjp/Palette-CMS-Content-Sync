@@ -59,7 +59,7 @@ async function warmUpContentCache()
 	if (result.isFailure())
 	{
 		getLogger().error('Initial list fetch failed:', result.error);
-		return ApiResult.generalFailure(`接続先 (${subdir}) のコンテンツ一覧をサーバーから取得できませんでした。サーバーの状態を確認し、拡張機能を再起動してください。`);
+		return ApiResult.generalFailure(`接続先 (${subdir}) のコンテンツ一覧をサーバーから取得できませんでした。サーバーの状態を確認し、ウィンドウを再読み込みしてください。`);
 	}
 
 	getContentCache().set(subdir, result.value);

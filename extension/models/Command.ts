@@ -713,6 +713,20 @@ export class Command
 			await ContentFile.write(uri, v2Result.data);
 			await CodeFile.create(uri, v2Result.data);
 			await CodeFile.write(uri, v2Result.data, result.value.codeList);
+
+			if (v2Result.data.use_template_engine)
+			{
+				const snippetsResult = await Api.getSnippets(v2Result.data);
+				if (snippetsResult.isFailure()) return {action, error: this.formatError(snippetsResult.error)};
+				await JsonFile.write('snippets', snippetsResult.value, uri);
+			}
+			else
+			{
+				const variablesResult = await Api.getVariables(v2Result.data);
+				if (variablesResult.isFailure()) return {action, error: this.formatError(variablesResult.error)};
+				await JsonFile.write('variables', variablesResult.value, uri);
+			}
+
 			return {action};
 		}
 

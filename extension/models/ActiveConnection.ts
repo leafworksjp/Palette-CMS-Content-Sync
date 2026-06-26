@@ -10,11 +10,12 @@ export abstract class ActiveConnection
 {
 	public static init(version: Version, v1Url?: string): ActiveConnection
 	{
-		if (version === 1) return new ActiveConnectionV1(v1Url);
-		return new ActiveConnectionV2();
+		return version === 1
+			? new ActiveConnectionV1(v1Url)
+			: new ActiveConnectionV2();
 	}
 
-	abstract readonly version: Version;
+	public abstract readonly version: Version;
 
 	public abstract get current(): string | undefined;
 	public abstract get subdir(): string | undefined;
@@ -22,9 +23,9 @@ export abstract class ActiveConnection
 
 export class ActiveConnectionV1 extends ActiveConnection
 {
-	readonly version = 1 as const;
+	public readonly version = 1 as const;
 
-	constructor(private readonly url: string | undefined)
+	public constructor(private readonly url: string | undefined)
 	{
 		super();
 	}
@@ -42,10 +43,10 @@ export class ActiveConnectionV1 extends ActiveConnection
 
 export class ActiveConnectionV2 extends ActiveConnection
 {
-	public static readonly configSection = 'paletteCMSContentSync';
-	public static readonly configKey = 'connection';
+	public readonly configSection = 'paletteCMSContentSync';
+	public readonly configKey = 'connection';
 
-	readonly version = 2 as const;
+	public readonly version = 2 as const;
 
 	public get current(): string | undefined
 	{
@@ -60,15 +61,15 @@ export class ActiveConnectionV2 extends ActiveConnection
 	public async set(value: ConnectionValue): Promise<void>
 	{
 		await vscode.workspace
-		.getConfiguration(ActiveConnectionV2.configSection)
-		.update(ActiveConnectionV2.configKey, value, vscode.ConfigurationTarget.Workspace);
+		.getConfiguration(this.configSection)
+		.update(this.configKey, value, vscode.ConfigurationTarget.Workspace);
 	}
 
 	private read(): ConnectionValue
 	{
 		const value = vscode.workspace
-		.getConfiguration(ActiveConnectionV2.configSection)
-		.get<ConnectionValue>(ActiveConnectionV2.configKey);
+		.getConfiguration(this.configSection)
+		.get<ConnectionValue>(this.configKey);
 
 		return value ?? {};
 	}

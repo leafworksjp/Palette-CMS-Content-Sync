@@ -512,18 +512,9 @@ export class Command
 			return ApiResult.generalFailure('切替先の definitions.json が不正な形式です');
 		}
 
-		const contentFiles = await vscode.workspace.findFiles(
-			new vscode.RelativePattern(workspace, '**/contents.json'),
-			new vscode.RelativePattern(workspace, '**/node_modules/**')
-		);
+		const contents = await ContentFile.readAll(workspace);
 		const contentStrategy = getContentStrategy();
-
-		const validationErrors = (await Promise.all(contentFiles.map(async uri =>
-		{
-			const content = await ContentFile.read(uri);
-			if (!content) return [];
-			return contentStrategy.validate(content, newDefinitions);
-		}))).flat();
+		const validationErrors = contents.flatMap(content => contentStrategy.validate(content, newDefinitions));
 
 		if (validationErrors.length > 0)
 		{
@@ -544,13 +535,17 @@ export class Command
 			return ApiResult.generalFailure('この接続先は切替に対応していません');
 		}
 
+		const oldUrl = activeConnection.current;
+		const oldSubdir = activeConnection.subdir;
+
 		await activeConnection.set({url, subdir});
 
 		const listResult = await this.refreshCache(subdir);
 		if (listResult.isFailure())
 		{
+			await activeConnection.set({url: oldUrl, subdir: oldSubdir});
 			getLogger().error('list fetch failed:', listResult.error);
-			vscode.window.showWarningMessage(`接続先 (${subdir}) のコンテンツ一覧をサーバーから取得できませんでした。アップロード時の新規/更新判定など一部機能が無効化されます。`);
+			return ApiResult.generalFailure(`切替先サーバー (${subdir}) のコンテンツ一覧を取得できませんでした。サーバーの状態を確認してください。`);
 		}
 
 		return ApiResult.success(`接続先を ${url} に切り替えました。`);

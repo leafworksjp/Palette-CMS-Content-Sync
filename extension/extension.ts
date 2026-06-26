@@ -38,7 +38,7 @@ export async function activate(context: vscode.ExtensionContext)
 	const result = await initializeVersionedServices();
 	if (result.isFailure())
 	{
-		vscode.window.showWarningMessage(result.error.message);
+		await notifyAndOfferRestart(result.error.message);
 		return;
 	}
 
@@ -178,4 +178,11 @@ function registerCommand(
 	context.subscriptions.push(
 		vscode.commands.registerCommand(command, callback)
 	);
+}
+
+async function notifyAndOfferRestart(message: string): Promise<void>
+{
+	const action = await vscode.window.showWarningMessage(message, '再起動');
+	if (action !== '再起動') return;
+	await vscode.commands.executeCommand('workbench.action.restartExtensionHost');
 }

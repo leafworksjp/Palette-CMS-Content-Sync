@@ -1,4 +1,3 @@
-import vscode from 'vscode';
 import {Api} from './Api';
 import {ApiFile} from './ApiFile';
 import {FileUtil} from './FileUtil';
@@ -20,8 +19,8 @@ export async function initializeVersionedServices()
 
 	if (resolution.value.version === 2)
 	{
-		const subdir = getActiveConnection().subdir;
-		if (subdir) await fetchContentCache(subdir);
+		const cacheResult = await warmUpContentCache();
+		if (cacheResult.isFailure()) return cacheResult;
 	}
 
 	return ApiResult.success(undefined);
@@ -51,16 +50,18 @@ async function resolveVersion()
 	return ApiResult.success({version, lwDir});
 }
 
-async function fetchContentCache(subdir: string): Promise<void>
+async function warmUpContentCache()
 {
+	const subdir = getActiveConnection().subdir;
+	if (!subdir) return ApiResult.success(undefined);
+
 	const result = await Api.list();
-	if (result.isSuccess())
+	if (result.isFailure())
 	{
-		getContentCache().set(subdir, result.value);
-		return;
+		getLogger().error('Initial list fetch failed:', result.error);
+		return ApiResult.generalFailure(`接続先 (${subdir}) のコンテンツ一覧をサーバーから取得できませんでした。サーバーの状態を確認し、拡張機能を再起動してください。`);
 	}
 
-	getLogger().error('Initial list fetch failed:', result.error);
-	getContentCache().clear(subdir);
-	vscode.window.showWarningMessage(`接続先 (${subdir}) のコンテンツ一覧をサーバーから取得できませんでした。アップロード時の新規/更新判定など一部機能が無効化されます。`);
+	getContentCache().set(subdir, result.value);
+	return ApiResult.success(undefined);
 }

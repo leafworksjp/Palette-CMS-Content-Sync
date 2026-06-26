@@ -4,7 +4,7 @@ import {ActiveConnection, ActiveConnectionV2} from './ActiveConnection';
 export class ConnectionStatusBar
 {
 	private readonly item: vscode.StatusBarItem;
-	private readonly configListener: vscode.Disposable;
+	private readonly configListener: vscode.Disposable | undefined;
 
 	public constructor(private readonly activeConnection: ActiveConnection)
 	{
@@ -15,21 +15,19 @@ export class ConnectionStatusBar
 		this.item.command = 'paletteCmsContentSync.selectConnection';
 		this.item.tooltip = '接続先をクリックして変更';
 		this.item.show();
+		this.refresh();
 
+		if (!(activeConnection instanceof ActiveConnectionV2)) return;
 		this.configListener = vscode.workspace.onDidChangeConfiguration(e =>
 		{
-			if (e.affectsConfiguration(`${ActiveConnectionV2.configSection}.${ActiveConnectionV2.configKey}`))
-			{
-				this.refresh();
-			}
+			if (!e.affectsConfiguration(`${activeConnection.configSection}.${activeConnection.configKey}`)) return;
+			this.refresh();
 		});
-
-		this.refresh();
 	}
 
 	public dispose(): void
 	{
-		this.configListener.dispose();
+		this.configListener?.dispose();
 		this.item.dispose();
 	}
 

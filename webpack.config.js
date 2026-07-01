@@ -39,10 +39,13 @@ module.exports = [{
 },
 {
 	target: 'web',
-	entry: './webview/index.tsx',
+	entry: {
+		setting: './webview/setting/index.tsx',
+		sync: './webview/sync/index.tsx',
+	},
 	output: {
 		path: path.resolve(__dirname, 'dist'),
-		filename: 'webview.bundle.js',
+		filename: '[name].bundle.js',
 	},
 	externals: {
 		vscode: 'commonjs vscode'

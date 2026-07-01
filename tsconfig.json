@@ -9,7 +9,8 @@
     "allowJs": true,
     "jsx": "react-jsx",
     "moduleResolution": "node",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": ["node", "jest", "vscode-webview"]
   },
   "include": [
     "common/**/*.ts",

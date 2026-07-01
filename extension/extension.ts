@@ -1,6 +1,7 @@
 
 import vscode from 'vscode';
 import {SettingViewController} from './views/setting/SettingViewController';
+import {SyncViewController} from './views/sync/SyncViewController';
 import {VariableCompletion} from './models/VariableCompletion';
 import {TemplateCompletion} from './models/TemplateCompletion';
 import {
@@ -8,8 +9,11 @@ import {
 	createLogger,
 	createDiagnosticReporter,
 	createUploadStatus,
+	getActiveConnection,
 	unregisterServices,
 } from './models/Services';
+import {initializeVersionedServices} from './models/Bootstrap';
+import {ConnectionStatusBar} from './models/ConnectionStatusBar';
 import {PaletteSyntaxHighlighting} from './models/PaletteSyntaxHighlighting';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -19,19 +23,30 @@ const onDidChangeActiveTextEditorHandlers: ((editor: vscode.TextEditor) => void)
 const onDidSaveTextDocumentHandlers:((document: vscode.TextDocument) => void)[] = [];
 let paletteSyntaxHighlighting: PaletteSyntaxHighlighting | undefined = undefined;
 let settingsViewController: SettingViewController | undefined = undefined;
+let syncViewController: SyncViewController | undefined = undefined;
 let variableCompletion: VariableCompletion | undefined = undefined;
 let templateCompletion: TemplateCompletion | undefined = undefined;
 let htmlFormatter: HTMLFormatter | undefined = undefined;
 
-export function activate(context: vscode.ExtensionContext)
+export async function activate(context: vscode.ExtensionContext)
 {
 	registerServices(context);
 	setLanguageConfiguration(context);
 	registerSyntaxHighlighting(context);
+	registerHTMLFormatter(context);
+
+	const result = await initializeVersionedServices();
+	if (result.isFailure())
+	{
+		await notifyAndOfferReload(result.error.message);
+		return;
+	}
+
+	registerConnectionStatusBar(context);
 	registerSettingsViewController(context);
+	registerSyncViewController(context);
 	registerVariableCompletionProvider(context);
 	registerTemplateCompletionProvider(context);
-	registerHTMLFormatter(context);
 	bindEvents(context);
 }
 
@@ -42,6 +57,7 @@ export function deactivate()
 	onDidSaveTextDocumentHandlers.splice(0);
 	paletteSyntaxHighlighting = undefined;
 	settingsViewController = undefined;
+	syncViewController = undefined;
 	variableCompletion = undefined;
 	templateCompletion = undefined;
 	htmlFormatter = undefined;
@@ -63,6 +79,11 @@ function setLanguageConfiguration(context: vscode.ExtensionContext)
 	const configContent = fs.readFileSync(configPath, 'utf8');
 	const config = JSON.parse(configContent);
 	vscode.languages.setLanguageConfiguration('html', config);
+}
+
+function registerConnectionStatusBar(context: vscode.ExtensionContext)
+{
+	context.subscriptions.push(new ConnectionStatusBar(getActiveConnection()));
 }
 
 function registerSyntaxHighlighting(context: vscode.ExtensionContext)
@@ -95,6 +116,15 @@ function registerSettingsViewController(context: vscode.ExtensionContext)
 	registerCommand(context, 'paletteCmsContentSync.downloadVariables', () => settingsViewController?.downloadVariables());
 	registerCommand(context, 'paletteCmsContentSync.downloadDefinitions', () => settingsViewController?.downloadDefinitions());
 	registerCommand(context, 'paletteCmsContentSync.renameDirectory', () => settingsViewController?.renameDirectory());
+	registerCommand(context, 'paletteCmsContentSync.selectConnection', () => settingsViewController?.selectConnection());
+}
+
+function registerSyncViewController(context: vscode.ExtensionContext)
+{
+	syncViewController = new SyncViewController(context);
+	context.subscriptions.push(syncViewController);
+
+	registerCommand(context, 'paletteCmsContentSync.sync', () => syncViewController?.sync());
 }
 
 function registerVariableCompletionProvider(context: vscode.ExtensionContext)
@@ -148,4 +178,11 @@ function registerCommand(
 	context.subscriptions.push(
 		vscode.commands.registerCommand(command, callback)
 	);
+}
+
+async function notifyAndOfferReload(message: string): Promise<void>
+{
+	const action = await vscode.window.showWarningMessage(message, '再読み込み');
+	if (action !== '再読み込み') return;
+	await vscode.commands.executeCommand('workbench.action.reloadWindow');
 }

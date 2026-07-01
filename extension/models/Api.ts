@@ -1,21 +1,13 @@
 import {z} from 'zod';
 import fetch, {Response, BodyInit, FetchError} from 'node-fetch';
-import {FileUtil} from './FileUtil';
+import {ApiFile} from './ApiFile';
 import {ApiResult} from '../../common/types/ApiResult';
-import {Content, zContent} from '../../common//types/Content';
-import {Code} from '../../common/types/Code';
-import {zDefinitions} from '../../common/types/Definitions';
 import {Is} from '../../common/types/Is';
 import {zCompileErrors} from '../../common/types/CompileErrors';
-import {getLogger} from './Services';
-
-const zApiSettings = z.object({
-	url: z.string(),
-	id: z.string(),
-	pass: z.string(),
-});
-
-export type ApiSettings = z.infer<typeof zApiSettings>;
+import {getLogger, getContentStrategy, getDefinitionsStrategy} from './Services';
+import {Content} from '../../common/types/Content';
+import {ContentStrategyV2} from './ContentStrategy';
+import {Code} from '../../common/types/Code';
 
 const isJsonResponse = (response: Response) =>
 {
@@ -28,14 +20,13 @@ const isJsonResponse = (response: Response) =>
 
 export class Api
 {
-	private static fileName = 'api.json';
-
 	public static async upload(content: Content, codeList: Code[])
 	{
-		const endpoint = `${content.id ? 'update' : 'create'}`;
-		const method = content.id ? 'PUT' : 'POST';
+		const contentStrategy = getContentStrategy();
+		const endpoint = contentStrategy.uploadEndpoint(content);
+		const method = contentStrategy.uploadMethod(content);
 		const body = JSON.stringify({
-			contents: content,
+			contents: contentStrategy.parse(content),
 			contents_html: codeList
 		});
 
@@ -52,20 +43,20 @@ export class Api
 				}
 				else
 				{
-					getLogger().error('API invalid response:', zCompileErrorsResult.error);
+					getLogger().error(`API invalid response [${content.page_id}]:`, zCompileErrorsResult.error);
 					return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 				}
 			}
 			else
 			{
-				const zResult = zContent.safeParse(result.value.contents);
+				const zResult = contentStrategy.safeParse(result.value.contents);
 				if (zResult.success)
 				{
 					return ApiResult.success({content: zResult.data});
 				}
 				else
 				{
-					getLogger().error('API invalid response:', zResult.error);
+					getLogger().error(`API invalid response [${content.page_id}]:`, zResult.error);
 					return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 				}
 			}
@@ -78,11 +69,12 @@ export class Api
 
 	public static async download(content: Content)
 	{
-		const result = await Api.fetch(`info?id=${content.id}`, 'GET');
+		const contentStrategy = getContentStrategy();
+		const result = await Api.fetch(`info?${contentStrategy.serverIdParam(content)}`, 'GET');
 
 		if (result.isSuccess())
 		{
-			const zResult = zContent.safeParse(result.value.contents);
+			const zResult = contentStrategy.safeParse(result.value.contents);
 			if (zResult.success)
 			{
 				return ApiResult.success({
@@ -92,7 +84,7 @@ export class Api
 			}
 			else
 			{
-				getLogger().error('API invalid response:', result.value);
+				getLogger().error(`API invalid response [${content.page_id}]:`, result.value);
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 		}
@@ -104,7 +96,7 @@ export class Api
 
 	public static async delete(content: Content)
 	{
-		const result = await Api.fetch(`delete?id=${content.id}`, 'DELETE');
+		const result = await Api.fetch(`delete?${getContentStrategy().serverIdParam(content)}`, 'DELETE');
 
 		if (result.isSuccess())
 		{
@@ -118,7 +110,7 @@ export class Api
 
 	public static async getVariables(content: Content)
 	{
-		const result = await Api.fetch(`variables?id=${content.id}`, 'GET');
+		const result = await Api.fetch(`variables?${getContentStrategy().serverIdParam(content)}`, 'GET');
 
 		if (result.isSuccess())
 		{
@@ -128,7 +120,7 @@ export class Api
 			}
 			else
 			{
-				getLogger().error('API invalid response:', result.value);
+				getLogger().error(`API invalid response [${content.page_id}]:`, result.value);
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 		}
@@ -140,7 +132,7 @@ export class Api
 
 	public static async getSnippets(content: Content)
 	{
-		const result = await Api.fetch(`snippets?id=${content.id}`, 'GET');
+		const result = await Api.fetch(`snippets?${getContentStrategy().serverIdParam(content)}`, 'GET');
 
 		if (result.isSuccess())
 		{
@@ -150,7 +142,7 @@ export class Api
 			}
 			else
 			{
-				getLogger().error('API invalid response:', result.value);
+				getLogger().error(`API invalid response [${content.page_id}]:`, result.value);
 				return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 			}
 		}
@@ -166,7 +158,7 @@ export class Api
 
 		if (result.isSuccess())
 		{
-			const zResult = zDefinitions.safeParse(result.value.definitions);
+			const zResult = getDefinitionsStrategy().safeParse(result.value.definitions);
 			if (zResult.success)
 			{
 				return ApiResult.success(zResult.data);
@@ -184,36 +176,86 @@ export class Api
 		}
 	}
 
-	public static async settings()
+	public static async create(content: Content, codeList: Code[])
 	{
-		const workspaceUri = FileUtil.getWorkspace();
+		return Api.sendContent('create', 'POST', content, codeList);
+	}
 
-		if (!workspaceUri) return undefined;
+	public static async update(content: Content, codeList: Code[])
+	{
+		return Api.sendContent('update', 'PUT', content, codeList);
+	}
 
-		const uri = FileUtil.join(workspaceUri, FileUtil.LW_DIRECTORY_NAME, Api.fileName);
+	public static async replace(content: Content, codeList: Code[], targetPageId: string)
+	{
+		const endpoint = `replace?target_page_id=${encodeURIComponent(targetPageId)}`;
+		return Api.sendContent(endpoint, 'PUT', content, codeList);
+	}
 
-		try
+	private static async sendContent(
+		endpoint: string,
+		method: 'POST' | 'PUT',
+		content: Content,
+		codeList: Code[]
+	)
+	{
+		const contentStrategy = getContentStrategy();
+		const body = JSON.stringify({
+			contents: contentStrategy.parse(content),
+			contents_html: codeList,
+		});
+
+		const result = await Api.fetch(endpoint, method, body);
+		if (result.isFailure()) return result;
+
+		if (Is.undefined(result.value.contents))
 		{
-			const data = JSON.parse(await FileUtil.readFile(uri));
-
-			const settings = zApiSettings.parse(data);
-
-			return settings;
+			const zCompileErrorsResult = zCompileErrors.safeParse(result.value);
+			if (zCompileErrorsResult.success)
+			{
+				return ApiResult.compilationFailure(zCompileErrorsResult.data);
+			}
+			getLogger().error(`API invalid response [${content.page_id}]:`, zCompileErrorsResult.error);
+			return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 		}
-		catch (error)
+
+		const zResult = contentStrategy.safeParse(result.value.contents);
+		if (!zResult.success)
 		{
-			getLogger().error('API invalid response:', error);
-			return undefined;
+			getLogger().error(`API invalid response [${content.page_id}]:`, zResult.error);
+			return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
 		}
+		return ApiResult.success({content: zResult.data});
+	}
+
+	public static async list()
+	{
+		const strategy = getContentStrategy();
+		if (!(strategy instanceof ContentStrategyV2))
+		{
+			return ApiResult.generalFailure('この機能は現在の接続先では利用できません。');
+		}
+
+		const result = await Api.fetch('list', 'GET');
+		if (result.isFailure()) return result;
+
+		const zResult = strategy.safeParseList(result.value.contents);
+		if (!zResult.success)
+		{
+			getLogger().error('API invalid response:', zResult.error);
+			return ApiResult.generalFailure('APIのレスポンスが不正な形式です。');
+		}
+
+		return ApiResult.success(zResult.data);
 	}
 
 	private static async fetch(endpoint: string, method: string, body: BodyInit | undefined = undefined)
 	{
-		const settings = await Api.settings();
+		const settings = await ApiFile.read();
 
 		if (!settings)
 		{
-			const message = `${Api.fileName}のフォーマットが不正な形式です。`;
+			const message = `${ApiFile.fileName}を読み込めません。環境設定を確認してください。`;
 			getLogger().error('settings error:', message);
 			return ApiResult.generalFailure(message);
 		}

@@ -1,11 +1,22 @@
 import {z} from 'zod';
 import {Definitions} from './Definitions';
-import {Is} from './Is';
+import {Version} from './Version';
+
+export const zSearchQueryForWhereVal = z.union([
+	z.string(),
+	z.object({sheet: z.string(), col: z.string()}),
+]);
+
+export const zSearchQueryForWhereV1 = z.object({
+	col: z.string(),
+	operator: z.string(),
+	val: z.string(),
+});
 
 export const zSearchQueryForWhere = z.object({
 	col: z.string(),
 	operator: z.string(),
-	val: z.string(),
+	val: zSearchQueryForWhereVal,
 });
 
 export type SearchQueryForWhere = z.infer<typeof zSearchQueryForWhere>;
@@ -17,8 +28,7 @@ export const zSearchQueryForOrder = z.object({
 
 export type SearchQueryForOrder = z.infer<typeof zSearchQueryForOrder>;
 
-export const zContent = z.object({
-	id: z.string(),
+const zContentBase = z.object({
 	category: z.string(),
 	page_id: z.string(),
 	static_url: z.string().optional(),
@@ -41,13 +51,28 @@ export const zContent = z.object({
 	login_url: z.string().optional(),
 	logout_url: z.string().optional(),
 	search_row: z.number().optional(),
-	search_query_where: z.array(zSearchQueryForWhere).optional(),
 	search_query_order_state: z.string().optional(),
 	search_query_order: z.array(zSearchQueryForOrder).optional(),
 	search_query_order_rand: z.string().optional(),
 });
 
-export type TextProperties = 'id'
+//V1 places id at the top of contents.json on write, so use z.object + ...shape instead of zContentBase.extend.
+//id is V1's server-side internal identifier; preserving the existing field order keeps git diffs clean.
+export const zContentV1 = z.object({
+	id: z.string(),
+	...zContentBase.shape,
+	search_query_where: z.array(zSearchQueryForWhereV1).optional(),
+}).brand<'ContentV1'>();
+
+export const zContentV2 = zContentBase.extend({
+	search_query_where: z.array(zSearchQueryForWhere).optional(),
+}).brand<'ContentV2'>();
+export type ContentV1 = z.infer<typeof zContentV1>;
+export type ContentV2 = z.infer<typeof zContentV2>;
+export type ContentFor<V extends Version> = V extends 1 ? ContentV1 : ContentV2;
+export type Content = ContentFor<Version>;
+
+type TextPropertyKeys = 'id'
 	| 'category'
 	| 'page_id'
 	| 'static_url'
@@ -60,7 +85,9 @@ export type TextProperties = 'id'
 	| 'device_type_url'
 	| 'login_url'
 	| 'logout_url'
-	|'search_row';
+	| 'search_row';
+
+export type TextPropertiesFor<V extends Version> = Extract<TextPropertyKeys, keyof ContentFor<V>>;
 
 export type RadioProperties = 'use_template_engine'|'state'|'role_key'|'role_key_owner'|'search_query_order_state';
 
@@ -68,42 +95,19 @@ export type CheckBoxProperties = 'permission'|'permission_sheet'|'manager_permis
 
 export type SelectProperties = 'contents_type'|'http_header_content_type'|'sheet_id'|'search_query_order_rand';
 
-export type SearchQueryProperties = 'search_query_where'|'search_query_order';
+export type UploadChoice =
+	| {action: 'create', label: string}
+	| {action: 'replace', label: string, targetPageId: string};
 
-export type Content = z.infer<typeof zContent>;
-
-export const createContent = (): Content => ({
-	id: '',
-	category: '',
-	page_id: '',
+export const baseDefaults = (newFileName: string) => ({
+	category: '未設定',
+	page_id: newFileName,
 	name: '',
 	contents_type: '',
+	http_header_content_type: 'html',
+	device_type: ['pc', 'smart'],
+	search_row: 10,
 });
-
-export const convertSearchQueryIntoLegacyFormat = (query: unknown, index: number) =>
-{
-	const results: {key: string, value: string}[] = [];
-
-	const resultForWhere = zSearchQueryForWhere.safeParse(query);
-	if (resultForWhere.success)
-	{
-		Object.entries(resultForWhere.data).forEach(([key, value]) =>
-		{
-			results.push({key: `search_query_where_${key}_${index}`, value});
-		});
-	}
-
-	const resultForOrder = zSearchQueryForOrder.safeParse(query);
-	if (resultForOrder.success)
-	{
-		Object.entries(resultForOrder.data).forEach(([key, value]) =>
-		{
-			results.push({key: `search_query_order_${key}_${index}`, value});
-		});
-	}
-
-	return results;
-};
 
 export const getColumnName = (definitions: Definitions, column: string) =>
 {
@@ -243,6 +247,30 @@ export const updateDefaultValues = (definitions: Definitions, content: Content) 
 		content.state = undefined;
 	}
 
+	if (columns.includes('search_query_where'))
+	{
+		if (!content.search_query_where?.length)
+		{
+			content.search_query_where = [{col: '', operator: '=', val: ''}];
+		}
+	}
+	else
+	{
+		content.search_query_where = undefined;
+	}
+
+	if (columns.includes('search_query_order'))
+	{
+		if (!content.search_query_order?.length)
+		{
+			content.search_query_order = [{col: '', operator: 'ASC'}];
+		}
+	}
+	else
+	{
+		content.search_query_order = undefined;
+	}
+
 	if (columns.includes('search_query_order_state'))
 	{
 		content.search_query_order_state = 'col';
@@ -254,7 +282,7 @@ export const updateDefaultValues = (definitions: Definitions, content: Content) 
 
 	if (columns.includes('search_query_order_rand'))
 	{
-		content.search_query_order_rand = 'content';
+		content.search_query_order_rand = 'contents';
 	}
 	else
 	{

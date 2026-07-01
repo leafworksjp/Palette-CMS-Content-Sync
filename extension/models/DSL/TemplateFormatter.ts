@@ -1,5 +1,6 @@
 import * as prettier from 'prettier';
 import {TemplateLexer, TemplateToken} from './TemplateLexer';
+import {Is} from '../../../common/types/Is';
 
 type LineCol = {line: number; char: number};
 
@@ -453,7 +454,7 @@ class HTMLTemplateFormatter
 
 		matches.forEach((match, i) =>
 		{
-			if (match.index === undefined) return;
+			if (Is.undefined(match.index)) return;
 
 			result += str.slice(lastIndex, match.index);
 			result += replacements[i];

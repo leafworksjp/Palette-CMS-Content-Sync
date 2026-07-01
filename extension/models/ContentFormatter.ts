@@ -1,5 +1,4 @@
-import {Content} from '../../common//types/Content';
-import {getLogger} from './Services';
+import {Content} from '../../common/types/Content';
 
 export class ContentFormatter
 {

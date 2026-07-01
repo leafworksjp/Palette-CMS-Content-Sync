@@ -1,6 +1,7 @@
+import vscode from 'vscode';
 import {FileUtil} from './FileUtil';
-import {Definitions, zDefinitions} from '../../common/types/Definitions';
-import {getLogger} from './Services';
+import {Definitions} from '../../common/types/Definitions';
+import {getLogger, getDefinitionsStrategy, getLwContent} from './Services';
 
 export class DefinitionsFile
 {
@@ -8,28 +9,31 @@ export class DefinitionsFile
 
 	private static uri()
 	{
-		const workspaceUri = FileUtil.getWorkspace();
-		if (!workspaceUri) return undefined;
-
-		return FileUtil.join(workspaceUri, FileUtil.LW_DIRECTORY_NAME, DefinitionsFile.fileName);
+		const base = getLwContent().baseDir();
+		return base ? FileUtil.join(base, DefinitionsFile.fileName) : undefined;
 	}
 
-	public static async read()
+	public static async read(): Promise<Definitions | undefined>
 	{
 		const uri = DefinitionsFile.uri();
 		if (!uri) return undefined;
+
+		return DefinitionsFile.readAt(uri);
+	}
+
+	public static async readAt(uri: vscode.Uri): Promise<Definitions | undefined>
+	{
 		if (!await FileUtil.exists(uri)) return undefined;
 
 		try
 		{
 			const data = JSON.parse(await FileUtil.readFile(uri));
 
-			return zDefinitions.parse(data);
+			return getDefinitionsStrategy().parse(data);
 		}
 		catch (error)
 		{
-			console.error(error);
-			getLogger().error(error);
+			getLogger().error('definitions.json parse failed:', error);
 			return undefined;
 		}
 	}

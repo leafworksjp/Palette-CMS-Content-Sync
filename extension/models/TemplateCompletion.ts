@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import {CodeFile} from './CodeFile';
 import {JsonFile} from './JsonFile';
+import {ContentFile} from './ContentFile';
 
 type Snippet = {
 	[key: string]: {
@@ -80,7 +81,10 @@ export class TemplateCompletion
 
 			const codeType = CodeFile.parseCodeType(fileUri);
 
-			const json = await JsonFile.read('snippets');
+			const contentUri = await ContentFile.resolveActive(fileUri);
+			if (!contentUri) return undefined;
+
+			const json = await JsonFile.read('snippets', contentUri);
 			if (!json) return undefined;
 
 			const data = json[codeType];

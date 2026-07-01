@@ -1,6 +1,5 @@
 import vscode from 'vscode';
 import {FileUtil} from './FileUtil';
-import {ContentFile} from './ContentFile';
 
 const fileNames = {
 	variables: 'variables.json',
@@ -9,13 +8,11 @@ const fileNames = {
 
 export class JsonFile
 {
-	public static async read(file: keyof typeof fileNames)
+	public static async read(file: keyof typeof fileNames, uri: vscode.Uri)
 	{
 		const fileName = fileNames[file];
 
-		const contentDir = await ContentFile.getDirectoryPath();
-
-		if (!contentDir) return undefined;
+		const contentDir = FileUtil.getDirectory(uri);
 
 		const variableUri = FileUtil.join(contentDir, fileName);
 
@@ -33,13 +30,11 @@ export class JsonFile
 		}
 	}
 
-	public static async write(file: keyof typeof fileNames, variables: object)
+	public static async write(file: keyof typeof fileNames, variables: object, uri: vscode.Uri)
 	{
 		const fileName = fileNames[file];
 
-		const contentDir = await ContentFile.getDirectoryPath();
-
-		if (!contentDir) return;
+		const contentDir = FileUtil.getDirectory(uri);
 
 		const jsonFilePath = FileUtil.join(contentDir, fileName);
 
